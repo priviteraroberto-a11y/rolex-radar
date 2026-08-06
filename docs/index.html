@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1120">
+<title>Rolex Radar · Pepsi 126710BLRO</title>
+<style>
+  :root {
+    --bg:#0b1120; --card:#131c2e; --line:#233047; --tx:#e8eef8; --mut:#8fa0bb;
+    --g:#22c55e; --y:#eab308; --r:#f43f5e;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+  body { margin:0; background:var(--bg); color:var(--tx); font:15px/1.5
+    -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:env(safe-area-inset-top) 0 40px }
+  .wrap { max-width:760px; margin:0 auto; padding:20px 16px }
+  h1 { font-size:20px; margin:2px 0 2px; letter-spacing:-.01em }
+  .eyebrow { font-size:11px; letter-spacing:.18em; color:var(--mut) }
+  .upd { font-size:12px; color:var(--mut); margin-bottom:18px }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px; margin-bottom:22px }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px }
+  .kpi .l { font-size:11px; letter-spacing:.1em; color:var(--mut);
+    text-transform:uppercase }
+  .kpi .v { font-size:23px; font-weight:650; margin-top:4px; letter-spacing:-.02em }
+  .kpi .s { font-size:12px; color:var(--mut) }
+  .note { background:#1e293b; border-left:3px solid var(--y); padding:10px 14px;
+    border-radius:0 8px 8px 0; font-size:13px; color:var(--mut); margin-bottom:18px }
+  h2 { font-size:13px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--mut); margin:26px 0 10px; font-weight:600 }
+  table { width:100%; border-collapse:collapse }
+  td { padding:14px 8px; border-bottom:1px solid var(--line); vertical-align:top }
+  .sc { width:58px }
+  .ring { width:44px; height:44px; border-radius:50%; display:grid; place-items:center;
+    background:conic-gradient(#38bdf8 calc(var(--v)*1%), #233047 0); font-size:13px;
+    font-weight:700 }
+  .ring span { width:34px; height:34px; border-radius:50%; background:var(--card);
+    display:grid; place-items:center }
+  .pr { font-size:17px; font-weight:650; letter-spacing:-.01em }
+  .fv { font-size:12px; color:var(--mut); margin-top:2px }
+  .chips { margin-top:7px }
+  .chip { display:inline-block; background:#1c2740; border:1px solid var(--line);
+    color:#b8c6dd; border-radius:99px; padding:2px 9px; font-size:11px;
+    margin:0 4px 4px 0 }
+  .src { font-size:11px; color:#5f708c; margin-top:4px }
+  .b { font-weight:600 } .g { color:var(--g) } .y { color:var(--y) }
+  .r { color:var(--r) } .n { color:var(--mut) }
+  .go a { color:#38bdf8; text-decoration:none; font-size:22px; padding:6px 4px }
+  canvas { width:100%; height:180px; background:var(--card); border-radius:14px;
+    border:1px solid var(--line); padding:8px }
+  footer { margin-top:30px; font-size:11px; color:#5f708c; line-height:1.6 }
+</style></head><body>
+<div class="wrap">
+  <div class="eyebrow">ROLEX RADAR</div>
+  <h1>GMT-Master II “Pepsi” · 126710BLRO</h1>
+  <div class="upd">aggiornato 07/08/2026 00:37</div>
+
+  <div class="grid">
+    <div class="kpi"><div class="l">Indice di mercato</div>
+      <div class="v">34.049 €</div><div class="s">10 annunci nel campione</div></div>
+    <div class="kpi"><div class="l">Mediana listini</div>
+      <div class="v">30.650 €</div><div class="s">prezzi non normalizzati</div></div>
+    <div class="kpi"><div class="l">Più economico</div>
+      <div class="v">23.200 €</div><div class="s">fra gli annunci attivi</div></div>
+    <div class="kpi"><div class="l">Sotto mercato</div>
+      <div class="v">2</div><div class="s">su 12 attivi</div></div>
+    <div class="kpi"><div class="l">Miglior punteggio</div>
+      <div class="v">86<span style="font-size:14px;color:var(--mut)">/100</span></div>
+      <div class="s">a 33.900 €</div></div>
+  </div>
+
+  <div class="note" id="note"></div>
+
+  <h2>Andamento del mercato</h2>
+  <canvas id="chart"></canvas>
+
+  <h2>Annunci attivi</h2>
+  <table><tbody><tr>
+      <td class="sc"><div class="ring" style="--v:86">
+        <span>86</span></div></td>
+      <td>
+        <div class="pr">33.900 €</div>
+        <div class="fv">stima 34.730 € · <span class="b y">in linea +2.4%</span></div>
+        <div class="chips"><span class="chip">2025</span><span class="chip">unworn</span><span class="chip">jubilee</span><span class="chip">gar. IT</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">davidepedretti</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/davidepedretti/0" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:82">
+        <span>82</span></div></td>
+      <td>
+        <div class="pr">30.100 €</div>
+        <div class="fv">stima 32.006 € · <span class="b g">sotto mercato +6.0%</span></div>
+        <div class="chips"><span class="chip">2025</span><span class="chip">unworn</span><span class="chip">jubilee</span><span class="chip">gar. SA</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">chrono24</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/chrono24/7" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:81">
+        <span>81</span></div></td>
+      <td>
+        <div class="pr">28.600 €</div>
+        <div class="fv">stima 30.340 € · <span class="b g">sotto mercato +5.7%</span></div>
+        <div class="chips"><span class="chip">2023</span><span class="chip">mint</span><span class="chip">jubilee</span><span class="chip">gar. IT</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">pluswatch</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/pluswatch/9" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:79">
+        <span>79</span></div></td>
+      <td>
+        <div class="pr">34.800 €</div>
+        <div class="fv">stima 34.389 € · <span class="b y">in linea -1.2%</span></div>
+        <div class="chips"><span class="chip">2025</span><span class="chip">unworn</span><span class="chip">jubilee</span><span class="chip">gar. EU</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">dellarocca</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/dellarocca/2" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:77">
+        <span>77</span></div></td>
+      <td>
+        <div class="pr">31.200 €</div>
+        <div class="fv">stima 31.674 € · <span class="b y">in linea +1.5%</span></div>
+        <div class="chips"><span class="chip">2024</span><span class="chip">mint</span><span class="chip">jubilee</span><span class="chip">gar. IT</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">pluswatch</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/pluswatch/1" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:70">
+        <span>70</span></div></td>
+      <td>
+        <div class="pr">38.500 €</div>
+        <div class="fv">stima 36.453 € · <span class="b r">sopra -5.6%</span></div>
+        <div class="chips"><span class="chip">2026</span><span class="chip">unworn</span><span class="chip">jubilee</span><span class="chip">gar. EU</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">chrono24</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/chrono24/4" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:69">
+        <span>69</span></div></td>
+      <td>
+        <div class="pr">29.400 €</div>
+        <div class="fv">stima 30.083 € · <span class="b y">in linea +2.3%</span></div>
+        <div class="chips"><span class="chip">2024</span><span class="chip">like new</span><span class="chip">oyster</span><span class="chip">gar. IT</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">orologiepassioni</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/orologiepassioni/5" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:66">
+        <span>66</span></div></td>
+      <td>
+        <div class="pr">39.900 €</div>
+        <div class="fv">stima 36.814 € · <span class="b r">sopra -8.4%</span></div>
+        <div class="chips"><span class="chip">2026</span><span class="chip">unworn</span><span class="chip">jubilee</span><span class="chip">gar. IT</span><span class="chip">full set</span><span class="chip">mai lucidato</span></div>
+        <div class="src">dellarocca</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/dellarocca/11" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:60">
+        <span>60</span></div></td>
+      <td>
+        <div class="pr">32.400 €</div>
+        <div class="fv">stima 31.053 € · <span class="b r">sopra -4.3%</span></div>
+        <div class="chips"><span class="chip">2024</span><span class="chip">mint</span><span class="chip">jubilee</span><span class="chip">gar. CH</span><span class="chip">full set</span></div>
+        <div class="src">wristler</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/wristler/8" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:45">
+        <span>45</span></div></td>
+      <td>
+        <div class="pr">25.900 €</div>
+        <div class="fv">stima 26.213 € · <span class="b y">in linea +1.2%</span></div>
+        <div class="chips"><span class="chip">2023</span><span class="chip">excellent</span><span class="chip">jubilee</span><span class="chip">gar. AE</span></div>
+        <div class="src">chrono24</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/chrono24/3" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:34">
+        <span>34</span></div></td>
+      <td>
+        <div class="pr">26.800 €</div>
+        <div class="fv">stima 25.469 € · <span class="b r">sopra -5.2%</span></div>
+        <div class="chips"><span class="chip">2022</span><span class="chip">very good</span><span class="chip">jubilee</span><span class="chip">gar. UK</span></div>
+        <div class="src">watchfinder</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/watchfinder/6" target="_blank" rel="noopener">→</a></td>
+    </tr>
+<tr>
+      <td class="sc"><div class="ring" style="--v:22">
+        <span>22</span></div></td>
+      <td>
+        <div class="pr">23.200 €</div>
+        <div class="fv">stima 21.956 € · <span class="b r">sopra -5.7%</span></div>
+        <div class="chips"><span class="chip">2019</span><span class="chip">good</span><span class="chip">oyster</span><span class="chip">gar. JP</span></div>
+        <div class="src">chrono24</div>
+      </td>
+      <td class="go"><a href="https://esempio.it/chrono24/10" target="_blank" rel="noopener">→</a></td>
+    </tr></tbody></table>
+
+  <footer>
+    Dati raccolti automaticamente da fonti pubbliche e dagli alert email dei
+    marketplace. L'“indice di mercato” è una stima statistica costruita sugli
+    annunci osservati (prezzi richiesti, non prezzi di transazione): è un
+    indicatore, non una valutazione peritale, e non costituisce consulenza
+    all'acquisto o all'investimento.
+  </footer>
+</div>
+<script>
+  if (!document.getElementById('note').textContent.trim())
+    document.getElementById('note').style.display = 'none';
+
+  const data = [{"t": "2026-06-22", "median": 33936.0, "index": 33936.0}, {"t": "2026-06-23", "median": 33866.0, "index": 33866.0}, {"t": "2026-06-24", "median": 34227.0, "index": 34227.0}, {"t": "2026-06-25", "median": 33898.0, "index": 33898.0}, {"t": "2026-06-26", "median": 34235.0, "index": 34235.0}, {"t": "2026-06-27", "median": 34167.0, "index": 34167.0}, {"t": "2026-06-28", "median": 34011.0, "index": 34011.0}, {"t": "2026-06-29", "median": 34340.0, "index": 34340.0}, {"t": "2026-06-30", "median": 34080.0, "index": 34080.0}, {"t": "2026-07-01", "median": 34374.0, "index": 34374.0}, {"t": "2026-07-02", "median": 34182.0, "index": 34182.0}, {"t": "2026-07-03", "median": 34236.0, "index": 34236.0}, {"t": "2026-07-04", "median": 34491.0, "index": 34491.0}, {"t": "2026-07-05", "median": 34789.0, "index": 34789.0}, {"t": "2026-07-06", "median": 34380.0, "index": 34380.0}, {"t": "2026-07-07", "median": 34485.0, "index": 34485.0}, {"t": "2026-07-08", "median": 34784.0, "index": 34784.0}, {"t": "2026-07-09", "median": 35030.0, "index": 35030.0}, {"t": "2026-07-10", "median": 34834.0, "index": 34834.0}, {"t": "2026-07-11", "median": 34759.0, "index": 34759.0}, {"t": "2026-07-12", "median": 35171.0, "index": 35171.0}, {"t": "2026-07-13", "median": 34617.0, "index": 34617.0}, {"t": "2026-07-14", "median": 35177.0, "index": 35177.0}, {"t": "2026-07-15", "median": 34854.0, "index": 34854.0}, {"t": "2026-07-16", "median": 34802.0, "index": 34802.0}, {"t": "2026-07-17", "median": 34826.0, "index": 34826.0}, {"t": "2026-07-18", "median": 34989.0, "index": 34989.0}, {"t": "2026-07-19", "median": 35354.0, "index": 35354.0}, {"t": "2026-07-20", "median": 34989.0, "index": 34989.0}, {"t": "2026-07-21", "median": 35286.0, "index": 35286.0}, {"t": "2026-07-22", "median": 35364.0, "index": 35364.0}, {"t": "2026-07-23", "median": 35234.0, "index": 35234.0}, {"t": "2026-07-24", "median": 35387.0, "index": 35387.0}, {"t": "2026-07-25", "median": 35117.0, "index": 35117.0}, {"t": "2026-07-26", "median": 35156.0, "index": 35156.0}, {"t": "2026-07-27", "median": 35291.0, "index": 35291.0}, {"t": "2026-07-28", "median": 35635.0, "index": 35635.0}, {"t": "2026-07-29", "median": 35514.0, "index": 35514.0}, {"t": "2026-07-30", "median": 35483.0, "index": 35483.0}, {"t": "2026-07-31", "median": 35697.0, "index": 35697.0}, {"t": "2026-08-01", "median": 35653.0, "index": 35653.0}, {"t": "2026-08-02", "median": 35596.0, "index": 35596.0}, {"t": "2026-08-03", "median": 35953.0, "index": 35953.0}, {"t": "2026-08-04", "median": 35933.0, "index": 35933.0}, {"t": "2026-08-05", "median": 35683.0, "index": 35683.0}, {"t": "2026-08-06", "median": 35935.0, "index": 35935.0}];
+  const c = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  c.width = c.clientWidth * dpr; c.height = 180 * dpr;
+  const x = c.getContext('2d'); x.scale(dpr, dpr);
+  const W = c.clientWidth, H = 180, P = 26;
+  if (data.length < 2) {
+    x.fillStyle = '#5f708c'; x.font = '13px -apple-system,sans-serif';
+    x.fillText('Servono almeno due rilevazioni per il grafico.', P, H / 2);
+  } else {
+    const vals = data.map(d => d.median);
+    const lo = Math.min(...vals) * 0.99, hi = Math.max(...vals) * 1.01;
+    const px = i => P + i * (W - 2 * P) / (data.length - 1);
+    const py = v => H - P - (v - lo) / (hi - lo) * (H - 2 * P);
+    const grad = x.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, 'rgba(56,189,248,.35)');
+    grad.addColorStop(1, 'rgba(56,189,248,0)');
+    x.beginPath(); x.moveTo(px(0), py(vals[0]));
+    vals.forEach((v, i) => x.lineTo(px(i), py(v)));
+    x.lineTo(px(vals.length - 1), H - P); x.lineTo(px(0), H - P); x.closePath();
+    x.fillStyle = grad; x.fill();
+    x.beginPath(); x.moveTo(px(0), py(vals[0]));
+    vals.forEach((v, i) => x.lineTo(px(i), py(v)));
+    x.strokeStyle = '#38bdf8'; x.lineWidth = 2; x.stroke();
+    x.fillStyle = '#8fa0bb'; x.font = '11px -apple-system,sans-serif';
+    x.fillText(Math.round(hi).toLocaleString('it-IT') + ' €', 4, 12);
+    x.fillText(Math.round(lo).toLocaleString('it-IT') + ' €', 4, H - 6);
+  }
+</script>
+</body></html>

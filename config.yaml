@@ -1,0 +1,326 @@
+# =============================================================================
+# ROLEX RADAR — configurazione
+# Il cuore del sistema. Il codice non si tocca: si tocca questo file.
+# =============================================================================
+
+watch:
+  brand: Rolex
+  model: GMT-Master II
+  # Riferimenti accettati. Tutto ciò che non matcha viene scartato PRIMA di ogni
+  # altra valutazione (è l'unico filtro davvero rigido del sistema).
+  references:
+    - "126710BLRO"
+  nickname: Pepsi
+
+# -----------------------------------------------------------------------------
+# FILTRI DURI — usali il meno possibile.
+# Filosofia: il sistema non deve *escludere*, deve *pesare*. Un 2023 impeccabile
+# a 26.000 € deve arrivarti comunque, con un punteggio alto.
+# -----------------------------------------------------------------------------
+hard_filters:
+  # Range di anni ampio: fuori range NON viene scartato, viene solo penalizzato.
+  # Serve solo a evitare di raccogliere referenze pre-ceramica per errore.
+  min_year: 2018
+  max_year: 2027
+  # Prezzo oltre il quale l'annuncio è quasi certamente un errore o un "price on
+  # request" mal parsato. Non è il tuo budget.
+  absolute_max_price_eur: 90000
+  absolute_min_price_eur: 12000
+
+# -----------------------------------------------------------------------------
+# PREFERENZE — entrano nello scoring, non nell'esclusione.
+# -----------------------------------------------------------------------------
+preferences:
+  target_years: [2025, 2026]      # ideale
+  acceptable_years: [2024]        # buono
+  tolerated_years: [2023]         # accettabile se il prezzo compensa
+
+  bracelet:
+    preferred: jubilee
+    other_penalty: -12            # oyster: penalizzato, non escluso
+
+  condition_rank:                 # dal migliore al peggiore
+    - unworn
+    - new
+    - mint
+    - like_new
+    - excellent
+    - very_good
+    - good
+
+  warranty_regions:
+    preferred: [IT, EU]
+    neutral: [CH, UK, JP, US]
+    disliked: [AE, SA, QA, KW, BH, OM, TR, HK]   # penalizzati, NON esclusi
+
+  full_set: strongly_preferred    # box + garanzia + cartellino
+  never_polished: preferred
+  dealer_only: false              # i privati possono essere ottime occasioni
+
+# -----------------------------------------------------------------------------
+# BUDGET — usato per il contesto, non come filtro
+# -----------------------------------------------------------------------------
+budget:
+  comfortable_eur: 28000          # sotto questo sei sereno
+  stretch_eur: 34000              # sopra questo devi volerlo davvero
+  # NB: il 126710BLRO è stato discontinuato ad aprile 2026. Il mercato si è
+  # riprezzato verso l'alto. Rivedi questi numeri ogni 2-3 mesi guardando la
+  # mediana che il sistema stesso calcola (la trovi in dashboard).
+
+# -----------------------------------------------------------------------------
+# FAIR VALUE — motore di stima
+# -----------------------------------------------------------------------------
+fair_value:
+  # Prezzo di partenza usato SOLO finché non ci sono abbastanza annunci nel DB.
+  # Riferimento: unworn 2025, jubilee, full set, garanzia EU.
+  seed_price_eur: 31000
+  # Numero minimo di annunci comparabili per passare alla stima data-driven.
+  min_samples: 10
+  # Finestra temporale (giorni) degli annunci usati per la mediana.
+  lookback_days: 60
+  # Moltiplicatori edonici: servono a normalizzare annunci diversi tra loro
+  # prima di calcolare la mediana, e poi a ri-adattarla al singolo annuncio.
+  multipliers:
+    year:
+      2026: 1.06
+      2025: 1.00
+      2024: 0.95
+      2023: 0.91
+      2022: 0.88
+      _default: 0.85
+    condition:
+      unworn: 1.00
+      new: 1.00
+      mint: 0.96
+      like_new: 0.94
+      excellent: 0.90
+      very_good: 0.85
+      good: 0.79
+      _default: 0.90
+    bracelet:
+      jubilee: 1.00
+      oyster: 0.97
+      _default: 0.99
+    full_set:
+      true: 1.00
+      false: 0.93
+    warranty_region:
+      IT: 1.02
+      EU: 1.01
+      CH: 1.00
+      UK: 1.00
+      JP: 0.99
+      US: 0.98
+      AE: 0.94
+      SA: 0.94
+      QA: 0.94
+      _default: 0.98
+    never_polished:
+      true: 1.01
+      false: 1.00
+  # Soglia per marcare un annuncio come "sotto mercato"
+  underpriced_threshold_pct: 4.0
+
+# -----------------------------------------------------------------------------
+# SCORING — 0..100
+# I pesi sono il massimo punto ottenibile per ciascuna voce.
+# -----------------------------------------------------------------------------
+scoring:
+  weights:
+    price_vs_fair: 40      # quanto costa rispetto a quanto vale
+    year: 12
+    condition: 12
+    full_set: 10
+    bracelet: 8
+    warranty: 8
+    never_polished: 5
+    seller_trust: 5
+  # Un annuncio a fair value esatto prende metà del peso price_vs_fair.
+  # Sconto pari a questo valore (%) → punteggio pieno.
+  price_full_credit_discount_pct: 10.0
+  # Sovrapprezzo pari a questo valore (%) → zero punti sulla voce prezzo.
+  price_zero_credit_premium_pct: 12.0
+
+# -----------------------------------------------------------------------------
+# NOTIFICHE
+# -----------------------------------------------------------------------------
+notifications:
+  min_score: 78                    # soglia per la notifica "annuncio buono"
+  # Un annuncio sotto mercato ti arriva SEMPRE, anche con score più basso.
+  always_notify_if_underpriced_pct: 6.0
+  # Re-notifica su annuncio già visto solo se:
+  price_drop_pct: 2.0              # il prezzo scende almeno di questo
+  price_drop_abs_eur: 400          #   ...o di questa cifra assoluta
+  score_improvement: 6             # o lo score migliora di questo
+  # Silenzio notturno (ora locale Europe/Rome)
+  quiet_hours: [23, 7]
+  max_per_run: 12                  # anti-spam in caso di primo popolamento
+
+# -----------------------------------------------------------------------------
+# FONTI
+# -----------------------------------------------------------------------------
+# type: html   -> scraping diretto con selettori CSS (per siti "aperti")
+# type: email  -> ingestione degli alert email che i marketplace ti mandano
+#                 (l'unica via affidabile per Chrono24 & co., vedi README)
+#
+# enabled: false = fonte presente ma spenta. Usa `python -m radar.main probe`
+# per scoprire quali fonti rispondono davvero dal runner GitHub.
+# -----------------------------------------------------------------------------
+sources:
+
+  # --- Ingestione alert email: la fonte più robusta del sistema --------------
+  - name: email_alerts
+    type: email
+    enabled: true
+    # Legge una casella IMAP e prende i messaggi di alert dei marketplace.
+    imap_host_env: IMAP_HOST
+    imap_user_env: IMAP_USER
+    imap_pass_env: IMAP_PASS
+    mailbox: INBOX
+    # Mittenti considerati alert di annunci
+    from_contains:
+      - chrono24
+      - watchfinder
+      - wristler
+      - chronohunter
+      - watchmaster
+      - subito
+    unseen_only: true
+    mark_seen: true
+
+  # --- Dealer italiani: HTML semplice, alta probabilità di funzionare --------
+  - name: pluswatch
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    start_urls:
+      - "https://www.pluswatch.it/?s=126710&post_type=product"
+    item_selector: "li.product, div.product, article.product"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title"
+      price: ".price, .woocommerce-Price-amount"
+      url: "a@href"
+      image: "img@src"
+
+  - name: dellarocca
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    start_urls:
+      - "https://www.dellarocca.com/catalogsearch/result/?q=126710BLRO"
+    item_selector: "li.product-item, .product-item"
+    fields:
+      title: ".product-item-link, .product-item-name"
+      price: ".price"
+      url: "a.product-item-link@href, a@href"
+      image: "img@src"
+
+  - name: orologiepassioni
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 3
+    start_urls:
+      - "https://www.orologiepassioni.com/?s=126710BLRO"
+    item_selector: "article, li.product, .post"
+    fields:
+      title: "h2, h3, .entry-title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  - name: davidepedretti
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 5
+    start_urls:
+      - "https://www.davidepedretti.it/?s=126710"
+    item_selector: "li.product, article, .product"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  - name: majer
+    type: html
+    enabled: false          # accendi dopo aver verificato i selettori con `probe`
+    country: IT
+    dealer: true
+    seller_trust: 4
+    start_urls:
+      - "https://www.orologeriamajer.it/catalogsearch/result/?q=126710BLRO"
+    item_selector: "li.product-item"
+    fields:
+      title: ".product-item-link"
+      price: ".price"
+      url: "a.product-item-link@href"
+      image: "img@src"
+
+  - name: passionedeltempo
+    type: html
+    enabled: false
+    country: IT
+    dealer: true
+    seller_trust: 3
+    start_urls:
+      - "https://www.passionedeltempo.it/?s=126710"
+    item_selector: "li.product, article"
+    fields:
+      title: "h2, h3"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  # --- Europa ---------------------------------------------------------------
+  - name: watchclub
+    type: html
+    enabled: false
+    country: UK
+    dealer: true
+    seller_trust: 4
+    start_urls:
+      - "https://www.watchclub.com/search?q=126710BLRO"
+    item_selector: ".product, li.product-item, article"
+    fields:
+      title: "h2, h3, .product-title"
+      price: ".price"
+      url: "a@href"
+      image: "img@src"
+
+  - name: amsterdamvintagewatches
+    type: html
+    enabled: false
+    country: NL
+    dealer: true
+    seller_trust: 4
+    start_urls:
+      - "https://amsterdamvintagewatches.com/search?q=126710BLRO"
+    item_selector: ".product-item, li.grid__item"
+    fields:
+      title: ".product-item__title, h3"
+      price: ".price"
+      url: "a@href"
+      image: "img@src"
+
+  # --- Fonti NON scrapabili: qui solo per memoria ----------------------------
+  # chrono24, watchfinder, watchcharts, swisswatchexpo usano protezione
+  # anti-bot (DataDome/Cloudflare). NON vanno scrapate: si usano via
+  # `email_alerts` (saved search → alert email → parsing). Vedi README §3.
+
+# -----------------------------------------------------------------------------
+# HTTP
+# -----------------------------------------------------------------------------
+http:
+  timeout: 25
+  retries: 2
+  delay_between_requests: 2.5      # secondi, per non martellare i dealer
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+  respect_robots: true

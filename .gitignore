@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.DS_Store
+.pytest_cache/
+
+# NB: history.db NON è ignorato di proposito.
+# È lo storico dei prezzi e viene versionato dal workflow.
+
+demo.db
+*.db-journal
