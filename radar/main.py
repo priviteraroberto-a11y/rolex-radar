@@ -107,17 +107,29 @@ def reject_reason(l: Listing, cfg: Config) -> Optional[str]:
 
 def filter_relevant(listings: list[Listing], cfg: Config) -> list[Listing]:
     """L'unico filtro duro: la referenza. Più i limiti di sanità sul prezzo."""
-    out, seen = [], set()
+    # Lo stesso annuncio può arrivare da due pagine della stessa fonte (una
+    # categoria e una ricerca) con dettagli diversi. Non basta scartare il
+    # secondo: va tenuto quello che ha piu informazioni.
+    best: dict[str, Listing] = {}
     for l in listings:
         reason = reject_reason(l, cfg)
         if reason:
             log.debug("scartato (%s): %s", reason, l.url)
             continue
-        if l.key in seen:
-            continue
-        seen.add(l.key)
-        out.append(l)
-    return out
+        prev = best.get(l.key)
+        if prev is None or _richness(l) > _richness(prev):
+            best[l.key] = l
+    return list(best.values())
+
+
+def _richness(l: Listing) -> int:
+    """Quante informazioni utili porta questo annuncio."""
+    score = 3 if l.price_eur is not None else 0
+    for v in (l.year, l.condition, l.bracelet, l.full_set,
+              l.warranty_region, l.never_polished, l.image):
+        if v is not None:
+            score += 1
+    return score
 
 
 # =============================================================================

@@ -45,8 +45,28 @@ def norm(text: str) -> str:
 # PREZZO
 # =============================================================================
 
+_NUM = r"\d{1,3}(?:[.\s,']\d{3})+(?:[.,]\d{1,2})?|\d{4,7}(?:[.,]\d{1,2})?"
+_CUR = r"(?:[€$£]|\beur\b|\busd\b|\bgbp\b|\bchf\b|\baed\b)"
+
+# Un numero adiacente a un simbolo di valuta è quasi certamente un prezzo.
+_PRICE_WITH_CUR = re.compile(rf"{_CUR}\s*({_NUM})|({_NUM})\s*{_CUR}", re.I)
+
+# Un numero preceduto da "ref"/"art"/"cod", o seguito da un suffisso di lettere,
+# è una referenza. Senza questo, "REF. 116234" diventa un prezzo di 116.234 €.
+_REF_NUMBER = re.compile(
+    rf"(?:\bref\.?|\breferenza\b|\breference\b|\bmodello\b|\bart\.?|\bcod\.?|\bn\.)"
+    rf"\s*[:.]?\s*({_NUM})|({_NUM})\s*[A-Z]{{2,6}}\b",
+    re.I,
+)
+
+
 def parse_price(text: str) -> tuple[Optional[float], str]:
-    """Ritorna (importo, valuta). Gestisce 23.700 € / €23,700 / EUR 23 700."""
+    """Ritorna (importo, valuta). Gestisce 23.700 € / €23,700 / EUR 23 700.
+
+    Regola: se nel testo c'è anche un solo numero attaccato a un simbolo di
+    valuta, si considerano SOLO quelli. È la differenza fra leggere un prezzo
+    e leggere un numero di referenza.
+    """
     if not text:
         return None, "EUR"
     t = norm(text)
@@ -60,22 +80,37 @@ def parse_price(text: str) -> tuple[Optional[float], str]:
             currency = code
             break
 
-    # candidati numerici con almeno 4 cifre significative
-    candidates: list[float] = []
-    for m in re.finditer(r"\d{1,3}(?:[.\s,']\d{3})+(?:[.,]\d{1,2})?|\d{4,7}(?:[.,]\d{1,2})?", t):
-        raw = m.group(0)
-        val = _to_float(raw)
-        if val is not None and 500 <= val <= 5_000_000:
-            candidates.append(val)
+    # numeri che sono referenze, non prezzi
+    banned: set[float] = set()
+    for m in _REF_NUMBER.finditer(text or ""):
+        raw = m.group(1) or m.group(2)
+        v = _to_float(raw) if raw else None
+        if v is not None:
+            banned.add(v)
 
-    if not candidates:
-        return None, currency
+    def usable(values: list[float]) -> list[float]:
+        return [v for v in values
+                if 500 <= v <= 5_000_000 and v not in banned
+                and not (1900 <= v <= _CURRENT_YEAR + 2 and v == int(v))]
 
-    # scarta valori che sono chiaramente anni o riferimenti
-    filtered = [c for c in candidates if not (1900 <= c <= _CURRENT_YEAR + 2 and c == int(c))]
-    filtered = [c for c in filtered if int(c) not in (126710, 126719, 126711)]
-    pool = filtered or candidates
-    return max(pool), currency
+    # 1) numeri adiacenti a una valuta: i più affidabili
+    with_cur: list[float] = []
+    for m in _PRICE_WITH_CUR.finditer(t):
+        v = _to_float(m.group(1) or m.group(2) or "")
+        if v is not None:
+            with_cur.append(v)
+    good = usable(with_cur)
+    if good:
+        return max(good), currency
+
+    # 2) ripiego: qualunque numero plausibile che non sia una referenza
+    loose = [v for v in (_to_float(m.group(0)) for m in re.finditer(_NUM, t))
+             if v is not None]
+    good = usable(loose)
+    if good:
+        return max(good), currency
+
+    return None, currency
 
 
 def _to_float(raw: str) -> Optional[float]:
@@ -114,15 +149,33 @@ def parse_reference(text: str) -> Optional[str]:
     return re.sub(r"\s+", "", m.group(1)).upper()
 
 
+_SPLIT_REF = re.compile(r"^(\d{6})([A-Z]{2,6})$")
+
+
 def matches_reference(listing_ref: Optional[str], text: str, wanted: list[str]) -> bool:
-    """Il filtro duro. Accetta anche la referenza scritta nel titolo senza spazi."""
-    hay = re.sub(r"[\s\-_/]", "", norm(text)).upper()
+    """Il filtro duro, tollerante su come la referenza è scritta.
+
+    Riconosce tre forme:
+      "126710BLRO"            attaccata
+      "126710 BLRO"           separata
+      "BLRO REF. 126710"      invertita  <- L'Orologiaio di Corte scrive così
+    """
+    spaced = norm(text).upper()
+    hay = re.sub(r"[\s\-_/.]", "", spaced)
+
     for w in wanted:
         w_clean = re.sub(r"[\s\-_/]", "", w).upper()
         if listing_ref and listing_ref.upper() == w_clean:
             return True
         if w_clean in hay:
             return True
+
+        # forma invertita: base e suffisso presenti ma in ordine diverso
+        m = _SPLIT_REF.match(w_clean)
+        if m:
+            base, suffix = m.group(1), m.group(2)
+            if base in hay and re.search(rf"(?<![A-Z]){suffix}(?![A-Z])", spaced):
+                return True
     return False
 
 

@@ -203,6 +203,14 @@ sources:
       - chronohunter
       - watchmaster
       - subito
+      - conteorologi
+      - edwatch
+      - pluswatch
+      - eorologi
+      - bonanno
+      - dellarocca
+      - pedretti
+      - paselli
     unseen_only: true
     mark_seen: true
 
@@ -258,6 +266,93 @@ sources:
       url: "a@href"
       image: "img@src"
 
+  # --- VERIFICATO A MANO: ha 3 Pepsi 126710BLRO a catalogo -------------------
+  - name: conteorologi
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    start_urls:
+      - "https://www.conteorologi.it/rolex/gmt-master-ii/"
+      - "https://www.conteorologi.it/?s=126710BLRO&post_type=product"
+    item_selector: "li.product, .product, article.product, .type-product"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title"
+      price: ".price, .amount, .woocommerce-Price-amount"
+      url: "a@href"
+      image: "img@src"
+
+  # --- VERIFICATO A MANO: ha un "GMT MASTER II BLRO REF. 126710" -------------
+  # Sito su misura, non WooCommerce. Scrive la referenza invertita: il matching
+  # ora la riconosce. I selettori sono un'ipotesi: verifica con `inspect`.
+  - name: lorologiaiodicorte
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 3
+    start_urls:
+      - "https://www.lorologiaiodicorte.it/?catId=2"
+    item_selector: ".product, .card, .item, .col-md-4, .col-lg-4"
+    fields:
+      title: "h6, h5, h2, a"
+      price: ".price, .prezzo"
+      url: "a@href"
+      image: "img@src"
+
+  # --- Da verificare col probe ----------------------------------------------
+  - name: bonanno
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    start_urls:
+      - "https://www.gioielleriabonanno.it/?s=126710&post_type=product"
+      - "https://www.bonannovintage.it/?s=126710"
+    item_selector: "li.product, .product, article"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title, .entry-title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  - name: edwatch
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    # VERIFICATO: la ricerca funziona. Oggi hanno solo Batman e Sprite, quindi
+    # 0 pertinenti è il risultato corretto, non un selettore rotto.
+    start_urls:
+      - "https://edwatch.it/?s=126710&post_type=product"
+      - "https://edwatch.it/negozio/"
+    item_selector: "li.product, .product, article"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  - name: tempoprezioso
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 3
+    start_urls:
+      - "https://www.tempopreziosobologna.com/?s=126710"
+      - "https://www.tempopreziosobologna.com/orologi/"
+      - "https://www.tempopreziosobologna.com/shop/"
+    item_selector: "li.product, .product, article"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
   # --- Candidati italiani da verificare col probe ---------------------------
   # VERIFICATO: a catalogo c'è un 126710BLRO. Griglia costruita con Elementor,
   # quindi niente <li class="product">: i selettori sono volutamente larghi.
@@ -296,14 +391,17 @@ sources:
       url: "a@href"
       image: "img@src"
 
-  - name: venditaorologiusati
+  # Orologi Famosi (Medicina, BO)
+  - name: orologifamosi
     type: html
-    enabled: false   # 0 elementi estratti: sito non WooCommerce
+    enabled: true
     country: IT
     dealer: true
     seller_trust: 3
+    # Catalogo Rolex: /catalogo/rolex-1. Le schede stanno su /scheda/...
+    # Gli esauriti sono marcati "Venduto": il filtro li scarta da solo.
     start_urls:
-      - "https://www.venditaorologiusati.it/?s=126710&post_type=product"
+      - "https://www.venditaorologiusati.it/catalogo/rolex-1"
     item_selector: "li.product, .product, article"
     fields:
       title: "h2, h3, .woocommerce-loop-product__title"

@@ -273,3 +273,52 @@ def test_smtp_port_vuoto_non_crasha(monkeypatch):
 
     monkeypatch.setenv("SMTP_PORT", "465")
     assert EmailNotifier().port == 465
+
+
+# --- referenza scritta in ordine invertito ------------------------------------
+
+def test_referenza_invertita():
+    """L'Orologiaio di Corte scrive 'GMT MASTER II BLRO REF. 126710'."""
+    t = "GMT MASTER II BLRO REF. 126710"
+    assert extract.matches_reference(None, t, WANTED)
+    assert extract.is_target_watch(t, t, WANTED, KEYWORDS, EXCL)
+
+
+def test_referenza_invertita_non_confonde_il_batman():
+    t = "GMT MASTER II BLNR REF. 126710"
+    assert not extract.matches_reference(None, t, WANTED)
+    assert not extract.is_target_watch(t, t, WANTED, KEYWORDS, EXCL)
+
+
+def test_referenza_invertita_rootbeer():
+    t = 'GMT MASTER II "ROOTBEER" REF. 126711 CHNR 40 MM'
+    assert not extract.is_target_watch(t, t, WANTED, KEYWORDS, EXCL)
+
+
+def test_forme_separate():
+    for t in ("Rolex 126710BLRO", "Rolex 126710 BLRO", "Rolex ref. 126710-BLRO"):
+        assert extract.matches_reference(None, t, WANTED), t
+
+
+# --- prezzo vs numero di referenza -------------------------------------------
+
+def test_referenza_non_scambiata_per_prezzo():
+    """Caso reale da L'Orologiaio di Corte: 'REF. 116234' diventava 116.234 €."""
+    assert extract.parse_price("DATEJUST REF. 116234 36 MM.")[0] is None
+    assert extract.parse_price("SUBMARINER REF. 126610 LN")[0] is None
+    assert extract.parse_price("GMT MASTER II BLRO REF. 126710")[0] is None
+    # numero seguito da suffisso di lettere: e' una referenza
+    assert extract.parse_price("Rolex Gmt-Master II 126710BLRO Leggi di piu")[0] is None
+
+
+def test_prezzo_vince_sulla_referenza_quando_ci_sono_entrambi():
+    """Caso reale da Conte Orologi."""
+    t = "Rolex GMT-Master II Pepsi Jubilee REF: 126710BLRO Disponibile 20499 € 20.499"
+    assert extract.parse_price(t)[0] == 20499.0
+    assert extract.parse_price("GMT MASTER II BLRO REF. 126710 - 22.000,00 €")[0] == 22000.0
+
+
+def test_valuta_adiacente_ha_la_precedenza():
+    """Se c'e' un numero attaccato alla valuta, gli altri numeri si ignorano."""
+    t = "Rolex 126710BLRO cassa 40 mm calibro 3285 anno 2025 — 33.900 €"
+    assert extract.parse_price(t)[0] == 33900.0

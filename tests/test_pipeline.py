@@ -249,3 +249,24 @@ def test_reject_reason_spiega_lo_scarto():
                     raw_text="scheda con 126710BLRO in fondo", price_eur=8000.0)
     extract.enrich(altro, {})
     assert reject_reason(altro, CFG) is not None
+
+
+def test_duplicato_vince_la_versione_piu_ricca():
+    """Conte restituisce lo stesso annuncio da categoria e da ricerca."""
+    from radar.main import filter_relevant
+    from radar.models import Listing
+
+    povero = Listing(source="c", url="https://c.it/orologi/pepsi/",
+                     title="Rolex Gmt-Master II 126710BLRO Leggi di piu",
+                     raw_text="Rolex Gmt-Master II 126710BLRO")
+    ricco = Listing(source="c", url="https://c.it/orologi/pepsi/",
+                    title="Rolex GMT-Master II Pepsi Jubilee 126710BLRO",
+                    raw_text="Garanzia italiana anno 2025 unworn full set 20.499 €")
+    for l in (povero, ricco):
+        extract.enrich(l, {})
+
+    for ordine in ((povero, ricco), (ricco, povero)):
+        out = filter_relevant(list(ordine), CFG)
+        assert len(out) == 1
+        assert out[0].price_eur == 20499.0, "ha vinto la versione senza prezzo"
+        assert out[0].warranty_region == "IT"
