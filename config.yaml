@@ -327,8 +327,9 @@ sources:
     # VERIFICATO: la ricerca funziona. Oggi hanno solo Batman e Sprite, quindi
     # 0 pertinenti è il risultato corretto, non un selettore rotto.
     start_urls:
+      # La pagina /negozio/ portava 31 annunci grezzi, 0 pertinenti e 90
+      # secondi di giro: la ricerca copre gia' tutto il catalogo.
       - "https://edwatch.it/?s=126710&post_type=product"
-      - "https://edwatch.it/negozio/"
     item_selector: "li.product, .product, article"
     fields:
       title: "h2, h3, .woocommerce-loop-product__title"
@@ -336,9 +337,11 @@ sources:
       url: "a@href"
       image: "img@src"
 
+  # Spenta: /?s=126710 non estrae nulla, /orologi/ e /shop/ danno 404.
+  # Il loro sito non espone un catalogo leggibile. Da coprire con newsletter.
   - name: tempoprezioso
     type: html
-    enabled: true
+    enabled: false
     country: IT
     dealer: true
     seller_trust: 3
@@ -400,6 +403,8 @@ sources:
     seller_trust: 3
     # Catalogo Rolex: /catalogo/rolex-1. Le schede stanno su /scheda/...
     # Gli esauriti sono marcati "Venduto": il filtro li scarta da solo.
+    # Il catalogo risponde ma non estrae: probabilmente renderizzato in JS.
+    # Verificare con `inspect orologifamosi -v` prima di spegnerla.
     start_urls:
       - "https://www.venditaorologiusati.it/catalogo/rolex-1"
     item_selector: "li.product, .product, article"
