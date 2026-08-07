@@ -56,8 +56,10 @@ jobs:
             ${{ inputs.dry_run && '--dry-run' || '' }} \
             ${{ inputs.force && '--force' || '' }}
 
+      # always(): se il giro fallisce dopo aver notificato, senza questo il DB
+      # non verrebbe salvato e al giro dopo riceveresti le stesse notifiche.
       - name: Salva storico e dashboard
-        if: ${{ !inputs.dry_run }}
+        if: ${{ always() && !inputs.dry_run }}
         run: |
           git config user.name  "rolex-radar[bot]"
           git config user.email "actions@github.com"

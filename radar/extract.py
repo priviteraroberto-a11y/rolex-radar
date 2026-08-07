@@ -132,30 +132,49 @@ def matches_reference(listing_ref: Optional[str], text: str, wanted: list[str]) 
 # per un Pepsi. Quindi la referenza deve stare nel TITOLO, oppure il titolo deve
 # almeno nominare il modello giusto.
 
-# Una referenza Rolex moderna è un numero di 6 cifre che inizia per 1.
-# Niente \b: dopo aver tolto gli spazi "Datejust126234" non avrebbe confini.
-_ROLEX_REF_RE = re.compile(r"(?<!\d)(1\d{5})(?!\d)")
+# Una referenza Rolex moderna è 6 cifre che iniziano per 1, spesso seguite da
+# un suffisso di lettere. Il suffisso NON è un dettaglio: 126710BLRO è il Pepsi,
+# 126710BLNR è il Batman. Stesso numero, orologi diversi, prezzi diversi.
+_ROLEX_REF_RE = re.compile(r"(?<![0-9A-Z])(1\d{5})\s*-?\s*([A-Z]{2,6})?(?![0-9A-Z])")
 
 
 def other_reference_in_title(title: str, wanted: list[str]) -> bool:
     """True se il titolo nomina una referenza Rolex diversa da quelle cercate."""
     hay = norm(title).upper()
-    wanted_bases = {re.sub(r"[\s\-_/]", "", w).upper()[:6] for w in wanted}
-    return any(m.group(1) not in wanted_bases for m in _ROLEX_REF_RE.finditer(hay))
+    wanted_full = {re.sub(r"[\s\-_/]", "", w).upper() for w in wanted}
+    wanted_bases = {w[:6] for w in wanted_full}
+
+    for m in _ROLEX_REF_RE.finditer(hay):
+        base, suffix = m.group(1), (m.group(2) or "")
+        if suffix:
+            # referenza completa: il confronto deve includere il suffisso
+            if base + suffix not in wanted_full:
+                return True
+        elif base not in wanted_bases:
+            return True
+    return False
 
 
 def is_target_watch(title: str, text: str, wanted: list[str],
-                    model_keywords: list[str] | None = None) -> bool:
+                    model_keywords: list[str] | None = None,
+                    exclude_keywords: list[str] | None = None) -> bool:
     """Il vero filtro duro, resistente allo spam SEO.
 
     Ordine dei controlli:
-      1. referenza nel titolo               → è lui, punto
-      2. titolo troppo povero per decidere  → ci si affida al corpo
-      3. titolo nomina un'altra referenza   → non è lui
-      4. referenza nel corpo + modello nel titolo → è lui
+      1. il titolo nomina un modello escluso → non è lui
+      2. referenza nel titolo                → è lui, punto
+      3. titolo troppo povero per decidere   → ci si affida al corpo
+      4. titolo nomina un'altra referenza    → non è lui
+      5. referenza nel corpo + modello nel titolo → è lui
     """
     title = title or ""
     model_keywords = model_keywords or []
+    nt_early = norm(title)
+
+    # Batman, Sprite, Root Beer: stesso modello, orologio diverso.
+    for k in (exclude_keywords or []):
+        if norm(k) in nt_early:
+            return False
 
     if matches_reference(None, title, wanted):
         return True

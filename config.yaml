@@ -20,6 +20,16 @@ watch:
     - "GMTMaster"
     - "GMT"
     - "Pepsi"
+  # Stesso modello, orologio diverso. Il Batman condivide le prime 6 cifre col
+  # Pepsi (126710BLNR vs 126710BLRO): senza questo elenco, un annuncio Batman
+  # che cita il Pepsi in una sezione "prodotti correlati" passerebbe.
+  exclude_keywords:
+    - "BLNR"
+    - "Batman"
+    - "Sprite"
+    - "Root Beer"
+    - "Rootbeer"
+    - "BLNR"
 
 # -----------------------------------------------------------------------------
 # FILTRI DURI — usali il meno possibile.

@@ -78,6 +78,7 @@ def reject_reason(l: Listing, cfg: Config) -> Optional[str]:
     """
     wanted = cfg.references
     keywords = cfg.get("watch.model_keywords", [])
+    excluded = cfg.get("watch.exclude_keywords", [])
     hf = cfg.get("hard_filters", {})
     lo = float(hf.get("absolute_min_price_eur", 0))
     hi = float(hf.get("absolute_max_price_eur", 10**9))
@@ -87,7 +88,11 @@ def reject_reason(l: Listing, cfg: Config) -> Optional[str]:
 
     if not extract.matches_reference(l.reference, text, wanted):
         return "referenza assente dal testo"
-    if not extract.is_target_watch(l.title, text, wanted, keywords):
+    if not extract.is_target_watch(l.title, text, wanted, keywords, excluded):
+        low = extract.norm(l.title)
+        for k in excluded:
+            if extract.norm(k) in low:
+                return f"modello escluso: {k}"
         if extract.other_reference_in_title(l.title, wanted):
             return "il titolo cita un'altra referenza"
         return "referenza solo nel corpo e modello assente dal titolo"
@@ -178,13 +183,22 @@ def cmd_check(args) -> int:
         for d in decisions:
             log.info("  [DRY] %-12s %3d/100  %s", d.reason, d.listing.score, d.headline)
     else:
-        tg = TelegramNotifier()
-        for d in decisions:
-            if tg.send(d):
-                db.log_notification(d.listing.key, d.reason, d.listing.price_eur,
-                                    d.listing.score)
-        if decisions:
-            EmailNotifier().send_digest(decisions, market)
+        # Un problema di notifica non deve mai far fallire il giro: lo storico
+        # e la dashboard valgono comunque, e un run fallito significa DB non
+        # salvato, quindi notifiche duplicate al giro successivo.
+        try:
+            tg = TelegramNotifier()
+            for d in decisions:
+                if tg.send(d):
+                    db.log_notification(d.listing.key, d.reason, d.listing.price_eur,
+                                        d.listing.score)
+        except Exception as exc:
+            log.error("invio Telegram fallito: %s: %s", type(exc).__name__, exc)
+        try:
+            if decisions:
+                EmailNotifier().send_digest(decisions, market)
+        except Exception as exc:
+            log.error("invio email fallito: %s: %s", type(exc).__name__, exc)
 
     path = dash.build(db, market, args.dashboard)
     log.info("dashboard → %s", path)

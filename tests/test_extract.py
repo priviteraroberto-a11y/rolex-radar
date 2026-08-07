@@ -222,3 +222,54 @@ def test_match_sender_con_header_codificato():
     # i mittenti normali continuano a funzionare
     assert src._match_sender("chrono24 <service@chrono24.com>") == "chrono24"
     assert src._match_sender("zno <newsletter@e.zno.com>") is None
+
+
+# --- Batman vs Pepsi: stesse 6 cifre, orologi diversi -------------------------
+
+EXCL = ["BLNR", "Batman", "Sprite", "Root Beer"]
+
+
+def test_batman_non_passa_per_pepsi():
+    """126710BLNR e 126710BLRO condividono le prime 6 cifre. Caso reale."""
+    titolo = "Rolex GMT-Master II 126710BLNR Batman Jubilee 2026"
+    corpo = f"{titolo} vedi anche Rolex GMT-Master II 126710BLRO Pepsi"
+    assert not extract.is_target_watch(titolo, corpo, WANTED, KEYWORDS, EXCL)
+    assert extract.other_reference_in_title(titolo, WANTED)
+
+
+def test_batman_senza_referenza_nel_titolo():
+    titolo = "Rolex GMT-Master II Batman 40mm"
+    corpo = f"{titolo} 126710BLRO"
+    assert not extract.is_target_watch(titolo, corpo, WANTED, KEYWORDS, EXCL)
+
+
+def test_pepsi_continua_a_passare():
+    t = "Rolex GMT-Master II 126710BLRO Pepsi Jubilee 2025"
+    assert extract.is_target_watch(t, t, WANTED, KEYWORDS, EXCL)
+    assert not extract.other_reference_in_title(t, WANTED)
+
+    t2 = "Rolex GMT Master II 126710 BLRO 40mm"
+    assert extract.is_target_watch(t2, t2, WANTED, KEYWORDS, EXCL)
+
+
+def test_suffisso_diverso_riconosciuto():
+    assert extract.other_reference_in_title("Rolex GMT-Master II 126710BLNR", WANTED)
+    assert extract.other_reference_in_title("Ref. 126711CHNR Root Beer", WANTED)
+    assert not extract.other_reference_in_title("Rolex 126710BLRO", WANTED)
+    # senza suffisso resta ambiguo: non si scarta
+    assert not extract.other_reference_in_title("Rolex GMT-Master II 126710", WANTED)
+
+
+# --- SMTP_PORT vuoto ----------------------------------------------------------
+
+def test_smtp_port_vuoto_non_crasha(monkeypatch):
+    """Su GitHub Actions un secret non definito arriva come stringa vuota."""
+    from radar.notify.email_report import EmailNotifier
+    monkeypatch.setenv("SMTP_PORT", "")
+    monkeypatch.setenv("SMTP_HOST", "")
+    n = EmailNotifier()
+    assert n.port == 587
+    assert n.enabled is False
+
+    monkeypatch.setenv("SMTP_PORT", "465")
+    assert EmailNotifier().port == 465

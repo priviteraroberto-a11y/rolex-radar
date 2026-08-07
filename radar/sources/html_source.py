@@ -117,6 +117,10 @@ class HtmlSource(BaseSource):
                 url = urljoin(base_url, a["href"]) if a else None
             if not url:
                 continue
+            # Se il "link all'annuncio" è la pagina di ricerca stessa, non è un
+            # annuncio: è un frammento di layout che ha ingannato il selettore.
+            if _same_page(url, base_url):
+                continue
             yield Listing(
                 source=self.name,
                 url=url,
@@ -143,7 +147,7 @@ class HtmlSource(BaseSource):
             if href.startswith(("#", "javascript:", "mailto:", "tel:")):
                 continue
             url = urljoin(base_url, href)
-            if url in seen:
+            if url in seen or _same_page(url, base_url):
                 continue
 
             block = None
@@ -206,6 +210,11 @@ class HtmlSource(BaseSource):
 # =============================================================================
 # helper
 # =============================================================================
+
+def _same_page(url: str, base_url: str) -> bool:
+    """L'URL punta alla pagina che stiamo leggendo?"""
+    return url.split("?")[0].rstrip("/").lower() == base_url.split("?")[0].rstrip("/").lower()
+
 
 def _pick(node, selector: Optional[str], base_url: Optional[str] = None) -> Optional[str]:
     """Supporta 'sel1, sel2' e la sintassi 'sel@attributo'."""

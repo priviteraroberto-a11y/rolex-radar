@@ -12,13 +12,21 @@ from .decide import NotifyDecision
 log = logging.getLogger("radar.email_out")
 
 
+def _env(name: str, default: str = "") -> str:
+    """os.environ.get() che tratta la stringa vuota come 'non impostato'."""
+    return (os.environ.get(name) or default).strip()
+
+
 class EmailNotifier:
     def __init__(self):
-        self.host = os.environ.get("SMTP_HOST", "")
-        self.port = int(os.environ.get("SMTP_PORT", "587"))
-        self.user = os.environ.get("SMTP_USER", "")
-        self.password = os.environ.get("SMTP_PASS", "")
-        self.to = os.environ.get("REPORT_TO", self.user)
+        # Attenzione: su GitHub Actions un secret non definito arriva come
+        # stringa VUOTA, non come variabile assente. Quindi il default di
+        # os.environ.get() non scatta mai e int("") esplode.
+        self.host = _env("SMTP_HOST")
+        self.port = int(_env("SMTP_PORT", "587") or 587)
+        self.user = _env("SMTP_USER")
+        self.password = _env("SMTP_PASS")
+        self.to = _env("REPORT_TO") or self.user
         self.enabled = bool(self.host and self.user and self.password and self.to)
 
     def send_digest(self, decisions: list[NotifyDecision], market: dict) -> bool:
