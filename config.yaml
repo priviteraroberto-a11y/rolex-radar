@@ -11,6 +11,15 @@ watch:
   references:
     - "126710BLRO"
   nickname: Pepsi
+  # Serve contro lo spam SEO: molti e-commerce infilano referenze popolari nelle
+  # descrizioni di prodotti che non c'entrano nulla. Se la referenza compare solo
+  # nel corpo dell'annuncio, il titolo deve almeno nominare il modello.
+  model_keywords:
+    - "GMT-Master"
+    - "GMT Master"
+    - "GMTMaster"
+    - "GMT"
+    - "Pepsi"
 
 # -----------------------------------------------------------------------------
 # FILTRI DURI — usali il meno possibile.
@@ -26,6 +35,8 @@ hard_filters:
   # request" mal parsato. Non è il tuo budget.
   absolute_max_price_eur: 90000
   absolute_min_price_eur: 12000
+  # Scarta gli annunci marcati come venduti / non disponibili.
+  exclude_sold: true
 
 # -----------------------------------------------------------------------------
 # PREFERENZE — entrano nello scoring, non nell'esclusione.
@@ -163,8 +174,7 @@ notifications:
 # type: email  -> ingestione degli alert email che i marketplace ti mandano
 #                 (l'unica via affidabile per Chrono24 & co., vedi README)
 #
-# enabled: false = fonte presente ma spenta. Usa `python -m radar.main probe`
-# per scoprire quali fonti rispondono davvero dal runner GitHub.
+# Usa `python -m radar.main probe` dopo ogni modifica.
 # -----------------------------------------------------------------------------
 sources:
 
@@ -172,12 +182,10 @@ sources:
   - name: email_alerts
     type: email
     enabled: true
-    # Legge una casella IMAP e prende i messaggi di alert dei marketplace.
     imap_host_env: IMAP_HOST
     imap_user_env: IMAP_USER
     imap_pass_env: IMAP_PASS
-    mailbox: INBOX
-    # Mittenti considerati alert di annunci
+    mailbox: Radar
     from_contains:
       - chrono24
       - watchfinder
@@ -188,7 +196,7 @@ sources:
     unseen_only: true
     mark_seen: true
 
-  # --- Dealer italiani: HTML semplice, alta probabilità di funzionare --------
+  # --- VERIFICATA: funziona ------------------------------------------------
   - name: pluswatch
     type: html
     enabled: true
@@ -204,6 +212,10 @@ sources:
       url: "a@href"
       image: "img@src"
 
+  # --- della Rocca: dominio corretto, pagina modello -------------------------
+  # La loro ricerca interna ignora la referenza e restituisce tutto il catalogo
+  # Rolex, con "126710BLRO" appiccicato alle descrizioni per SEO. Inutilizzabile.
+  # Usiamo invece le pagine di modello, che contengono prodotti veri.
   - name: dellarocca
     type: html
     enabled: true
@@ -211,17 +223,89 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
-      - "https://www.dellarocca.com/catalogsearch/result/?q=126710BLRO"
-    item_selector: "li.product-item, .product-item"
+      - "https://www.dellaroccagioielli.it/plm_10-rolex+gmt-master+.php"
+      - "https://www.dellaroccagioielli.it/o_32-Rolex+Professionali.php"
+    item_selector: "div.prodotto, div.box_prodotto, td.prodotto"
     fields:
-      title: ".product-item-link, .product-item-name"
-      price: ".price"
-      url: "a.product-item-link@href, a@href"
+      title: "h3, h2, a"
+      price: ".prezzo, .price"
+      url: "a@href"
       image: "img@src"
 
-  - name: orologiepassioni
+  # --- Davide Pedretti: dominio corretto ------------------------------------
+  - name: davidepedretti
     type: html
     enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 5
+    start_urls:
+      - "https://shop.davidepedretti.com/?s=126710&post_type=product"
+    item_selector: "li.product, article.product, .product-item, .type-product"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title, .product-item__title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  # --- Candidati italiani da verificare col probe ---------------------------
+  # VERIFICATO: a catalogo c'è un 126710BLRO. Griglia costruita con Elementor,
+  # quindi niente <li class="product">: i selettori sono volutamente larghi.
+  - name: eorologi
+    type: html
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 3
+    start_urls:
+      - "https://eorologi.com/?s=126710&post_type=product"
+      - "https://eorologi.com/modello-orologio/rolex-gmt-master/"
+    item_selector: >
+      li.product, .product, .type-product, article.product,
+      .elementor-widget-woocommerce-products li, .products > li
+    fields:
+      title: >
+        h2, h3, .woocommerce-loop-product__title,
+        .elementor-heading-title, a@title
+      price: ".price, .amount, .woocommerce-Price-amount"
+      url: "a@href"
+      image: "img@src"
+
+  - name: loradelgallo
+    type: html
+    enabled: false   # 0 elementi estratti: sito non WooCommerce
+    country: IT
+    dealer: true
+    seller_trust: 3
+    start_urls:
+      - "https://www.loradelgallo.com/?s=126710&post_type=product"
+    item_selector: "li.product, .product, article"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  - name: venditaorologiusati
+    type: html
+    enabled: false   # 0 elementi estratti: sito non WooCommerce
+    country: IT
+    dealer: true
+    seller_trust: 3
+    start_urls:
+      - "https://www.venditaorologiusati.it/?s=126710&post_type=product"
+    item_selector: "li.product, .product, article"
+    fields:
+      title: "h2, h3, .woocommerce-loop-product__title"
+      price: ".price, .amount"
+      url: "a@href"
+      image: "img@src"
+
+  # --- Spente: verificate come non utilizzabili ------------------------------
+  # orologiepassioni.com restituisce una pagina vuota (sito JS o dismesso).
+  - name: orologiepassioni
+    type: html
+    enabled: false
     country: IT
     dealer: true
     seller_trust: 3
@@ -234,24 +318,9 @@ sources:
       url: "a@href"
       image: "img@src"
 
-  - name: davidepedretti
-    type: html
-    enabled: true
-    country: IT
-    dealer: true
-    seller_trust: 5
-    start_urls:
-      - "https://www.davidepedretti.it/?s=126710"
-    item_selector: "li.product, article, .product"
-    fields:
-      title: "h2, h3, .woocommerce-loop-product__title"
-      price: ".price, .amount"
-      url: "a@href"
-      image: "img@src"
-
   - name: majer
     type: html
-    enabled: false          # accendi dopo aver verificato i selettori con `probe`
+    enabled: false
     country: IT
     dealer: true
     seller_trust: 4
@@ -264,22 +333,6 @@ sources:
       url: "a.product-item-link@href"
       image: "img@src"
 
-  - name: passionedeltempo
-    type: html
-    enabled: false
-    country: IT
-    dealer: true
-    seller_trust: 3
-    start_urls:
-      - "https://www.passionedeltempo.it/?s=126710"
-    item_selector: "li.product, article"
-    fields:
-      title: "h2, h3"
-      price: ".price, .amount"
-      url: "a@href"
-      image: "img@src"
-
-  # --- Europa ---------------------------------------------------------------
   - name: watchclub
     type: html
     enabled: false

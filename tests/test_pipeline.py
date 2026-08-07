@@ -218,3 +218,34 @@ def test_dashboard_gestisce_database_vuoto(tmp_path):
     out = dashboard.build(db, engine.summary(), tmp_path / "index.html")
     assert "ROLEX RADAR" in out.read_text(encoding="utf-8")
     db.close()
+
+
+# --- motivi di scarto ---------------------------------------------------------
+
+def test_reject_reason_spiega_lo_scarto():
+    from radar.main import reject_reason
+    from radar.models import Listing
+
+    ok = Listing(source="t", url="https://t.it/1",
+                 title="Rolex GMT-Master II 126710BLRO Pepsi",
+                 raw_text="anno 2025 unworn jubilee", price_eur=31000.0)
+    extract.enrich(ok, {})
+    assert reject_reason(ok, CFG) is None
+
+    venduto = Listing(source="t", url="https://t.it/2",
+                      title="Rolex GMT-Master II 126710BLRO Pepsi",
+                      raw_text="VENDUTO anno 2025", price_eur=31000.0)
+    extract.enrich(venduto, {})
+    assert "venduto" in reject_reason(venduto, CFG)
+
+    caro = Listing(source="t", url="https://t.it/3",
+                   title="Rolex GMT-Master II 126710BLRO",
+                   raw_text="anno 2025", price_eur=250000.0)
+    extract.enrich(caro, {})
+    assert "prezzo fuori range" in reject_reason(caro, CFG)
+
+    altro = Listing(source="t", url="https://t.it/4",
+                    title="Rolex Datejust 126234 Jubilee",
+                    raw_text="scheda con 126710BLRO in fondo", price_eur=8000.0)
+    extract.enrich(altro, {})
+    assert reject_reason(altro, CFG) is not None

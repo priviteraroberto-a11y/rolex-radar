@@ -13,7 +13,7 @@ import argparse
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from . import dashboard as dash
 from . import extract, sources
@@ -70,23 +70,43 @@ def collect(cfg: Config, ctx: Context) -> tuple[list[Listing], list[str]]:
     return all_listings, healthy
 
 
-def filter_relevant(listings: list[Listing], cfg: Config) -> list[Listing]:
-    """L'unico filtro duro: la referenza. Più i limiti di sanità sul prezzo."""
+def reject_reason(l: Listing, cfg: Config) -> Optional[str]:
+    """Perché questo annuncio non ci interessa? None = va tenuto.
+
+    Tenere la logica di scarto in un posto solo serve a due cose: evitare che
+    `check` e `inspect` divergano, e poter spiegare all'utente cosa è successo.
+    """
     wanted = cfg.references
+    keywords = cfg.get("watch.model_keywords", [])
     hf = cfg.get("hard_filters", {})
     lo = float(hf.get("absolute_min_price_eur", 0))
     hi = float(hf.get("absolute_max_price_eur", 10**9))
     ymin, ymax = int(hf.get("min_year", 1900)), int(hf.get("max_year", 2100))
 
+    text = f"{l.title} {l.raw_text}"
+
+    if not extract.matches_reference(l.reference, text, wanted):
+        return "referenza assente dal testo"
+    if not extract.is_target_watch(l.title, text, wanted, keywords):
+        if extract.other_reference_in_title(l.title, wanted):
+            return "il titolo cita un'altra referenza"
+        return "referenza solo nel corpo e modello assente dal titolo"
+    if bool(hf.get("exclude_sold", True)) and l.sold:
+        return "gia venduto / non disponibile"
+    if l.price_eur is not None and not (lo <= l.price_eur <= hi):
+        return f"prezzo fuori range ({l.price_eur:,.0f} EUR)"
+    if l.year is not None and not (ymin <= l.year <= ymax):
+        return f"anno fuori range ({l.year})"
+    return None
+
+
+def filter_relevant(listings: list[Listing], cfg: Config) -> list[Listing]:
+    """L'unico filtro duro: la referenza. Più i limiti di sanità sul prezzo."""
     out, seen = [], set()
     for l in listings:
-        text = f"{l.title} {l.raw_text}"
-        if not extract.matches_reference(l.reference, text, wanted):
-            continue
-        if l.price_eur is not None and not (lo <= l.price_eur <= hi):
-            log.debug("scartato prezzo implausibile: %s (%s)", l.price_eur, l.url)
-            continue
-        if l.year is not None and not (ymin <= l.year <= ymax):
+        reason = reject_reason(l, cfg)
+        if reason:
+            log.debug("scartato (%s): %s", reason, l.url)
             continue
         if l.key in seen:
             continue
@@ -178,7 +198,7 @@ def cmd_probe(args) -> int:
     ctx = Context(cfg, Fetcher(cfg.get("http", {})))
 
     print("\n  FONTE                 STATO         ANNUNCI  DETTAGLIO")
-    print("  " + "─" * 74)
+    print("  " + "─" * 106)
     usable = 0
     for src_cfg in cfg.all_sources:
         name = src_cfg.get("name", "?")
@@ -200,13 +220,70 @@ def cmd_probe(args) -> int:
             state = "raggiungibile"
         else:
             state = "IRRAGGIUNGIBILE"
-        print(f"  {name:<21} {state:<13} {len(relevant):>7}  {result.detail[:38]}")
+        print(f"  {name:<21} {state:<13} {len(relevant):>7}  {result.detail[:70]}")
 
     print(f"\n  {usable} fonti stanno producendo annunci pertinenti.\n")
     print("  Se una fonte è 'raggiungibile' ma con 0 annunci, i selettori CSS in")
     print("  config.yaml non corrispondono più: apri la pagina, ispeziona, aggiorna.")
     print("  Se è 'IRRAGGIUNGIBILE' per anti-bot, usa la ricerca salvata del sito")
     print("  con alert email e lascia fare a email_alerts.\n")
+    return 0
+
+
+def cmd_inspect(args) -> int:
+    """Mostra ogni annuncio grezzo e il motivo per cui viene tenuto o scartato.
+
+    È lo strumento da usare quando `probe` dice "raggiungibile, 0 annunci":
+    ti fa vedere cosa il parser ha effettivamente letto dalla pagina.
+    """
+    cfg = Config.load(args.config)
+    ctx = Context(cfg, Fetcher(cfg.get("http", {})))
+
+    targets = [s for s in cfg.all_sources
+               if (args.source and s.get("name") == args.source)
+               or (not args.source and s.get("enabled"))]
+    if not targets:
+        print(f"Nessuna fonte chiamata '{args.source}'. Nomi disponibili: "
+              + ", ".join(s.get("name", "?") for s in cfg.all_sources))
+        return 1
+
+    for src_cfg in targets:
+        name = src_cfg.get("name", "?")
+        try:
+            result = sources.build(src_cfg, ctx).collect()
+        except Exception as exc:
+            print(f"\n=== {name}: eccezione {type(exc).__name__}: {exc}")
+            continue
+
+        print(f"\n=== {name} — {len(result.listings)} annunci grezzi — {result.detail}")
+        if not result.listings:
+            if src_cfg.get("type") == "email":
+                print("    Nessun annuncio estratto. Guarda i numeri qui sopra:")
+                print("      0 messaggi          -> cartella sbagliata o vuota")
+                print("      0 non letti         -> li hai gia aperti tu")
+                print("      0 dai mittenti      -> il filtro non li porta qui")
+                print("      annunci 0 ma >0 msg -> le email non citano la referenza")
+            else:
+                print("    Nessun elemento estratto: item_selector non corrisponde,")
+                print("    oppure la pagina è renderizzata in JavaScript.")
+            continue
+
+        for i, l in enumerate(result.listings, 1):
+            extract.enrich(l, src_cfg)
+            reason = reject_reason(l, cfg)
+            mark = "TENUTO " if reason is None else "scartato"
+            price = f"{l.price_eur:,.0f} EUR" if l.price_eur else "prezzo n/d"
+            print(f"\n  [{i}] {mark}  {price}")
+            print(f"      titolo : {(l.title or '(vuoto)')[:100]}")
+            print(f"      url    : {l.url[:100]}")
+            print(f"      campi  : ref={l.reference} anno={l.year} "
+                  f"cond={l.condition} bracc={l.bracelet} gar={l.warranty_region} "
+                  f"fullset={l.full_set} venduto={l.sold}")
+            if reason:
+                print(f"      MOTIVO : {reason}")
+            if args.verbose:
+                print(f"      testo  : {(l.raw_text or '')[:400]}")
+    print()
     return 0
 
 
@@ -260,17 +337,23 @@ def _i(v):
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="radar", description="Rolex Radar")
-    p.add_argument("command", choices=["check", "probe", "dashboard", "test-notify"])
+    p.add_argument("command",
+                   choices=["check", "probe", "inspect", "dashboard", "test-notify"])
+    p.add_argument("source", nargs="?", default=None,
+                   help="nome della fonte (solo per inspect)")
     p.add_argument("--config", default=None)
     p.add_argument("--db", default="history.db")
     p.add_argument("--dashboard", default="docs/index.html")
     p.add_argument("--dry-run", action="store_true", help="non scrive nulla, non notifica")
     p.add_argument("--force", action="store_true", help="ignora le ore di silenzio")
+    p.add_argument("--verbose", "-v", action="store_true",
+                   help="mostra anche il testo grezzo (inspect)")
     args = p.parse_args(argv)
 
     return {
         "check": cmd_check,
         "probe": cmd_probe,
+        "inspect": cmd_inspect,
         "dashboard": cmd_dashboard,
         "test-notify": cmd_test_notify,
     }[args.command](args)

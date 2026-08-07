@@ -38,6 +38,7 @@ class Listing:
     seller_trust: int = 0                       # 0..5, da config o dalla fonte
 
     image: Optional[str] = None
+    sold: Optional[bool] = None          # gia venduto / non disponibile
 
     # calcolati a valle
     fair_value_eur: Optional[float] = None

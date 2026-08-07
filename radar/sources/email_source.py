@@ -61,11 +61,32 @@ class EmailSource(BaseSource):
         if not (host and user and pwd):
             return SourceResult(self.name, False, [], "credenziali IMAP non configurate")
 
+        mailbox = self.cfg.get("mailbox", "INBOX")
         listings: list[Listing] = []
+        # Diagnostica: senza questi numeri, "0 annunci" non distingue fra
+        # "cartella vuota", "tutto gia letto" e "mittenti che non corrispondono".
+        n_total = n_unseen = n_matched = 0
+        other_senders: list[str] = []
+
         try:
             with imaplib.IMAP4_SSL(host) as imap:
                 imap.login(user, pwd)
-                imap.select(self.cfg.get("mailbox", "INBOX"))
+
+                typ, sel = imap.select(mailbox)
+                if typ != "OK":
+                    folders = self._list_folders(imap)
+                    return SourceResult(
+                        self.name, False, [],
+                        f"cartella '{mailbox}' inesistente. Disponibili: {folders}",
+                    )
+                try:
+                    n_total = int(sel[0])
+                except (TypeError, ValueError, IndexError):
+                    n_total = -1
+
+                typ, unseen_data = imap.search(None, "(UNSEEN)")
+                n_unseen = len(unseen_data[0].split()) if typ == "OK" and unseen_data[0] else 0
+
                 criteria = "(UNSEEN)" if self.cfg.get("unseen_only", True) else "(ALL)"
                 typ, data = imap.search(None, criteria)
                 if typ != "OK":
@@ -77,10 +98,16 @@ class EmailSource(BaseSource):
                     if typ != "OK" or not raw or not raw[0]:
                         continue
                     msg = email.message_from_bytes(raw[0][1])
-                    sender = str(msg.get("From", "")).lower()
+                    # Il campo From va DECODIFICATO prima del confronto: se il
+                    # nome visualizzato contiene accenti, arriva come
+                    # "=?UTF-8?B?...?=" e il nome del mittente sparisce.
+                    sender = f"{_decode(msg.get('From', ''))} {msg.get('From', '')}".lower()
                     matched = self._match_sender(sender)
                     if not matched:
+                        if len(other_senders) < 8:
+                            other_senders.append(_decode(msg.get("From", ""))[:70])
                         continue
+                    n_matched += 1
                     subject = _decode(msg.get("Subject", ""))
                     body_html, body_text = _bodies(msg)
                     listings.extend(
@@ -93,7 +120,30 @@ class EmailSource(BaseSource):
         except Exception as exc:                       # pragma: no cover
             return SourceResult(self.name, False, [], f"{type(exc).__name__}: {exc}")
 
-        return SourceResult(self.name, True, listings, f"{len(listings)} annunci da email")
+        detail = (f"cartella '{mailbox}': {n_total} messaggi, {n_unseen} non letti, "
+                  f"{n_matched} dai mittenti cercati, {len(listings)} annunci estratti")
+        if other_senders:
+            detail += " | mittenti scartati: " + ", ".join(other_senders)
+        return SourceResult(self.name, True, listings, detail)
+
+    @staticmethod
+    def _list_folders(imap) -> str:
+        """Elenca le cartelle IMAP: serve quando il nome dell'etichetta è sbagliato."""
+        try:
+            typ, data = imap.list()
+        except Exception:
+            return "(elenco non disponibile)"
+        if typ != "OK":
+            return "(elenco non disponibile)"
+        names = []
+        for row in data or []:
+            try:
+                line = row.decode("utf-8", "replace")
+            except AttributeError:
+                line = str(row)
+            if '"' in line:
+                names.append(line.rsplit('"', 2)[-2])
+        return ", ".join(n for n in names if n)[:400]
 
     # ------------------------------------------------------------------
 

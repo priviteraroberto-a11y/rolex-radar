@@ -129,3 +129,96 @@ def test_enrich_annuncio_realistico():
     assert l.warranty_region == "IT"
     assert l.price_eur == 33900.0
     assert l.seller_trust == 4
+
+
+# --- protezione contro lo spam SEO --------------------------------------------
+
+WANTED = ["126710BLRO"]
+KEYWORDS = ["GMT-Master", "GMT Master", "GMT", "Pepsi"]
+
+
+def test_datejust_con_spam_seo_viene_scartato():
+    """Caso reale: della Rocca appiccica '126710BLRO' a schede di altri modelli."""
+    titolo = "Rolex Datejust 126234 Jubilee Quadrante Rosa Romani"
+    corpo = ("Rolex Datejust - Ref. 126234 - Condizioni: Nuovo - Bracciale "
+             "jubilé - Scatola e garanzia. 126710BLRO. Maggiori informazioni")
+    assert not extract.is_target_watch(titolo, f"{titolo} {corpo}", WANTED, KEYWORDS)
+
+
+def test_referenza_nel_titolo_viene_accettata():
+    t = "Rolex GMT-Master II 126710BLRO Pepsi Jubilee 2025"
+    assert extract.is_target_watch(t, t, WANTED, KEYWORDS)
+
+
+def test_referenza_solo_nel_corpo_ma_titolo_giusto():
+    t = "Rolex GMT-Master II Pepsi"
+    assert extract.is_target_watch(t, f"{t} ref 126710BLRO anno 2025", WANTED, KEYWORDS)
+
+
+def test_referenza_solo_nel_corpo_e_titolo_generico():
+    t = "Orologio di lusso in vendita a Bologna"
+    assert not extract.is_target_watch(t, f"{t} 126710BLRO", WANTED, KEYWORDS)
+
+
+def test_titolo_povero_si_affida_al_corpo():
+    t = "Vedi"
+    assert extract.is_target_watch(t, "Rolex 126710BLRO Pepsi", WANTED, KEYWORDS)
+
+
+def test_submariner_resta_escluso():
+    t = "Rolex Submariner 126610LN 2024"
+    assert not extract.is_target_watch(t, f"{t} 126710BLRO", WANTED, KEYWORDS)
+
+
+def test_altra_referenza_nel_titolo():
+    assert extract.other_reference_in_title("Rolex Datejust 126234", WANTED)
+    assert not extract.other_reference_in_title("Rolex GMT-Master II 126710BLRO", WANTED)
+    assert not extract.other_reference_in_title("Rolex GMT-Master II Pepsi", WANTED)
+
+
+# --- disponibilità ------------------------------------------------------------
+
+def test_venduto_riconosciuto():
+    assert extract.parse_sold("Prodotto Non Disponibile")
+    assert extract.parse_sold("VENDUTO")
+    assert extract.parse_sold("Sold Out")
+    assert extract.parse_sold("Esaurito")
+    assert not extract.parse_sold("Disponibile, spedizione immediata")
+
+
+def test_enrich_marca_il_venduto():
+    from radar.models import Listing
+    l = Listing(source="d", url="https://d.it/1",
+                title="Rolex GMT-Master II 126710BLRO",
+                raw_text="Prodotto Non Disponibile 33.000 €")
+    extract.enrich(l, {})
+    assert l.sold is True
+
+
+# --- mittenti con intestazioni codificate ------------------------------------
+
+def test_match_sender_con_header_codificato():
+    """Le intestazioni non ASCII arrivano codificate in base64: il nome sparisce."""
+    import base64
+    from email.header import decode_header, make_header
+    from radar.sources.email_source import EmailSource
+
+    class Ctx:
+        config = None
+
+    src = EmailSource({"name": "e", "from_contains": ["chrono24", "subito"]}, Ctx())
+
+    nome = "Chrono24 Servizio Clienti"
+    b64 = base64.b64encode(nome.encode()).decode()
+    grezzo = f"=?UTF-8?B?{b64}?= <noreply@mailer.c24.com>"
+
+    # nella stringa grezza "chrono24" non compare: e' dentro il base64
+    assert src._match_sender(grezzo.lower()) is None
+
+    # decodificando invece si trova
+    decodificato = str(make_header(decode_header(grezzo)))
+    assert src._match_sender(f"{decodificato} {grezzo}".lower()) == "chrono24"
+
+    # i mittenti normali continuano a funzionare
+    assert src._match_sender("chrono24 <service@chrono24.com>") == "chrono24"
+    assert src._match_sender("zno <newsletter@e.zno.com>") is None

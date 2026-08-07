@@ -126,6 +126,70 @@ def matches_reference(listing_ref: Optional[str], text: str, wanted: list[str]) 
     return False
 
 
+# Molti e-commerce infilano referenze popolari nelle descrizioni di prodotti che
+# non c'entrano nulla, per posizionarsi su Google. Se ci fidassimo del solo
+# testo, un Datejust con "126710BLRO" in fondo alla scheda verrebbe scambiato
+# per un Pepsi. Quindi la referenza deve stare nel TITOLO, oppure il titolo deve
+# almeno nominare il modello giusto.
+
+# Una referenza Rolex moderna è un numero di 6 cifre che inizia per 1.
+# Niente \b: dopo aver tolto gli spazi "Datejust126234" non avrebbe confini.
+_ROLEX_REF_RE = re.compile(r"(?<!\d)(1\d{5})(?!\d)")
+
+
+def other_reference_in_title(title: str, wanted: list[str]) -> bool:
+    """True se il titolo nomina una referenza Rolex diversa da quelle cercate."""
+    hay = norm(title).upper()
+    wanted_bases = {re.sub(r"[\s\-_/]", "", w).upper()[:6] for w in wanted}
+    return any(m.group(1) not in wanted_bases for m in _ROLEX_REF_RE.finditer(hay))
+
+
+def is_target_watch(title: str, text: str, wanted: list[str],
+                    model_keywords: list[str] | None = None) -> bool:
+    """Il vero filtro duro, resistente allo spam SEO.
+
+    Ordine dei controlli:
+      1. referenza nel titolo               → è lui, punto
+      2. titolo troppo povero per decidere  → ci si affida al corpo
+      3. titolo nomina un'altra referenza   → non è lui
+      4. referenza nel corpo + modello nel titolo → è lui
+    """
+    title = title or ""
+    model_keywords = model_keywords or []
+
+    if matches_reference(None, title, wanted):
+        return True
+
+    if not matches_reference(None, text, wanted):
+        return False
+
+    nt = norm(title)
+    if len(nt) < 12:
+        return True
+
+    if other_reference_in_title(title, wanted):
+        return False
+
+    return any(norm(k) in nt for k in model_keywords)
+
+
+# =============================================================================
+# DISPONIBILITA
+# =============================================================================
+
+_SOLD_RE = re.compile(
+    r"prodotto non disponibile|non (piu )?disponibile|\bvenduto\b|\bvendute?\b|"
+    r"sold\s*out|out of stock|esaurito|non disponibile al momento|"
+    r"articolo non disponibile",
+    re.I,
+)
+
+
+def parse_sold(text: str) -> bool:
+    """True se l'annuncio è chiaramente già venduto o non acquistabile."""
+    return bool(_SOLD_RE.search(norm(text or "")))
+
+
 # =============================================================================
 # ANNO
 # =============================================================================
@@ -315,6 +379,8 @@ def enrich(listing, source_cfg: dict | None = None):
         listing.never_polished = parse_never_polished(text)
     if listing.warranty_region is None:
         listing.warranty_region = normalize_region_group(parse_warranty_region(text))
+    if listing.sold is None:
+        listing.sold = parse_sold(text)
 
     if listing.seller_trust == 0:
         listing.seller_trust = int(source_cfg.get("seller_trust", 0))
