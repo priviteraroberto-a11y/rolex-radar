@@ -660,3 +660,54 @@ def test_la_dashboard_mette_l_italia_in_cima(tmp_path):
     # il sommario conta l'Italia, non il totale
     assert "2 in Italia" in h
     db.close()
+
+
+def test_la_dashboard_mostra_anche_gli_orologi_non_controllati(tmp_path):
+    """Con la rotazione si controlla mezzo gruppo per volta: se la pagina
+    mostrasse solo quelli, l'altra meta' sparirebbe a ogni giro — insieme
+    agli annunci che aveva gia' trovato."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "rot.db")
+
+    db.upsert(Listing(source="pluswatch", url="https://p/vc", price_eur=35000.0,
+                      score=76, seller_country="IT"), "vc-overseas")
+    db.upsert(Listing(source="pluswatch", url="https://p/sp", price_eur=7000.0,
+                      score=58, seller_country="IT"), "speedmaster")
+
+    # giro del gruppo B: il Vacheron non e' stato controllato, ma va mostrato
+    out = dashboard.build(db, [
+        {"watch_id": "speedmaster", "label": "Omega Speedmaster", "index": 7300},
+        {"watch_id": "vc-overseas", "label": "Vacheron Overseas",
+         "index": 35000, "stale": True},
+    ], tmp_path / "r.html")
+    h = out.read_text(encoding="utf-8")
+
+    assert "Vacheron Overseas" in h
+    assert "35.000" in h, "l'annuncio trovato in un giro precedente deve restare"
+    assert "non aggiornato in questo giro" in h
+    db.close()
+
+
+def test_una_fonte_vuota_non_cancella_i_ritrovamenti(tmp_path):
+    """Il caso reale: un Vacheron da 35.000 e' stato marcato "non piu' online"
+    perche' la ricerca di PlusWatch quel giorno tornava vuota. Una query che
+    non trova nulla non prova che il negozio abbia svuotato la vetrina."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "v.db")
+    db.upsert(Listing(source="pluswatch", url="https://p/vc", price_eur=35000.0),
+              "vc-overseas")
+
+    # la fonte risponde ma non produce annunci: non entra fra le "produttive"
+    chiusi = db.mark_inactive_except([], [], "vc-overseas")
+    assert chiusi == 0
+    assert len(db.active_listings("vc-overseas")) == 1
+
+    # se invece la fonte produce altri annunci, allora il vecchio e' sparito
+    db.upsert(Listing(source="pluswatch", url="https://p/altro", price_eur=30000.0),
+              "vc-overseas")
+    altro = Listing(source="pluswatch", url="https://p/altro")
+    chiusi = db.mark_inactive_except([altro.key], ["pluswatch"], "vc-overseas")
+    assert chiusi == 1
+    db.close()

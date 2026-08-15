@@ -197,7 +197,7 @@ _ROLEX_STYLE = re.compile(r"^\d{6}[A-Z]{0,6}$")
 
 
 def _forma(ref: str) -> str:
-    """Traduce una referenza nel suo schema: cifre, lettere, separatori.
+    r"""Traduce una referenza nel suo schema: cifre, lettere, separatori.
 
     "310.30.42.50.01.002" -> \d{3}\.\d{2}\.\d{2}\.\d{2}\.\d{2}\.\d{3}
     "126710BLRO"          -> \d{6}[A-Z]{4}

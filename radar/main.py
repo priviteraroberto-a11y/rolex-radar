@@ -78,7 +78,12 @@ def collect(cfg: Config, ctx: Context,
             watch: WatchView | None = None) -> tuple[list[Listing], list[str]]:
     """Ritorna (annunci grezzi, nomi delle fonti che hanno risposto)."""
     all_listings: list[Listing] = []
-    healthy: list[str] = []
+    # Solo le fonti che hanno restituito ALMENO UN annuncio. Una ricerca che
+    # torna vuota non prova che il negozio abbia svuotato la vetrina: prova
+    # solo che quella query non ha trovato nulla — e le query cambiano, si
+    # rompono, cambiano indicizzazione. Chiudere gli annunci su quella base
+    # cancella ritrovamenti veri.
+    produttive: list[str] = []
 
     for src_cfg in cfg.sources:
         if watch is not None:
@@ -92,7 +97,8 @@ def collect(cfg: Config, ctx: Context,
             continue
 
         if result.ok:
-            healthy.append(name)
+            if result.listings:
+                produttive.append(name)
             log.info("[%s] %d annunci — %s", name, len(result.listings), result.detail)
         else:
             log.warning("[%s] FONTE NON RAGGIUNGIBILE — %s", name, result.detail)
@@ -101,7 +107,7 @@ def collect(cfg: Config, ctx: Context,
             extract.enrich(l, src_cfg)
         all_listings.extend(result.listings)
 
-    return all_listings, healthy
+    return all_listings, produttive
 
 
 def reject_reason(l: Listing, cfg) -> Optional[str]:
@@ -177,7 +183,7 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
     log.info("═══ %s  %s", watch.label, ", ".join(watch.references))
     log.info("── raccolta ──────────────────────────────────────────")
 
-    raw, healthy = collect(cfg, ctx, watch)
+    raw, produttive = collect(cfg, ctx, watch)
     listings = filter_relevant(raw, watch)
     log.info("%d annunci grezzi → %d pertinenti", len(raw), len(listings))
 
@@ -218,7 +224,7 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
                  f"{l.year or '????'}", l.url[:70])
 
     if not args.dry_run:
-        closed = db.mark_inactive_except([l.key for l in listings], healthy, watch.id)
+        closed = db.mark_inactive_except([l.key for l in listings], produttive, watch.id)
         if closed:
             log.info("%d annunci non più online", closed)
         db.save_market_snapshot(
@@ -226,7 +232,7 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
             market["samples"], market["median_raw"], market["p25"],
             market["index"], watch.id,
         )
-        for name in healthy:
+        for name in produttive:
             db.log_run(name, True, len(listings))
 
     decisions = decide_notifications(scored, watch, engine.is_underpriced,
@@ -294,6 +300,25 @@ def cmd_check(args) -> int:
             continue
         markets.append(market)
         all_decisions.extend(decisions)
+
+    # La dashboard deve mostrare SEMPRE tutti gli orologi, non solo quelli del
+    # gruppo di turno: altrimenti con la rotazione meta' dei modelli sparisce
+    # dalla pagina a ogni giro, insieme agli annunci che avevano gia' trovato.
+    controllati = {m["watch_id"] for m in markets}
+    for watch in cfg.watches:
+        if watch.id in controllati:
+            continue
+        comps = db.comparables(watch.references,
+                               int(watch.get("fair_value.lookback_days", 60)))
+        m = FairValueEngine(watch, comps).summary()
+        m["label"], m["watch_id"] = watch.label, watch.id
+        m["photo"] = watch.watch.get("photo")
+        geo = watch.get("preferences.geography", {}) or {}
+        m["home"], m["nearby"] = geo.get("home"), geo.get("nearby")
+        m["stale"] = True          # non controllato in questo giro
+        markets.append(m)
+    ordine = {w.id: i for i, w in enumerate(cfg.watches)}
+    markets.sort(key=lambda m: ordine.get(m["watch_id"], 999))
 
     log.info("")
     log.info("── rete ──────────────────────────────────────────────")

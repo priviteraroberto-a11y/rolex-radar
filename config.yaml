@@ -464,8 +464,12 @@ sources:
       - dellarocca
       - pedretti
       - paselli
-    unseen_only: true
-    mark_seen: true
+    # false, non true: nella cartella Radar ci sono 22 messaggi e nessuno non
+    # letto — li avevi aperti tu, e il sistema non li ha mai visti. Rileggerli
+    # tutti a ogni giro costa qualche secondo; la deduplica per URL impedisce
+    # comunque di rinotificare due volte lo stesso annuncio.
+    unseen_only: false
+    mark_seen: false
 
   # --- VERIFICATA: funziona ------------------------------------------------
   - name: pluswatch
@@ -610,9 +614,12 @@ sources:
   # --- Candidati italiani da verificare col probe ---------------------------
   # VERIFICATO: a catalogo c'è un 126710BLRO. Griglia costruita con Elementor,
   # quindi niente <li class="product">: i selettori sono volutamente larghi.
+  # Spenta il 16/08: il certificato SSL del sito non e' valido per il proprio
+  # dominio e la connessione fallisce. Ogni tentativo costa ~2 minuti di
+  # timeout PER OGNI orologio. Riaccendila quando avranno sistemato.
   - name: eorologi
     type: html
-    enabled: true
+    enabled: false
     country: IT
     dealer: true
     seller_trust: 3

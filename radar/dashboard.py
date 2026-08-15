@@ -138,7 +138,7 @@ def _sezione(db, market: dict, listings: list[dict]) -> str:
         {_foto(market, listings)}
         <span class="wtxt">
           <span class="wname">{html.escape(label)}</span>
-          <span class="wsub">{_eur(market.get('index'))} · {len(listings)} annunc{'io' if len(listings) == 1 else 'i'}"""\
+          <span class="wsub">{_eur(market.get('index'))} · {len(listings)} annunc{'io' if len(listings) == 1 else 'i'}{' · non aggiornato in questo giro' if market.get('stale') else ''}"""\
 f"""{f' · <b class="g">{len(under)} sotto mercato</b>' if under else ''}</span>
         </span>
       </summary>
