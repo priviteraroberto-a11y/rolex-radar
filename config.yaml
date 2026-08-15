@@ -279,16 +279,23 @@ preferences:
     neutral: [CH, UK, JP, US]
     disliked: [AE, SA, QA, KW, BH, OM, TR, HK]   # penalizzati, NON esclusi
 
-  # DOVE SI TROVA L'OROLOGIO. È cosa diversa dalla garanzia: un orologio a
-  # Bologna con garanzia emiratina sta in Italia ma ha una garanzia scomoda,
-  # e viceversa. Il sistema le tiene separate e le pesa entrambe.
+  # DOVE SI TROVA L'OROLOGIO — tre piani, non un punteggio.
   #
-  # Italia e San Marino in cima: puoi vederlo di persona, niente dogana,
-  # spedizione breve, e se qualcosa va storto hai qualcuno da chiamare.
-  seller_locations:
-    preferred: [IT, SM]
-    neutral: [EU, CH]
-    distant: [US, JP, HK, AE, SA, QA, SG, AU, TR]   # penalizzati, NON esclusi
+  # Non è una preferenza da pesare: è un cancello sulle notifiche. Tu compri
+  # andando a vedere l'orologio, quindi un Royal Oak a Singapore non è "meno
+  # interessante", è irrilevante — ma il suo prezzo serve per capire il
+  # mercato, quindi resta nel database e nell'indice.
+  #
+  #   home       Italia e San Marino: primo piano, notifiche normali
+  #   nearby     Europa: secondo piano, notifica solo se ne vale davvero la pena
+  #   (resto)    solo riferimento di prezzo, mai notificato
+  #
+  # Nota: la garanzia è un'altra cosa ancora. Un orologio a Bologna con
+  # garanzia emiratina sta in Italia ma è scomodo da rivendere. Restano due
+  # dimensioni separate.
+  geography:
+    home: [IT, SM]
+    nearby: [EU, CH]
 
   full_set: strongly_preferred    # box + garanzia + cartellino
   never_polished: preferred
@@ -363,16 +370,18 @@ fair_value:
 # I pesi sono il massimo punto ottenibile per ciascuna voce.
 # -----------------------------------------------------------------------------
 scoring:
+  # La geografia NON è qui dentro di proposito: è un cancello sulle notifiche,
+  # non un ingrediente del punteggio. Così i punteggi restano confrontabili fra
+  # paesi, e l'indice di mercato non si deforma.
   weights:
-    price_vs_fair: 38      # quanto costa rispetto a quanto vale
-    seller_location: 10    # Italia e San Marino in priorità
-    year: 11
-    condition: 11
-    full_set: 9
-    warranty: 7
-    bracelet: 5            # sceso: fuori dal mondo Rolex conta poco
-    seller_trust: 5
-    never_polished: 4
+    price_vs_fair: 40      # quanto costa rispetto a quanto vale
+    year: 12
+    condition: 12
+    full_set: 10
+    warranty: 8
+    bracelet: 6            # fuori dal mondo Rolex conta poco
+    seller_trust: 6
+    never_polished: 6
   # Un annuncio a fair value esatto prende metà del peso price_vs_fair.
   # Sconto pari a questo valore (%) → punteggio pieno.
   price_full_credit_discount_pct: 10.0
@@ -383,9 +392,28 @@ scoring:
 # NOTIFICHE
 # -----------------------------------------------------------------------------
 notifications:
+  # --- Italia e San Marino: primo piano ---
   min_score: 78                    # soglia per la notifica "annuncio buono"
   # Un annuncio sotto mercato ti arriva SEMPRE, anche con score più basso.
   always_notify_if_underpriced_pct: 6.0
+
+  # --- Europa: secondo piano ---
+  # Soglie più alte: raggiungibile, ma deve valerne il viaggio.
+  # 88 e non 95: deve restare raggiungibile da un annuncio davvero buono,
+  # altrimenti l'Europa diventa muta come il resto del mondo e il "secondo
+  # piano" non esiste piu'.
+  nearby_min_score: 88
+  nearby_underpriced_pct: 15.0
+
+  # --- Resto del mondo ---
+  # Raccolto e usato per l'indice di mercato, mai notificato. Mettilo a true
+  # se vuoi vedere anche quelli (utile per qualche giorno, poi stanca).
+  notify_reference: false
+
+  # Molti annunci non dichiarano dove si trovano. Trattarli come "resto del
+  # mondo" significherebbe perdere occasioni italiane mal compilate, quindi
+  # finiscono in Europa: notificati, ma con la soglia alta.
+  unknown_location_as: nearby
   # Re-notifica su annuncio già visto solo se:
   price_drop_pct: 2.0              # il prezzo scende almeno di questo
   price_drop_abs_eur: 400          #   ...o di questa cifra assoluta

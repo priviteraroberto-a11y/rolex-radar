@@ -27,7 +27,7 @@ def mk(price, url="https://t.it/a", score_year=2025) -> Listing:
     l = Listing(source="t", url=url, reference="126710BLRO", year=score_year,
                 condition="unworn", bracelet="jubilee", full_set=True,
                 warranty_region="IT", never_polished=True, seller_trust=4,
-                price_eur=price)
+                seller_country="IT", price_eur=price)
     return SCORER.score(ENGINE.evaluate(l))
 
 

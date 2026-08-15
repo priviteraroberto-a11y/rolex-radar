@@ -196,6 +196,8 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
     market["label"] = watch.label
     market["watch_id"] = watch.id
     market["photo"] = watch.watch.get("photo")
+    geo = watch.get("preferences.geography", {}) or {}
+    market["home"], market["nearby"] = geo.get("home"), geo.get("nearby")
     log.info("indice %s € su %d campioni (%s)", f"{market['index']:,.0f}",
              market["samples"],
              "data-driven" if market["data_driven"] else "stima di partenza")
@@ -436,6 +438,8 @@ def cmd_dashboard(args) -> int:
         m = FairValueEngine(w, comps).summary()
         m["label"], m["watch_id"] = w.label, w.id
         m["photo"] = w.watch.get("photo")
+        geo = w.get("preferences.geography", {}) or {}
+        m["home"], m["nearby"] = geo.get("home"), geo.get("nearby")
         markets.append(m)
     path = dash.build(db, markets, args.dashboard)
     print(f"dashboard → {path}")

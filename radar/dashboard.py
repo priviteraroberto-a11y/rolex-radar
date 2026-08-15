@@ -48,6 +48,20 @@ def _segnaposto(market: dict) -> str:
     return (f'<div class="ph ph-vuota">{html.escape(_iniziali(market.get("label", "?")))}</div>')
 
 
+_PIANI = {"home": 0, "nearby": 1, "reference": 2}
+
+
+def _piano(l: dict, market: dict) -> str:
+    home = market.get("home") or ["IT", "SM"]
+    nearby = market.get("nearby") or ["EU", "CH"]
+    c = l.get("seller_country")
+    if c in home:
+        return "home"
+    if c in nearby or c is None:
+        return "nearby"
+    return "reference"
+
+
 def build(db, markets, out_path: str | Path = "docs/index.html") -> Path:
     if isinstance(markets, dict):          # retrocompatibilità: un solo orologio
         markets = [markets]
@@ -56,6 +70,11 @@ def build(db, markets, out_path: str | Path = "docs/index.html") -> Path:
     dati = []
     for m in markets:
         listings = [l for l in db.active_listings(m.get("watch_id")) if l.get("price_eur")]
+        # Italia e San Marino in cima: è dove compreresti davvero. Il resto
+        # scende, ma resta visibile perché serve a leggere i prezzi.
+        listings.sort(key=lambda l: (_PIANI[_piano(l, m)], -(l.get("score") or 0)))
+        for l in listings:
+            l["_piano"] = _piano(l, m)
         dati.append((m, listings))
 
     sommario = "\n".join(_riga_sommario(m, ls) for m, ls in dati)
@@ -76,11 +95,17 @@ def build(db, markets, out_path: str | Path = "docs/index.html") -> Path:
 
 def _riga_sommario(market: dict, listings: list[dict]) -> str:
     """Riga compatta in cima: colpo d'occhio su tutti gli orologi."""
-    under = sum(1 for l in listings if (l.get("delta_pct") or 0) >= 4)
-    best = listings[0] if listings else None
-    stato = (f'<span class="occ">{under} sotto mercato</span>' if under
-             else (f'{len(listings)} annunci' if listings
-                   else '<span class="mut">nessun annuncio</span>'))
+    qui = [l for l in listings if l.get("_piano") == "home"]
+    under = sum(1 for l in qui if (l.get("delta_pct") or 0) >= 4)
+    best = qui[0] if qui else (listings[0] if listings else None)
+    if under:
+        stato = f'<span class="occ">{under} sotto mercato</span>'
+    elif qui:
+        stato = f'{len(qui)} in Italia'
+    elif listings:
+        stato = f'<span class="mut">{len(listings)} altrove</span>'
+    else:
+        stato = '<span class="mut">nessun annuncio</span>'
     return f"""<a class="srow" href="#{html.escape(str(market.get('watch_id', '')))}">
       {_foto(market, listings)}
       <span class="sname">{html.escape(market.get('label', 'Orologio'))}</span>
@@ -162,7 +187,7 @@ def _row(l: dict) -> str:
             "mai lucidato" if l.get("never_polished") else None,
         ] if c
     )
-    return f"""<tr>
+    return f"""<tr class="{l.get('_piano', 'home')}">
       <td class="sc"><div class="ring" style="--v:{l.get('score', 0)}">
         <span>{l.get('score', 0)}</span></div></td>
       <td>
@@ -269,6 +294,11 @@ _TEMPLATE = """<!doctype html>
   .b {{ font-weight:600 }} .g {{ color:var(--g) }} .y {{ color:var(--y) }}
   .r {{ color:var(--r) }} .n {{ color:var(--mut) }}
   .go a {{ color:var(--acc); font-size:22px; padding:6px 4px }}
+  /* i piani geografici: l'Italia in evidenza, il resto in tono minore */
+  tr.nearby {{ opacity:.78 }}
+  tr.reference {{ opacity:.5 }}
+  tr.reference .chip:first-child, tr.nearby .chip:first-child {{
+    background:#1c2740; border-color:var(--line); color:#9fb0c9 }}
   canvas.chart {{ width:100%; height:130px; background:#182338; border-radius:12px;
     border:1px solid var(--line); padding:8px; margin-bottom:12px }}
   footer {{ margin-top:30px; font-size:11px; color:#5f708c; line-height:1.6 }}

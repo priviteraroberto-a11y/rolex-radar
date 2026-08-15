@@ -636,3 +636,27 @@ def test_ridefinire_una_chiave_non_cancella_la_sezione():
 
     pesi = w.get("scoring.weights")
     assert pesi["price_vs_fair"] == 50 and pesi["seller_location"] == 10
+
+
+def test_la_dashboard_mette_l_italia_in_cima(tmp_path):
+    """Ordine per piano geografico, non per punteggio: prima quello che
+    compreresti davvero, poi il resto — che resta visibile come riferimento."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "geo.db")
+
+    for paese, score in (("JP", 95), ("EU", 90), ("IT", 60), ("SM", 55)):
+        db.upsert(Listing(source="c24", url=f"https://c/{paese}", price_eur=6000.0,
+                          score=score, seller_country=paese), "w")
+
+    out = dashboard.build(db, [{"watch_id": "w", "label": "Omega Speedmaster",
+                                "index": 6200, "home": ["IT", "SM"],
+                                "nearby": ["EU", "CH"]}], tmp_path / "g.html")
+    h = out.read_text(encoding="utf-8")
+
+    import re
+    ordine = re.findall(r'<tr class="(\w+)"', h)
+    assert ordine == ["home", "home", "nearby", "reference"], ordine
+    # il sommario conta l'Italia, non il totale
+    assert "2 in Italia" in h
+    db.close()

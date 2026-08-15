@@ -147,46 +147,105 @@ def test_stelle():
 # GEOGRAFIA: dove si trova l'orologio
 # =============================================================================
 
-def test_italia_e_san_marino_valgono_di_piu():
+def test_la_geografia_non_e_un_punteggio():
+    """Deve restare fuori dal punteggio: due annunci identici in paesi diversi
+    valgono uguale. È il cancello sulle notifiche a fare la differenza."""
     e = FairValueEngine(CFG, [])
     s = Scorer(CFG)
-    prezzo = e.index * 0.95
-
-    punteggi = {}
-    for paese in ("IT", "SM", "EU", "US", "AE", None):
-        l = mk(price_eur=prezzo, url_id=str(paese))
+    punteggi = set()
+    for paese in ("IT", "SM", "EU", "US", "JP", None):
+        l = mk(price_eur=e.index * 0.95, url_id=str(paese))
         l.seller_country = paese
-        punteggi[paese] = s.score(e.evaluate(l)).score
-
-    assert punteggi["IT"] == punteggi["SM"], "San Marino vale quanto l'Italia"
-    assert punteggi["IT"] > punteggi["EU"] > punteggi["US"]
-    assert punteggi["US"] >= punteggi["AE"]
-    assert punteggi["EU"] > punteggi[None], "meglio saperlo che non saperlo"
+        punteggi.add(s.score(e.evaluate(l)).score)
+    assert len(punteggi) == 1, "il paese non deve spostare il punteggio"
 
 
-def test_la_geografia_non_tocca_la_stima_di_valore():
-    """Un Overseas non vale di più perché sta a Milano: è comodo, non prezioso."""
-    e = FairValueEngine(CFG, [])
-    vicino, lontano = mk(price_eur=30000.0), mk(price_eur=30000.0, url_id="2")
-    vicino.seller_country, lontano.seller_country = "IT", "JP"
-    e.evaluate(vicino); e.evaluate(lontano)
-    assert vicino.fair_value_eur == lontano.fair_value_eur
+def test_i_tre_piani_geografici():
+    from radar.notify.decide import tier_geografico
+    from radar.models import Listing
+
+    def dove(paese):
+        l = Listing(source="t", url="https://t/x")
+        l.seller_country = paese
+        return tier_geografico(l, CFG)
+
+    assert dove("IT") == "home"
+    assert dove("SM") == "home", "San Marino sta in primo piano come l'Italia"
+    assert dove("EU") == "nearby"
+    assert dove("CH") == "nearby"
+    assert dove("JP") == "reference"
+    assert dove("US") == "reference"
+    assert dove(None) == "nearby", "senza paese si sbaglia per eccesso, non per difetto"
 
 
-def test_garanzia_e_posizione_sono_indipendenti():
-    """Un orologio a Bologna con garanzia emiratina, e il caso opposto."""
+def test_il_resto_del_mondo_non_notifica_ma_resta_nei_dati():
+    """Un affare a Singapore non ti sveglia, ma il suo prezzo conta."""
+    from radar.notify.decide import decide_notifications
     e = FairValueEngine(CFG, [])
     s = Scorer(CFG)
 
-    qui_gar_estera = mk(price_eur=e.index, warranty_region="AE")
-    qui_gar_estera.seller_country = "IT"
-    lontano_gar_it = mk(price_eur=e.index, warranty_region="IT", url_id="2")
-    lontano_gar_it.seller_country = "HK"
+    def annuncio(paese, sconto):
+        l = mk(price_eur=e.index * sconto, url_id=paese)
+        l.seller_country = paese
+        return s.score(e.evaluate(l))
 
-    a = s.score(e.evaluate(qui_gar_estera))
-    b = s.score(e.evaluate(lontano_gar_it))
-    assert a.score_breakdown["seller_location"] > b.score_breakdown["seller_location"]
-    assert a.score_breakdown["warranty"] < b.score_breakdown["warranty"]
+    italiano = annuncio("IT", 0.93)
+    lontano = annuncio("SG", 0.70)      # affare clamoroso, ma dall'altra parte del mondo
+
+    scelte = decide_notifications(
+        [(italiano, {"is_new": True}), (lontano, {"is_new": True})],
+        CFG, e.is_underpriced, force=True)
+
+    paesi = [d.listing.seller_country for d in scelte]
+    assert "IT" in paesi
+    assert "SG" not in paesi, "il resto del mondo non deve notificare"
+    # ma il suo prezzo è comunque stato valutato
+    assert lontano.fair_value_eur and lontano.delta_pct > 20
+
+
+def test_l_europa_ha_la_soglia_piu_alta():
+    """Stesso annuncio, stesso punteggio: passa dall'Italia, non dall'Europa.
+
+    Il punteggio è imposto a mano di proposito: qui si verifica la regola
+    sulle soglie, non quanto vale un certo orologio.
+    """
+    from radar.notify.decide import decide_notifications
+    e = FairValueEngine(CFG, [])
+
+    def passa(paese, punteggio):
+        l = mk(price_eur=e.index, url_id=f"{paese}{punteggio}")
+        e.evaluate(l)
+        l.score = punteggio
+        l.seller_country = paese
+        return bool(decide_notifications([(l, {"is_new": True})], CFG,
+                                         lambda x, t=None: False, force=True))
+
+    soglia_it = int(CFG.get("notifications.min_score"))
+    soglia_eu = int(CFG.get("notifications.nearby_min_score"))
+    assert soglia_eu > soglia_it
+
+    intermedio = (soglia_it + soglia_eu) // 2
+    assert passa("IT", intermedio), "in Italia un buon annuncio passa"
+    assert not passa("EU", intermedio), "in Europa lo stesso annuncio non basta"
+    assert passa("EU", soglia_eu + 2), "ma un annuncio eccellente passa comunque"
+
+
+def test_a_parita_l_italia_arriva_prima():
+    from radar.notify.decide import decide_notifications
+    e = FairValueEngine(CFG, [])
+    s = Scorer(CFG)
+
+    ita = mk(price_eur=e.index * 0.90, url_id="it")
+    ita.seller_country = "IT"
+    eur = mk(price_eur=e.index * 0.90, url_id="eu")
+    eur.seller_country = "EU"
+    for l in (ita, eur):
+        s.score(e.evaluate(l))
+
+    scelte = decide_notifications(
+        [(eur, {"is_new": True}), (ita, {"is_new": True})],
+        CFG, e.is_underpriced, force=True)
+    assert [d.listing.seller_country for d in scelte][0] == "IT"
 
 
 def test_san_marino_riconosciuto_nel_testo():
