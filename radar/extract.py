@@ -196,13 +196,59 @@ _ROLEX_REF_RE = re.compile(r"(?<![0-9A-Z])(1\d{5})\s*-?\s*([A-Z]{2,6})?(?![0-9A-
 _ROLEX_STYLE = re.compile(r"^\d{6}[A-Z]{0,6}$")
 
 
-def other_reference_in_title(title: str, wanted: list[str]) -> bool:
-    """True se il titolo nomina una referenza Rolex diversa da quelle cercate.
+def _forma(ref: str) -> str:
+    """Traduce una referenza nel suo schema: cifre, lettere, separatori.
 
-    Vale SOLO per la numerazione Rolex (sei cifre più suffisso). Su altri
-    marchi il controllo si disattiva: uno Speedmaster vintage "145022" farebbe
-    scattare il pattern `1\d{5}` e verrebbe scartato per errore.
+    "310.30.42.50.01.002" -> \d{3}\.\d{2}\.\d{2}\.\d{2}\.\d{2}\.\d{3}
+    "126710BLRO"          -> \d{6}[A-Z]{4}
+
+    Serve a riconoscere un'altra referenza *dello stesso marchio*: una stringa
+    con la stessa forma ma valore diverso è un altro orologio, qualunque sia
+    la casa che l'ha numerata.
     """
+    pezzi, i = [], 0
+    for m in re.finditer(r"\d+|[A-Z]+|[.\-/]", ref.upper()):
+        t = m.group(0)
+        if t.isdigit():
+            pezzi.append(rf"\d{{{len(t)}}}")
+        elif t.isalpha():
+            pezzi.append(rf"[A-Z]{{{len(t)}}}")
+        else:
+            pezzi.append(re.escape(t))
+    return "".join(pezzi)
+
+
+def altra_referenza_stessa_forma(title: str, wanted: list[str]) -> bool:
+    """True se il titolo contiene una referenza della stessa forma ma diversa.
+
+    Caso reale: cercando lo Speedmaster 310.30.42.50.01.002 è arrivato un
+    310.30.42.50.04.001 — il Moonwatch bianco, altro orologio, altro prezzo.
+    Era passato perché la referenza giusta compariva fra i prodotti correlati
+    della sua scheda.
+    """
+    if not title or not wanted:
+        return False
+    hay = norm(title).upper()
+    attese = {re.sub(r"[\s\-_/.]", "", w).upper() for w in wanted}
+
+    for w in wanted:
+        forma = _forma(w)
+        if len(forma) < 8:          # schemi troppo corti: troppi falsi positivi
+            continue
+        for m in re.finditer(rf"(?<![0-9A-Z]){forma}(?![0-9A-Z])", hay):
+            trovata = re.sub(r"[\s\-_/.]", "", m.group(0))
+            if trovata not in attese:
+                return True
+    return False
+
+
+def other_reference_in_title(title: str, wanted: list[str]) -> bool:
+    """True se il titolo nomina una referenza diversa da quelle cercate."""
+    if altra_referenza_stessa_forma(title, wanted):
+        return True
+
+    # controllo aggiuntivo sulla numerazione Rolex: sei cifre nude, dove la
+    # forma non basta a distinguere un 126234 da un 126710
     clean = [re.sub(r"[\s\-_/]", "", w).upper() for w in wanted]
     if not clean or not all(_ROLEX_STYLE.match(w) for w in clean):
         return False

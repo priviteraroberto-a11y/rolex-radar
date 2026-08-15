@@ -138,7 +138,7 @@ def _sezione(db, market: dict, listings: list[dict]) -> str:
         {_foto(market, listings)}
         <span class="wtxt">
           <span class="wname">{html.escape(label)}</span>
-          <span class="wsub">{_eur(market.get('index'))} · {len(listings)} annunci"""\
+          <span class="wsub">{_eur(market.get('index'))} · {len(listings)} annunc{'io' if len(listings) == 1 else 'i'}"""\
 f"""{f' · <b class="g">{len(under)} sotto mercato</b>' if under else ''}</span>
         </span>
       </summary>
@@ -146,7 +146,7 @@ f"""{f' · <b class="g">{len(under)} sotto mercato</b>' if under else ''}</span>
         <div class="grid">
           <div class="kpi"><div class="l">Indice</div>
             <div class="v">{_eur(market.get('index'))}</div>
-            <div class="s">{market.get('samples', 0)} campioni</div></div>
+            <div class="s">{market.get('samples', 0)} campion{'e' if market.get('samples') == 1 else 'i'}</div></div>
           <div class="kpi"><div class="l">Più economico</div>
             <div class="v">{_eur(cheapest['price_eur']) if cheapest else '—'}</div>
             <div class="s">fra gli attivi</div></div>
@@ -174,7 +174,7 @@ def _row(l: dict) -> str:
     elif delta >= -2:
         badge = f'<span class="b y">in linea {delta:+.1f}%</span>'
     else:
-        badge = f'<span class="b r">sopra {delta:+.1f}%</span>'
+        badge = f'<span class="b r">sopra {abs(delta):.1f}%</span>'
 
     chips = "".join(
         f'<span class="chip{" here" if c == _QUI else ""}">{e(str(c))}</span>'

@@ -35,8 +35,11 @@ rotation:
 watches:
 
   # ---------------------------------------------------------------------------
-  # NOTA SUI PREZZI DI PARTENZA
-  # I `seed_price_eur` qui sotto sono STIME, non rilevazioni. Servono solo
+  # NOTA SUI PREZZI DI PARTENZA — rivisti il 15/08/2026
+  # Le mie prime stime erano basse del 20-40% rispetto ai prezzi richiesti
+  # davvero dai dealer italiani: tre su tre sbagliate nella stessa direzione.
+  # Ho corretto quelle verificate sui dati e alzato le altre in proporzione,
+  # ma restano stime. Servono solo
   # finché il database non raccoglie 10 annunci comparabili. Per gli orologi
   # ancora sul seed ho alzato la soglia "sotto mercato" al 15%: con una stima
   # incerta non ha senso gridare all'affare per uno scarto del 6%.
@@ -63,7 +66,7 @@ watches:
       acceptable_years: [2022, 2023]
       tolerated_years: [2020, 2021]
     fair_value:
-      seed_price_eur: 5200
+      seed_price_eur: 7000    # osservato 7.300 su PlusWatch
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -86,7 +89,7 @@ watches:
       acceptable_years: [2023, 2024]
       tolerated_years: [2021, 2022]
     fair_value:
-      seed_price_eur: 6200
+      seed_price_eur: 7300    # osservati 7.000 e 7.600 in Italia
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -112,7 +115,7 @@ watches:
       acceptable_years: [2024]
       tolerated_years: []
     fair_value:
-      seed_price_eur: 7200
+      seed_price_eur: 8500    # osservato 8.800 da Pedretti, full set italiano
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -137,7 +140,7 @@ watches:
     # Referenza che conosco male: il prefisso 18 indica oro rosa, ma la stima
     # è la più incerta di tutte. Correggila appena vedi un prezzo vero.
     fair_value:
-      seed_price_eur: 10000
+      seed_price_eur: 12500    # nessun dato: alzato del 25% come gli altri
     notifications:
       always_notify_if_underpriced_pct: 20.0
 
@@ -160,7 +163,7 @@ watches:
       acceptable_years: [2023, 2024]
       tolerated_years: [2022]
     fair_value:
-      seed_price_eur: 95000
+      seed_price_eur: 105000    # nessun dato: alzato del 10%
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -183,7 +186,7 @@ watches:
       acceptable_years: [2021, 2022, 2023]
       tolerated_years: [2018, 2019, 2020]
     fair_value:
-      seed_price_eur: 30000
+      seed_price_eur: 35000    # nessun dato: alzato del 17%
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -207,7 +210,7 @@ watches:
       acceptable_years: [2016, 2017, 2018]
       tolerated_years: [2013, 2014, 2015]
     fair_value:
-      seed_price_eur: 32000
+      seed_price_eur: 37000    # nessun dato: alzato del 16%
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -230,7 +233,7 @@ watches:
       acceptable_years: [2022, 2023]
       tolerated_years: [2019, 2020, 2021]
     fair_value:
-      seed_price_eur: 7000
+      seed_price_eur: 8000    # nessun dato: alzato per coerenza con gli altri
     notifications:
       always_notify_if_underpriced_pct: 15.0
 

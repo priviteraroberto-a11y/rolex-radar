@@ -322,3 +322,45 @@ def test_valuta_adiacente_ha_la_precedenza():
     """Se c'e' un numero attaccato alla valuta, gli altri numeri si ignorano."""
     t = "Rolex 126710BLRO cassa 40 mm calibro 3285 anno 2025 — 33.900 €"
     assert extract.parse_price(t)[0] == 33900.0
+
+
+# --- referenze di altri marchi: stessa forma, valore diverso -------------------
+
+SPEED = ["310.30.42.50.01.002"]
+
+
+def test_speedmaster_sbagliato_scartato():
+    """Caso reale: cercando il 310.30.42.50.01.002 e' arrivato il Moonwatch
+    bianco 310.30.42.50.04.001, perche' la referenza giusta compariva fra i
+    prodotti correlati della sua scheda."""
+    giusto = "Omega Speedmaster Moonwatch Professional 310.30.42.50.01.002"
+    bianco = "Omega Speedmaster Moonwatch Professional White 42mm 310.30.42.50.04.001"
+    kw = ["Speedmaster", "Moonwatch"]
+
+    assert extract.is_target_watch(giusto, giusto, SPEED, kw, [])
+    assert not extract.is_target_watch(
+        bianco, bianco + " vedi anche 310.30.42.50.01.002", SPEED, kw, [])
+
+
+def test_la_forma_della_referenza():
+    assert extract._forma("310.30.42.50.01.002") == r"\d{3}\.\d{2}\.\d{2}\.\d{2}\.\d{2}\.\d{3}"
+    assert extract._forma("126710BLRO") == r"\d{6}[A-Z]{4}"
+    assert extract._forma("4520V/210A-B128") == r"\d{4}[A-Z]{1}/\d{3}[A-Z]{1}\-[A-Z]{1}\d{3}"
+
+
+def test_stessa_forma_diverso_valore_su_ogni_marchio():
+    prove = [
+        (["4520V/210A-B128"], "Vacheron Overseas 4520V/110A-B128"),
+        (["15450ST.OO.1256ST.03"], "AP Royal Oak 15450ST.OO.1256ST.01"),
+        (["03.A384.400/3817.M3817"], "Zenith A384 03.A384.400/3818.M3817"),
+        (["M79360N-0024"], "Tudor Black Bay Chrono M79360N-0002"),
+    ]
+    for wanted, titolo in prove:
+        assert extract.altra_referenza_stessa_forma(titolo, wanted), titolo
+        assert not extract.altra_referenza_stessa_forma(
+            titolo.replace(titolo.split()[-1], wanted[0]), wanted)
+
+
+def test_senza_referenza_nel_testo_non_passa():
+    t = "Omega Speedmaster Moonwatch Professional"
+    assert not extract.is_target_watch(t, t, SPEED, ["Speedmaster"], [])
