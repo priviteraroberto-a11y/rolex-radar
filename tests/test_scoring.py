@@ -141,3 +141,56 @@ def test_stelle():
     assert stars(96) == "★★★★★"
     assert stars(50) == "★★★☆☆"
     assert len(stars(0)) == 5
+
+
+# =============================================================================
+# GEOGRAFIA: dove si trova l'orologio
+# =============================================================================
+
+def test_italia_e_san_marino_valgono_di_piu():
+    e = FairValueEngine(CFG, [])
+    s = Scorer(CFG)
+    prezzo = e.index * 0.95
+
+    punteggi = {}
+    for paese in ("IT", "SM", "EU", "US", "AE", None):
+        l = mk(price_eur=prezzo, url_id=str(paese))
+        l.seller_country = paese
+        punteggi[paese] = s.score(e.evaluate(l)).score
+
+    assert punteggi["IT"] == punteggi["SM"], "San Marino vale quanto l'Italia"
+    assert punteggi["IT"] > punteggi["EU"] > punteggi["US"]
+    assert punteggi["US"] >= punteggi["AE"]
+    assert punteggi["EU"] > punteggi[None], "meglio saperlo che non saperlo"
+
+
+def test_la_geografia_non_tocca_la_stima_di_valore():
+    """Un Overseas non vale di più perché sta a Milano: è comodo, non prezioso."""
+    e = FairValueEngine(CFG, [])
+    vicino, lontano = mk(price_eur=30000.0), mk(price_eur=30000.0, url_id="2")
+    vicino.seller_country, lontano.seller_country = "IT", "JP"
+    e.evaluate(vicino); e.evaluate(lontano)
+    assert vicino.fair_value_eur == lontano.fair_value_eur
+
+
+def test_garanzia_e_posizione_sono_indipendenti():
+    """Un orologio a Bologna con garanzia emiratina, e il caso opposto."""
+    e = FairValueEngine(CFG, [])
+    s = Scorer(CFG)
+
+    qui_gar_estera = mk(price_eur=e.index, warranty_region="AE")
+    qui_gar_estera.seller_country = "IT"
+    lontano_gar_it = mk(price_eur=e.index, warranty_region="IT", url_id="2")
+    lontano_gar_it.seller_country = "HK"
+
+    a = s.score(e.evaluate(qui_gar_estera))
+    b = s.score(e.evaluate(lontano_gar_it))
+    assert a.score_breakdown["seller_location"] > b.score_breakdown["seller_location"]
+    assert a.score_breakdown["warranty"] < b.score_breakdown["warranty"]
+
+
+def test_san_marino_riconosciuto_nel_testo():
+    from radar import extract
+    assert extract.parse_location("Luogo: San Marino") == "SM"
+    assert extract.normalize_region_group("SM") == "SM", \
+        "San Marino non deve finire nel gruppo EU: non è nell'Unione"

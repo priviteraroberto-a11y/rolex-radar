@@ -234,7 +234,7 @@ def test_dashboard_gestisce_database_vuoto(tmp_path):
     db = Database(tmp_path / "v.db")
     engine = FairValueEngine(W, [])
     out = dashboard.build(db, engine.summary(), tmp_path / "index.html")
-    assert "ROLEX RADAR" in out.read_text(encoding="utf-8")
+    assert "RADAR OROLOGI" in out.read_text(encoding="utf-8")
     db.close()
 
 
@@ -430,7 +430,7 @@ def test_dashboard_con_due_sezioni(tmp_path):
     ], tmp_path / "index.html")
     html = out.read_text(encoding="utf-8")
 
-    assert "2 orologi monitorati" in html
+    assert "2 modelli monitorati" in html
     assert "Pepsi" in html and "Daytona" in html
     assert "25.000" in html and "33.000" in html
     # il Daytona ha pochi campioni: deve comparire l'avviso
@@ -566,3 +566,73 @@ def test_un_gruppo_saltato_non_chiude_gli_annunci_degli_altri(tmp_path):
     assert [l["watch_id"] for l in db.active_listings()] == ["el-primero-a384"], \
         "il giro di un orologio ha chiuso gli annunci di un altro"
     db.close()
+
+
+def test_la_dashboard_mostra_le_foto(tmp_path):
+    """Foto dal config, altrimenti dagli annunci, altrimenti segnaposto."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "f.db")
+
+    db.upsert(Listing(source="t", url="https://t.it/a", price_eur=9000.0,
+                      image="https://cdn.it/annuncio.jpg"), "con-annuncio")
+
+    out = dashboard.build(db, [
+        {"watch_id": "da-config", "label": "Omega Speedmaster",
+         "photo": "https://cdn.it/scelta-da-me.jpg", "index": 6200},
+        {"watch_id": "con-annuncio", "label": "Zenith A384", "index": 7000},
+        {"watch_id": "vuoto", "label": "Vacheron Constantin Overseas", "index": 30000},
+    ], tmp_path / "i.html")
+    html = out.read_text(encoding="utf-8")
+
+    assert "scelta-da-me.jpg" in html, "la foto del config ha la precedenza"
+    assert "annuncio.jpg" in html, "senza config si usa la foto di un annuncio"
+    assert ">VC<" in html, "senza nessuna foto, le iniziali del modello"
+    db.close()
+
+
+def test_le_sezioni_senza_annunci_restano_chiuse(tmp_path):
+    """Con otto orologi, aprire tutto rende la pagina illeggibile."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "c.db")
+    db.upsert(Listing(source="t", url="https://t.it/x", price_eur=5000.0), "pieno")
+
+    out = dashboard.build(db, [
+        {"watch_id": "pieno", "label": "TAG Heuer Monaco", "index": 5200},
+        {"watch_id": "vuoto", "label": "Zenith Elite", "index": 10000},
+    ], tmp_path / "c.html")
+    html = out.read_text(encoding="utf-8")
+
+    assert '<details class="watch" id="pieno" open>' in html
+    assert '<details class="watch" id="vuoto">' in html
+    db.close()
+
+
+def test_ridefinire_una_chiave_non_cancella_la_sezione():
+    """Il bug: un orologio che ridefiniva target_years perdeva tutte le altre
+    preferenze globali — geografia compresa — senza che nulla lo segnalasse."""
+    from radar.config import Config
+    c = Config({
+        "preferences": {
+            "target_years": [2025],
+            "seller_locations": {"preferred": ["IT", "SM"], "neutral": ["EU"]},
+            "condition_rank": ["unworn", "new", "mint"],
+        },
+        "scoring": {"weights": {"price_vs_fair": 40, "seller_location": 10}},
+        "watches": [{
+            "id": "x", "references": ["A"],
+            "preferences": {"target_years": [2019, 2020]},
+            "scoring": {"weights": {"price_vs_fair": 50}},
+        }],
+    })
+    w = c.watches[0]
+    prefs = w.get("preferences")
+
+    assert prefs["target_years"] == [2019, 2020], "la chiave ridefinita vince"
+    assert prefs["seller_locations"]["preferred"] == ["IT", "SM"], \
+        "le altre chiavi della sezione vanno ereditate"
+    assert prefs["condition_rank"] == ["unworn", "new", "mint"]
+
+    pesi = w.get("scoring.weights")
+    assert pesi["price_vs_fair"] == 50 and pesi["seller_location"] == 10

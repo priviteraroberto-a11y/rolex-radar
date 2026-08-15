@@ -99,6 +99,7 @@ class TelegramNotifier:
         row("Anno      ", l.year)
         row("Condizioni", _pretty(l.condition))
         row("Bracciale ", _pretty(l.bracelet))
+        row("Si trova  ", l.seller_country)
         row("Garanzia  ", l.warranty_region)
         row("Full set  ", "sì" if l.full_set else ("no" if l.full_set is False else None))
         row("Lucidatura", "mai lucidato" if l.never_polished else None)

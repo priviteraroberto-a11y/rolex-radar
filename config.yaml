@@ -26,6 +26,11 @@ rotation:
 # prezzo e la sua curva di deprezzamento senza duplicare l'intero file.
 #
 # Campi obbligatori: id, references. Tutto il resto e' facoltativo.
+#
+# `photo:` e' l'immagine mostrata in dashboard. Se la lasci vuota, il sistema
+# usa la foto di uno degli annunci trovati; finche' non ce ne sono, disegna un
+# segnaposto con le iniziali. Per metterne una tua: apri l'orologio su un sito
+# qualsiasi, tasto destro sull'immagine -> "Copia indirizzo immagine".
 # -----------------------------------------------------------------------------
 watches:
 
@@ -39,6 +44,7 @@ watches:
   # ---------------------------------------------------------------------------
 
   - id: monaco-gulf
+    # photo: "https://..."
     group: b
     brand: TAG Heuer
     model: Monaco
@@ -62,6 +68,7 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: speedmaster
+    # photo: "https://..."
     group: b
     brand: Omega
     model: Speedmaster Moonwatch Professional
@@ -84,6 +91,7 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: bb-chrono-flamingo
+    # photo: "https://..."
     group: b
     brand: Tudor
     model: Black Bay Chrono
@@ -109,6 +117,7 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: zenith-ultrathin
+    # photo: "https://..."
     group: a
     brand: Zenith
     model: Elite Ultra Thin
@@ -133,6 +142,7 @@ watches:
       always_notify_if_underpriced_pct: 20.0
 
   - id: vc-222
+    # photo: "https://..."
     group: a
     brand: Vacheron Constantin
     model: Historiques 222
@@ -155,6 +165,7 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: vc-overseas
+    # photo: "https://..."
     group: a
     brand: Vacheron Constantin
     model: Overseas
@@ -177,6 +188,7 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: royal-oak-15450
+    # photo: "https://..."
     group: a
     brand: Audemars Piguet
     model: Royal Oak 37
@@ -200,6 +212,7 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: el-primero-a384
+    # photo: "https://..."
     group: b
     brand: Zenith
     model: Chronomaster Revival A384
@@ -260,10 +273,22 @@ preferences:
     - very_good
     - good
 
+  # Dove è stata emessa la garanzia. Conta per la rivendibilità in Italia.
   warranty_regions:
-    preferred: [IT, EU]
+    preferred: [IT, SM, EU]
     neutral: [CH, UK, JP, US]
     disliked: [AE, SA, QA, KW, BH, OM, TR, HK]   # penalizzati, NON esclusi
+
+  # DOVE SI TROVA L'OROLOGIO. È cosa diversa dalla garanzia: un orologio a
+  # Bologna con garanzia emiratina sta in Italia ma ha una garanzia scomoda,
+  # e viceversa. Il sistema le tiene separate e le pesa entrambe.
+  #
+  # Italia e San Marino in cima: puoi vederlo di persona, niente dogana,
+  # spedizione breve, e se qualcosa va storto hai qualcuno da chiamare.
+  seller_locations:
+    preferred: [IT, SM]
+    neutral: [EU, CH]
+    distant: [US, JP, HK, AE, SA, QA, SG, AU, TR]   # penalizzati, NON esclusi
 
   full_set: strongly_preferred    # box + garanzia + cartellino
   never_polished: preferred
@@ -339,14 +364,15 @@ fair_value:
 # -----------------------------------------------------------------------------
 scoring:
   weights:
-    price_vs_fair: 40      # quanto costa rispetto a quanto vale
-    year: 12
-    condition: 12
-    full_set: 10
-    bracelet: 8
-    warranty: 8
-    never_polished: 5
+    price_vs_fair: 38      # quanto costa rispetto a quanto vale
+    seller_location: 10    # Italia e San Marino in priorità
+    year: 11
+    condition: 11
+    full_set: 9
+    warranty: 7
+    bracelet: 5            # sceso: fuori dal mondo Rolex conta poco
     seller_trust: 5
+    never_polished: 4
   # Un annuncio a fair value esatto prende metà del peso price_vs_fair.
   # Sconto pari a questo valore (%) → punteggio pieno.
   price_full_credit_discount_pct: 10.0

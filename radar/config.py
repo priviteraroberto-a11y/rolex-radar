@@ -105,14 +105,35 @@ class WatchView:
         return self.watch.get("exclude_keywords", [])
 
     def get(self, dotted: str, default: Any = None) -> Any:
-        """Cerca prima nell'orologio, poi ricade sulla configurazione globale."""
+        """Valore dell'orologio, fuso con quello globale.
+
+        La fusione è ricorsiva e questo è il punto: se un orologio ridefinisce
+        `preferences.target_years`, deve ereditare comunque tutto il resto di
+        `preferences`. Senza fusione ridefinire una chiave ne cancellava
+        un'intera sezione — e il difetto era invisibile, perché il sistema
+        continuava a funzionare usando i valori di ripiego del codice.
+        """
         own = _dig(self.watch, dotted)
-        if own is not None:
-            return own
-        return self.cfg.get(dotted, default)
+        glob = self.cfg.get(dotted, None)
+        if own is None:
+            return glob if glob is not None else default
+        if isinstance(own, dict) and isinstance(glob, dict):
+            return _fondi(glob, own)
+        return own
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<WatchView {self.id} {self.references}>"
+
+
+def _fondi(base: dict, sopra: dict) -> dict:
+    """Fusione ricorsiva: `sopra` vince chiave per chiave, non in blocco."""
+    out = dict(base)
+    for k, v in sopra.items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = _fondi(out[k], v)
+        else:
+            out[k] = v
+    return out
 
 
 def _dig(data: Any, dotted: str) -> Any:

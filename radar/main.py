@@ -195,6 +195,7 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
     market = engine.summary()
     market["label"] = watch.label
     market["watch_id"] = watch.id
+    market["photo"] = watch.watch.get("photo")
     log.info("indice %s € su %d campioni (%s)", f"{market['index']:,.0f}",
              market["samples"],
              "data-driven" if market["data_driven"] else "stima di partenza")
@@ -434,6 +435,7 @@ def cmd_dashboard(args) -> int:
         comps = db.comparables(w.references, int(w.get("fair_value.lookback_days", 60)))
         m = FairValueEngine(w, comps).summary()
         m["label"], m["watch_id"] = w.label, w.id
+        m["photo"] = w.watch.get("photo")
         markets.append(m)
     path = dash.build(db, markets, args.dashboard)
     print(f"dashboard → {path}")

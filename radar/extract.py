@@ -375,6 +375,9 @@ def parse_never_polished(text: str) -> Optional[bool]:
 # =============================================================================
 
 _REGION_PATTERNS = [
+    # San Marino prima dell'Italia: "San Marino" contiene un riferimento
+    # geografico italiano e verrebbe assorbito dal pattern successivo.
+    ("SM", r"san\s?marino|\brsm\b|repubblica di san marino"),
     ("IT", r"\bitali|\bitaly\b|\bit\b\s*(warranty|garanzia)|garanzia italian"),
     ("AE", r"\buae\b|emirat|dubai|abu dhabi|\bae\b\s*warranty"),
     ("SA", r"saudi|arabia saudita|\bksa\b|riyadh|jeddah"),
@@ -396,6 +399,10 @@ _REGION_PATTERNS = [
 ]
 
 _EU_MEMBERS = {"IT", "DE", "FR", "ES", "NL", "EU", "AT", "BE", "PT", "IE"}
+
+# San Marino non è nell'Unione: resta una sigla a sé, sia per la garanzia sia
+# per la posizione del venditore.
+_NON_EU_VICINI = {"SM", "CH", "VA"}
 
 
 def parse_warranty_region(text: str) -> Optional[str]:
@@ -419,7 +426,40 @@ def parse_warranty_region(text: str) -> Optional[str]:
 def normalize_region_group(code: Optional[str]) -> Optional[str]:
     if code is None:
         return None
+    if code in _NON_EU_VICINI:
+        return code
     return "EU" if code in _EU_MEMBERS and code != "IT" else code
+
+
+# =============================================================================
+# POSIZIONE DEL VENDITORE
+# =============================================================================
+
+# Dove si trova l'orologio è cosa diversa da dove è stata emessa la garanzia.
+# Chrono24 le espone come due campi distinti, e confonderle porta a valutare
+# male un orologio a Milano con garanzia emiratina — o viceversa.
+_LOCATION_CONTEXT = re.compile(
+    r"(?:luogo|location|standort|paese|country|si trova|ubicazion|sede|"
+    r"spedizione da|ships? from|venditore in)\s*:?\s*(.{0,50})",
+    re.I | re.S,
+)
+
+
+def parse_location(text: str) -> Optional[str]:
+    """Paese in cui si trova l'orologio, non quello della garanzia.
+
+    Cerca solo dentro un campo esplicito: dedurlo dal testo intero
+    significherebbe leggere la garanzia e chiamarla posizione.
+    """
+    if not text:
+        return None
+    t = norm(text)
+    for m in _LOCATION_CONTEXT.finditer(t):
+        finestra = m.group(1)
+        for code, pattern in _REGION_PATTERNS:
+            if re.search(pattern, finestra):
+                return code
+    return None
 
 
 # =============================================================================
@@ -465,6 +505,8 @@ def enrich(listing, source_cfg: dict | None = None):
         listing.never_polished = parse_never_polished(text)
     if listing.warranty_region is None:
         listing.warranty_region = normalize_region_group(parse_warranty_region(text))
+    if listing.seller_country is None:
+        listing.seller_country = normalize_region_group(parse_location(text))
     if listing.sold is None:
         listing.sold = parse_sold(text)
 

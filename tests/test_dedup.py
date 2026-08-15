@@ -119,3 +119,15 @@ def test_tetto_notifiche_per_giro(tmp_path):
     d = decide_notifications(batch, CFG, ENGINE.is_underpriced, force=True)
     assert len(d) <= CFG.get("notifications.max_per_run")
     db.close()
+
+
+def test_il_paese_del_venditore_viene_salvato(tmp_path):
+    """Serve alla dashboard e alla pastiglia: se non si salva, sparisce."""
+    from radar.models import Listing
+    db = Database(tmp_path / "geo.db")
+    l = Listing(source="chrono24", url="https://c/1", reference="126710BLRO",
+                price_eur=25000.0, seller_country="SM")
+    db.upsert(l, "test")
+    salvato = db.active_listings("test")[0]
+    assert salvato["seller_country"] == "SM"
+    db.close()

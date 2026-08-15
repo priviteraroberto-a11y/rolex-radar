@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS listings (
     never_polished  INTEGER,
     warranty_region TEXT,
     seller          TEXT,
+    seller_country  TEXT,
     seller_trust    INTEGER DEFAULT 0,
     image           TEXT,
     price_eur       REAL,
@@ -107,6 +108,8 @@ class Database:
             self.conn.execute(
                 "UPDATE listings SET watch_id = ? WHERE watch_id IS NULL",
                 (DEFAULT_WATCH_ID,))
+        if "seller_country" not in cols:
+            self.conn.execute("ALTER TABLE listings ADD COLUMN seller_country TEXT")
         cur = self.conn.execute("PRAGMA table_info(market_snapshots)")
         cols = {r[1] for r in cur.fetchall()}
         if "watch_id" not in cols:
@@ -188,7 +191,7 @@ class Database:
             listing.key, watch_id, listing.source, listing.url, listing.title,
             listing.reference, listing.year, listing.bracelet, listing.condition,
             _b(listing.full_set), _b(listing.never_polished), listing.warranty_region,
-            listing.seller, listing.seller_trust, listing.image,
+            listing.seller, listing.seller_country, listing.seller_trust, listing.image,
             listing.price_eur, listing.fair_value_eur, listing.delta_pct,
             listing.score, now, now, payload,
         )
@@ -198,9 +201,9 @@ class Database:
                 """INSERT INTO listings
                    (key, watch_id, source, url, title, reference, year, bracelet,
                     condition, full_set, never_polished, warranty_region, seller,
-                    seller_trust, image, price_eur, fair_value_eur, delta_pct, score,
-                    first_seen, last_seen, payload, active)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
+                    seller_country, seller_trust, image, price_eur, fair_value_eur,
+                    delta_pct, score, first_seen, last_seen, payload, active)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
                 values,
             )
         else:
@@ -208,10 +211,11 @@ class Database:
                 """UPDATE listings SET
                      watch_id=?, source=?, url=?, title=?, reference=?, year=?, bracelet=?,
                      condition=?, full_set=?, never_polished=?, warranty_region=?,
-                     seller=?, seller_trust=?, image=?, price_eur=?, fair_value_eur=?,
-                     delta_pct=?, score=?, last_seen=?, payload=?, active=1
+                     seller=?, seller_country=?, seller_trust=?, image=?, price_eur=?,
+                     fair_value_eur=?, delta_pct=?, score=?, last_seen=?, payload=?,
+                     active=1
                    WHERE key=?""",
-                (*values[1:19], now, payload, listing.key),
+                (*values[1:20], now, payload, listing.key),
             )
 
         # storico prezzi: una riga al giorno per annuncio

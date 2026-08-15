@@ -30,15 +30,17 @@ class Scorer:
         b["warranty"] = self._warranty_points(l, reasons)
         b["never_polished"] = self._polish_points(l, reasons)
         b["seller_trust"] = self._seller_points(l, reasons)
+        b["seller_location"] = self._location_points(l, reasons)
 
         total = sum(b.values())
 
         # Penalità dati mancanti: un annuncio opaco non merita di stare in cima.
         unknowns = sum(
-            1 for v in (l.year, l.condition, l.full_set, l.bracelet, l.warranty_region)
+            1 for v in (l.year, l.condition, l.full_set, l.bracelet,
+                        l.warranty_region, l.seller_country)
             if v is None
         )
-        if unknowns >= 3:
+        if unknowns >= 4:
             total -= 6
             reasons.append(f"⚠︎ {unknowns} caratteristiche non dichiarate")
         if l.price_eur is None:
@@ -141,6 +143,31 @@ class Scorer:
         if l.never_polished is False:
             return 0.0
         return w * 0.5
+
+    def _location_points(self, l: Listing, reasons: list[str]) -> float:
+        """Dove si trova l'orologio.
+
+        Non è una questione di valore intrinseco — un Overseas non vale di più
+        perché sta a Milano — ma di quanto è comprabile: puoi vederlo, non paghi
+        dogana, e se qualcosa va storto hai un interlocutore raggiungibile.
+        Per questo pesa nel punteggio e NON nella stima di valore.
+        """
+        w = float(self.w.get("seller_location", 0))
+        if not w:
+            return 0.0
+        geo = self.prefs.get("seller_locations", {})
+        c = l.seller_country
+        if c is None:
+            return w * 0.4
+        if c in geo.get("preferred", []):
+            reasons.append(f"📍 si trova in {c}")
+            return w
+        if c in geo.get("neutral", []):
+            return w * 0.55
+        if c in geo.get("distant", []):
+            reasons.append(f"⚠︎ si trova in {c} — dogana, spedizione, resi complicati")
+            return w * 0.05
+        return w * 0.3
 
     def _seller_points(self, l: Listing, reasons: list[str]) -> float:
         w = float(self.w.get("seller_trust", 5))
