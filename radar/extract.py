@@ -164,8 +164,10 @@ def matches_reference(listing_ref: Optional[str], text: str, wanted: list[str]) 
     hay = re.sub(r"[\s\-_/.]", "", spaced)
 
     for w in wanted:
-        w_clean = re.sub(r"[\s\-_/]", "", w).upper()
-        if listing_ref and listing_ref.upper() == w_clean:
+        # i punti vanno tolti anche dalla referenza cercata, altrimenti
+        # "310.30.42.50.01.002" non trova mai se stessa nel testo normalizzato
+        w_clean = re.sub(r"[\s\-_/.]", "", w).upper()
+        if listing_ref and re.sub(r"[\s\-_/.]", "", listing_ref).upper() == w_clean:
             return True
         if w_clean in hay:
             return True
@@ -191,10 +193,22 @@ def matches_reference(listing_ref: Optional[str], text: str, wanted: list[str]) 
 _ROLEX_REF_RE = re.compile(r"(?<![0-9A-Z])(1\d{5})\s*-?\s*([A-Z]{2,6})?(?![0-9A-Z])")
 
 
+_ROLEX_STYLE = re.compile(r"^\d{6}[A-Z]{0,6}$")
+
+
 def other_reference_in_title(title: str, wanted: list[str]) -> bool:
-    """True se il titolo nomina una referenza Rolex diversa da quelle cercate."""
+    """True se il titolo nomina una referenza Rolex diversa da quelle cercate.
+
+    Vale SOLO per la numerazione Rolex (sei cifre più suffisso). Su altri
+    marchi il controllo si disattiva: uno Speedmaster vintage "145022" farebbe
+    scattare il pattern `1\d{5}` e verrebbe scartato per errore.
+    """
+    clean = [re.sub(r"[\s\-_/]", "", w).upper() for w in wanted]
+    if not clean or not all(_ROLEX_STYLE.match(w) for w in clean):
+        return False
+
     hay = norm(title).upper()
-    wanted_full = {re.sub(r"[\s\-_/]", "", w).upper() for w in wanted}
+    wanted_full = set(clean)
     wanted_bases = {w[:6] for w in wanted_full}
 
     for m in _ROLEX_REF_RE.finditer(hay):

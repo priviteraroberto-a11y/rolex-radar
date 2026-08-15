@@ -45,7 +45,83 @@ class Config:
 
     @property
     def references(self) -> list[str]:
-        return [r.upper().replace(" ", "") for r in self.get("watch.references", [])]
+        """Tutte le referenze, di tutti gli orologi monitorati."""
+        out: list[str] = []
+        for w in self.watches:
+            out.extend(w.references)
+        return out
+
+    @property
+    def watches(self) -> list["WatchView"]:
+        """Gli orologi monitorati.
+
+        Accetta sia la forma `watches:` (lista) sia la vecchia `watch:`
+        (singolo), cosi' le configurazioni esistenti continuano a funzionare.
+        """
+        raw = self._d.get("watches")
+        if raw is None:
+            single = self._d.get("watch")
+            raw = [single] if single else []
+        return [WatchView(self, w) for w in raw]
+
+
+class WatchView:
+    """La configurazione vista dal punto di vista di UN orologio.
+
+    Ogni orologio puo' ridefinire qualsiasi chiave globale: prezzo di partenza,
+    moltiplicatori, preferenze, soglie di notifica. Quello che non ridefinisce
+    lo eredita. Cosi' un Daytona ha la sua curva di deprezzamento senza dover
+    duplicare tutto il resto del file.
+    """
+
+    def __init__(self, cfg: "Config", watch: dict):
+        self.cfg = cfg
+        self.watch = watch or {}
+
+    @property
+    def id(self) -> str:
+        raw = (self.watch.get("id") or self.watch.get("nickname")
+               or self.watch.get("model") or "watch")
+        return str(raw).strip().lower().replace(" ", "-")
+
+    @property
+    def label(self) -> str:
+        base = f"{self.watch.get('brand', '')} {self.watch.get('model', '')}".strip()
+        nick = self.watch.get("nickname")
+        if nick:
+            return f"{base} \u201c{nick}\u201d" if base else str(nick)
+        return base or self.id
+
+    @property
+    def references(self) -> list[str]:
+        return [str(r).upper().replace(" ", "") for r in self.watch.get("references", [])]
+
+    @property
+    def model_keywords(self) -> list[str]:
+        return self.watch.get("model_keywords", [])
+
+    @property
+    def exclude_keywords(self) -> list[str]:
+        return self.watch.get("exclude_keywords", [])
+
+    def get(self, dotted: str, default: Any = None) -> Any:
+        """Cerca prima nell'orologio, poi ricade sulla configurazione globale."""
+        own = _dig(self.watch, dotted)
+        if own is not None:
+            return own
+        return self.cfg.get(dotted, default)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<WatchView {self.id} {self.references}>"
+
+
+def _dig(data: Any, dotted: str) -> Any:
+    cur = data
+    for part in dotted.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return None
+        cur = cur[part]
+    return cur
 
 
 def multiplier(table: dict, key: Any, default_key: str = "_default") -> float:

@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1120">
-<title>Rolex Radar · Pepsi 126710BLRO</title>
+<title>Rolex Radar</title>
 <style>
   :root {
     --bg:#0b1120; --card:#131c2e; --line:#233047; --tx:#e8eef8; --mut:#8fa0bb;
@@ -14,23 +14,26 @@
     -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     padding:env(safe-area-inset-top) 0 40px }
   .wrap { max-width:760px; margin:0 auto; padding:20px 16px }
-  h1 { font-size:20px; margin:2px 0 2px; letter-spacing:-.01em }
+  h1 { font-size:20px; margin:2px 0; letter-spacing:-.01em }
   .eyebrow { font-size:11px; letter-spacing:.18em; color:var(--mut) }
-  .upd { font-size:12px; color:var(--mut); margin-bottom:18px }
+  .upd { font-size:12px; color:var(--mut); margin-bottom:8px }
+  .watch { border-top:1px solid var(--line); margin-top:26px; padding-top:20px }
+  .watch:first-of-type { border-top:0; margin-top:14px }
+  .wname { font-size:17px; margin:0 0 14px; letter-spacing:-.01em }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-    gap:10px; margin-bottom:22px }
+    gap:10px; margin-bottom:16px }
   .kpi { background:var(--card); border:1px solid var(--line); border-radius:14px;
     padding:14px }
   .kpi .l { font-size:11px; letter-spacing:.1em; color:var(--mut);
     text-transform:uppercase }
   .kpi .v { font-size:23px; font-weight:650; margin-top:4px; letter-spacing:-.02em }
   .kpi .s { font-size:12px; color:var(--mut) }
+  .pct { font-size:14px; color:var(--mut) }
   .note { background:#1e293b; border-left:3px solid var(--y); padding:10px 14px;
-    border-radius:0 8px 8px 0; font-size:13px; color:var(--mut); margin-bottom:18px }
-  h2 { font-size:13px; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--mut); margin:26px 0 10px; font-weight:600 }
+    border-radius:0 8px 8px 0; font-size:13px; color:var(--mut); margin-bottom:14px }
   table { width:100%; border-collapse:collapse }
   td { padding:14px 8px; border-bottom:1px solid var(--line); vertical-align:top }
+  .empty { color:var(--mut); font-size:13px; text-align:center }
   .sc { width:58px }
   .ring { width:44px; height:44px; border-radius:50%; display:grid; place-items:center;
     background:conic-gradient(#38bdf8 calc(var(--v)*1%), #233047 0); font-size:13px;
@@ -47,460 +50,247 @@
   .b { font-weight:600 } .g { color:var(--g) } .y { color:var(--y) }
   .r { color:var(--r) } .n { color:var(--mut) }
   .go a { color:#38bdf8; text-decoration:none; font-size:22px; padding:6px 4px }
-  canvas { width:100%; height:180px; background:var(--card); border-radius:14px;
-    border:1px solid var(--line); padding:8px }
+  canvas.chart { width:100%; height:150px; background:var(--card); border-radius:14px;
+    border:1px solid var(--line); padding:8px; margin-bottom:14px }
   footer { margin-top:30px; font-size:11px; color:#5f708c; line-height:1.6 }
 </style></head><body>
 <div class="wrap">
   <div class="eyebrow">ROLEX RADAR</div>
-  <h1>GMT-Master II “Pepsi” · 126710BLRO</h1>
-  <div class="upd">aggiornato 14/08/2026 20:47</div>
+  <h1>8 orologi monitorati</h1>
+  <div class="upd">aggiornato 15/08/2026 04:58</div>
 
-  <div class="grid">
-    <div class="kpi"><div class="l">Indice di mercato</div>
-      <div class="v">27.571 €</div><div class="s">37 annunci nel campione</div></div>
-    <div class="kpi"><div class="l">Mediana listini</div>
-      <div class="v">22.026 €</div><div class="s">prezzi non normalizzati</div></div>
-    <div class="kpi"><div class="l">Più economico</div>
-      <div class="v">19.822 €</div><div class="s">fra gli annunci attivi</div></div>
-    <div class="kpi"><div class="l">Sotto mercato</div>
-      <div class="v">6</div><div class="s">su 35 attivi</div></div>
-    <div class="kpi"><div class="l">Miglior punteggio</div>
-      <div class="v">95<span style="font-size:14px;color:var(--mut)">/100</span></div>
-      <div class="s">a 25.500 €</div></div>
-  </div>
+  
+    <section class="watch">
+      <h2 class="wname">TAG Heuer Monaco “Gulf”</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">5.200 €</div>
+          <div class="s">1 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">7.300 €</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
 
-  <div class="note" id="note"></div>
+    <section class="watch">
+      <h2 class="wname">Omega Speedmaster Moonwatch Professional</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">6.200 €</div>
+          <div class="s">3 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">7.600 €</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
 
-  <h2>Andamento del mercato</h2>
-  <canvas id="chart"></canvas>
+    <section class="watch">
+      <h2 class="wname">Tudor Black Bay Chrono “Flamingo Blue”</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">7.200 €</div>
+          <div class="s">1 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">8.800 €</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
 
-  <h2>Annunci attivi</h2>
-  <table><tbody><tr>
-      <td class="sc"><div class="ring" style="--v:95">
-        <span>95</span></div></td>
-      <td>
-        <div class="pr">25.500 €</div>
-        <div class="fv">stima 28.122 € · <span class="b g">sotto mercato +9.3%</span></div>
-        <div class="chips"><span class="chip">2025</span><span class="chip">unworn</span><span class="chip">jubilee</span><span class="chip">gar. IT</span><span class="chip">full set</span></div>
-        <div class="src">pluswatch</div>
-      </td>
-      <td class="go"><a href="https://www.pluswatch.it/p/rolex-gmt-master-ii-126710blro-126710-blro-40mm-jubilee-pepsi-black-dial-2025-10794/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:69">
-        <span>69</span></div></td>
-      <td>
-        <div class="pr">20.000 €</div>
-        <div class="fv">stima 21.298 € · <span class="b g">sotto mercato +6.1%</span></div>
-        <div class="chips"><span class="chip">2018</span><span class="chip">gar. IT</span><span class="chip">full set</span></div>
-        <div class="src">bonanno</div>
-      </td>
-      <td class="go"><a href="https://www.gioielleriabonanno.it/prodotto/rolex-gmt-master-ii-126710blro-pepsi-fullset-2/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:69">
-        <span>69</span></div></td>
-      <td>
-        <div class="pr">20.000 €</div>
-        <div class="fv">stima 21.298 € · <span class="b g">sotto mercato +6.1%</span></div>
-        <div class="chips"><span class="chip">2019</span><span class="chip">gar. IT</span><span class="chip">full set</span></div>
-        <div class="src">bonanno</div>
-      </td>
-      <td class="go"><a href="https://www.gioielleriabonanno.it/prodotto/rolex-gmt-master-ii-126710blro-fullset-4/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:69">
-        <span>69</span></div></td>
-      <td>
-        <div class="pr">20.000 €</div>
-        <div class="fv">stima 21.298 € · <span class="b g">sotto mercato +6.1%</span></div>
-        <div class="chips"><span class="chip">2019</span><span class="chip">gar. IT</span><span class="chip">full set</span></div>
-        <div class="src">bonanno</div>
-      </td>
-      <td class="go"><a href="https://www.gioielleriabonanno.it/prodotto/rolex-gmt-master-ii-126710blro-pepsi-fullset-3/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:61">
-        <span>61</span></div></td>
-      <td>
-        <div class="pr">22.000 €</div>
-        <div class="fv">stima 23.201 € · <span class="b g">sotto mercato +5.2%</span></div>
-        <div class="chips"><span class="chip">2018</span><span class="chip">new</span><span class="chip">gar. CH</span></div>
-        <div class="src">eorologi</div>
-      </td>
-      <td class="go"><a href="https://eorologi.com/rolex-gmt-master-ii-pepsi-ref-126710blro/#richSnippet" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:61">
-        <span>61</span></div></td>
-      <td>
-        <div class="pr">22.000 €</div>
-        <div class="fv">stima 23.201 € · <span class="b g">sotto mercato +5.2%</span></div>
-        <div class="chips"><span class="chip">2018</span><span class="chip">new</span><span class="chip">gar. CH</span></div>
-        <div class="src">eorologi</div>
-      </td>
-      <td class="go"><a href="https://eorologi.com/rolex-gmt-master-ii-pepsi-ref-126710blro/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:58">
-        <span>58</span></div></td>
-      <td>
-        <div class="pr">24.500 €</div>
-        <div class="fv">stima 24.500 € · <span class="b y">in linea +0.0%</span></div>
-        <div class="chips"><span class="chip">2022</span><span class="chip">unworn</span><span class="chip">gar. IT</span></div>
-        <div class="src">pluswatch</div>
-      </td>
-      <td class="go"><a href="https://www.pluswatch.it/p/rolex-gmt-master-ii-126710blro-40mm-pepsi-with-films-stickers-black-dial-03-2022-nos-11165/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:56">
-        <span>56</span></div></td>
-      <td>
-        <div class="pr">20.999 €</div>
-        <div class="fv">stima 21.513 € · <span class="b y">in linea +2.4%</span></div>
-        <div class="chips"><span class="chip">jubilee</span><span class="chip">gar. IT</span></div>
-        <div class="src">conteorologi</div>
-      </td>
-      <td class="go"><a href="https://www.conteorologi.it/orologi/rolex-gmt-master-ii-pepsi-jubilee/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:49">
-        <span>49</span></div></td>
-      <td>
-        <div class="pr">20.499 €</div>
-        <div class="fv">stima 20.670 € · <span class="b y">in linea +0.8%</span></div>
-        <div class="chips"><span class="chip">jubilee</span></div>
-        <div class="src">conteorologi</div>
-      </td>
-      <td class="go"><a href="https://www.conteorologi.it/orologi/rolex-gmt-master-ii-pepsi-jubilee-3/" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:44">
-        <span>44</span></div></td>
-      <td>
-        <div class="pr">21.200 €</div>
-        <div class="fv">stima 21.707 € · <span class="b y">in linea +2.3%</span></div>
-        <div class="chips"><span class="chip">2023</span></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii-126710blro---022023--id47934298.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_ZMHdsZ6Nw4uAQ9X26uhNJEdUaklEOjq3mVqOZZ_XIy1QXezQpnIGdY13dA5ePW7CgESs7ljP5m0DT2YTqoq274phU" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:42">
-        <span>42</span></div></td>
-      <td>
-        <div class="pr">20.300 €</div>
-        <div class="fv">stima 20.202 € · <span class="b y">in linea -0.5%</span></div>
-        <div class="chips"><span class="chip">jubilee</span></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii--id47881507.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_ZmlSJGN4KvP-HXFzzeoHTyn3rbU4pR3PZOOAgUMAf-zWitRs1ndPbrNMk1pwCyaS0OgI01o6mVQoJvcSEkcjfDu8c" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:40">
-        <span>40</span></div></td>
-      <td>
-        <div class="pr">19.822 €</div>
-        <div class="fv">stima 20.000 € · <span class="b y">in linea +0.9%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii--id47896403.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_avWlyCA4CTYDEGd3M0MXsDeQSWCBGPcXOLMqUBLdGZFPlWOIvtk-9Q8tlORADNqCMZvX0DA9nxsLEpoM9cUqDniYQ" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:40">
-        <span>40</span></div></td>
-      <td>
-        <div class="pr">20.000 €</div>
-        <div class="fv">stima 20.097 € · <span class="b y">in linea +0.5%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47844659.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_Zlk4enlWrp1zMh2oqWrMN_M4A8AU349q14W098uz5ZBQPMp7tGbSLubcsH7cOVmapUENRpPgUJb2uho7p41-9Q7Vo" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:35">
-        <span>35</span></div></td>
-      <td>
-        <div class="pr">21.200 €</div>
-        <div class="fv">stima 20.992 € · <span class="b y">in linea -1.0%</span></div>
-        <div class="chips"><span class="chip">2022</span></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii-126710blro---022022--id47933730.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_Y7JYz-QLxTdzyAQtmZe7e-8ibDuh-jtPbAPte2eIKtbVVIlXnQ-Td4r75Gw2PZRb2DP5692MMeRLHtw5_AYrfhS0A" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:32">
-        <span>32</span></div></td>
-      <td>
-        <div class="pr">21.470 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -3.5%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii-pepsi-ref-126710blro-stainless-steel-box-papers-bj-2021-new-like--id47949251.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_ZOOpZdFX1kiUgdu1vB6fZhkGFA_R5J6qOpJgnuSa8CovdccMyHCHpFS9-ecpmz4nLTosqr_NploayKf_KJFw7N6qc" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:31">
-        <span>31</span></div></td>
-      <td>
-        <div class="pr">22.000 €</div>
-        <div class="fv">stima 20.050 € · <span class="b r">sopra -9.7%</span></div>
-        <div class="chips"><span class="chip">2019</span><span class="chip">excellent</span><span class="chip">oyster</span><span class="chip">full set</span></div>
-        <div class="src">lorologiaiodicorte</div>
-      </td>
-      <td class="go"><a href="https://www.lorologiaiodicorte.it/Detail/Index/827" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:31">
-        <span>31</span></div></td>
-      <td>
-        <div class="pr">23.768 €</div>
-        <div class="fv">stima 22.529 € · <span class="b r">sopra -5.5%</span></div>
-        <div class="chips"><span class="chip">2020</span><span class="chip">new</span></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/2020-new-papers-126710blro-rolex-gmt-master-ii-pepsi-red-blue-jubilee-ceramic-watch--id47936543.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_Y8OqAH_-tPxoXQxwLAQr-_B4sDqbXZPXao5OMduYR17FCNk9nq0lyaoZrJ5bNVocUqerjucXzT6rqGEn7-mRS9BBY" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:30">
-        <span>30</span></div></td>
-      <td>
-        <div class="pr">20.999 €</div>
-        <div class="fv">stima 20.000 € · <span class="b r">sopra -5.0%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii--id47847844.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_aCWSGw-uvoRJqDq9jpehvtmcoXm9M2vmfnym-19GZeA9GhuD93CZxXsgDlmCY4tBX6ZX5R9xKYjQfmeu1t1xkGm10" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:24">
-        <span>24</span></div></td>
-      <td>
-        <div class="pr">22.950 €</div>
-        <div class="fv">stima 20.097 € · <span class="b r">sopra -14.2%</span></div>
-        <div class="chips"><span class="chip">full set</span></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii-pepsi-126710blro--id47926023.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_b8qvzhTdq852EtN44XDmrW-zypaKt58xdIl0tfqJ1ZgRhAQZuejDWsCctwS3xM6hSK2cZf88NAA2oc8GlKgADiTw0" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:24">
-        <span>24</span></div></td>
-      <td>
-        <div class="pr">26.642 €</div>
-        <div class="fv">stima 20.097 € · <span class="b r">sopra -32.6%</span></div>
-        <div class="chips"><span class="chip">full set</span></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47856058.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_a7SCkwBM2wV1Pyuj-6LBfbnmTkMWqxpYnkFX1XMPsEK7gjbyVVDIHmXslvggcpBAfGICTm5TBkPcVxVeEf1aJR4oA" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:23">
-        <span>23</span></div></td>
-      <td>
-        <div class="pr">22.026 €</div>
-        <div class="fv">stima 20.276 € · <span class="b r">sopra -8.6%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii--id47936211.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_Y0XF3hXwxccB8S5IHUYNdJ9Wrn5oewRdVWDllknQ-EHKvoy6WTAZtsmPhhbgx6CistxiUI7Pjff15YRUAN_orYz80" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">22.881 €</div>
-        <div class="fv">stima 20.129 € · <span class="b r">sopra -13.7%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii-40mm-126710blro-pepsi-on-jubilee-2020--id47858849.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_YwCp0B4QcNIqbbgKXSdFk5D5P_lqSbfv0vZ9xfkSW4D4HXhIuhlT3uM24yiVSpo4QiQPUdhp2-WI35S-29t-rhxFU" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">22.900 €</div>
-        <div class="fv">stima 20.097 € · <span class="b r">sopra -13.9%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii--id47899569.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_ZesLGlsOXR5oI_9RmDhtM67ZDtJAUvUtEqs_Ms7ZzJ6AmKcmzgCcx4igW443NT_XNxHNj8EpQreompSMqGrfoHIJE" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">23.495 €</div>
-        <div class="fv">stima 20.276 € · <span class="b r">sopra -15.9%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii-126710blro--id47928863.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_bGUpje1hp6NXhMHKCkwmeN8BOxTzjKIBLT1BZxzGaP9LrBuwyoc69aOHriGVBNCMSRkmTW4pufIsNdBRVgSqAowT8" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">24.466 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -18.0%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47952755.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_aVzWsrWTJamstDc4Bm7MDQx-IyA0QvGUk-ohpaGI_IhzFTijXhqgXda4YlBSrbPVQz5qC6TH4cpQg7iZ-9dbabt28" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">26.202 €</div>
-        <div class="fv">stima 20.097 € · <span class="b r">sopra -30.4%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii--id47905295.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_ZRO07nLCEZ6mI5redAnBuNRe0PS1fo8B6htKq9JuJ6iJWWGeoU3C5anpNqSUHcw9pEETarW0weeR7TkQuht01FcGc" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">26.569 €</div>
-        <div class="fv">stima 20.147 € · <span class="b r">sopra -31.9%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii-126710blro--id47867091.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_bGjYP0LMUZF__Zf3rVvA02S2w_bX1SJIuzPtt0s5cdNe9hjwNdfDBkLxKwDEyDVoKGEDuKY69crm2rDMZ77kW_g5o" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">27.042 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -30.4%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47952942.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_aTWfb5kwfdGeqtpw_sSitB7pd-stUbcf1vV88GRSO-QH7ou9g_3FtSFmaBra0IzVRIxo5GnEwFocWUR7hg3CsZPxk" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">27.257 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -31.4%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47952347.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_a2lrhvOpbsmvQUxnTzvHWyugPz7CzkL4WR67cXsindOR8wGgCSfjhX1N9memnzyQ6JTjMkK9rOFJNm0BZ73C3OSwY" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">27.990 €</div>
-        <div class="fv">stima 20.000 € · <span class="b r">sopra -40.0%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/rolex-gmt-master-ii--id47846512.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_YauLAomniuh44YxAHKSZNi0ColSduAfukoysnJ4jZcK1mwM85hoEc7j6SArVQ3rI8rFENOyKKerfZIrweIZwkJjzQ" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">28.329 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -36.6%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47952860.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_YrYbkbkha9u2Zt2vWDGRANjyEL2TLZ8NBmJZFcfTzdd3pNFaWJnB6Os7ldDU-_ZF4L_xC3O6LcLU-Xv6ptp1EyCn0" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">28.383 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -36.9%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47952150.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_bfm6ymAWLFYFDtA9QwDvuTG-1EGKxo5UFUbP9CfvDDgWXdV-bKsOVsPdW4cIxdpCDmVWWqxcvnHFX0sVVmhy6vSNs" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">29.456 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -42.0%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47952298.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_bNatDl-35AVclreM4qzql61ovWwRfg76xqt44AJpz___1Z17VEHDL5F1SdkZ2pYpE6zP5r96aA-N65ZFw7gEY9pcs" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:17">
-        <span>17</span></div></td>
-      <td>
-        <div class="pr">31.334 €</div>
-        <div class="fv">stima 20.738 € · <span class="b r">sopra -51.1%</span></div>
-        <div class="chips"></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47952323.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_YMOtoJZ5SG8G-Uo7jmLKBiKwtRRbgnodKwlw7R5slC2ifFZDqCFT6qak1Y3NxG-xSWKm8tybOU4N7qsm_hPFVi9Fo" target="_blank" rel="noopener">→</a></td>
-    </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:16">
-        <span>16</span></div></td>
-      <td>
-        <div class="pr">22.405 €</div>
-        <div class="fv">stima 20.129 € · <span class="b r">sopra -11.3%</span></div>
-        <div class="chips"><span class="chip">2019</span></div>
-        <div class="src">chrono24</div>
-      </td>
-      <td class="go"><a href="https://www.chrono24.it/rolex/gmt-master-ii--id47857408.htm?eeid=PlU%2Bl1HrXZcG%2BjK6tLdKc0p7VUjr7oCbWx4D&amp;ikcampaign=feat-SavedSearch&amp;ikcontent=SearchResults&amp;ikmedium=user-mail&amp;iksource=c24sm&amp;ikterm=AdImageLink&amp;recid=ATsf2_YQLsX0ZTeH_5glx11SfcFW2zWoIxOk39ADZFIqn57XeHmYbpqR4Krc1_heXq7sgjE17U8KXL6M935IC-nHRCM4dnQ" target="_blank" rel="noopener">→</a></td>
-    </tr></tbody></table>
+    <section class="watch">
+      <h2 class="wname">Zenith Elite Ultra Thin</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">10.000 €</div>
+          <div class="s">0 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">—</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
+
+    <section class="watch">
+      <h2 class="wname">Vacheron Constantin Historiques 222</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">95.000 €</div>
+          <div class="s">0 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">—</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
+
+    <section class="watch">
+      <h2 class="wname">Vacheron Constantin Overseas</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">30.000 €</div>
+          <div class="s">2 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">43.500 €</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
+
+    <section class="watch">
+      <h2 class="wname">Audemars Piguet Royal Oak 37</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">32.000 €</div>
+          <div class="s">0 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">—</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
+
+    <section class="watch">
+      <h2 class="wname">Zenith Chronomaster Revival A384</h2>
+      <div class="grid">
+        <div class="kpi"><div class="l">Indice di mercato</div>
+          <div class="v">7.000 €</div>
+          <div class="s">0 annunci nel campione</div></div>
+        <div class="kpi"><div class="l">Mediana listini</div>
+          <div class="v">—</div>
+          <div class="s">prezzi non normalizzati</div></div>
+        <div class="kpi"><div class="l">Più economico</div>
+          <div class="v">—</div>
+          <div class="s">fra gli annunci attivi</div></div>
+        <div class="kpi"><div class="l">Sotto mercato</div>
+          <div class="v">0</div>
+          <div class="s">su 0 attivi</div></div>
+        <div class="kpi"><div class="l">Miglior punteggio</div>
+          <div class="v">0<span class="pct">/100</span></div>
+          <div class="s">a —</div></div>
+      </div>
+      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
+      <canvas class="chart" data-series='[]'></canvas>
+      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
+    </section>
 
   <footer>
     Dati raccolti automaticamente da fonti pubbliche e dagli alert email dei
     marketplace. L'“indice di mercato” è una stima statistica costruita sugli
-    annunci osservati (prezzi richiesti, non prezzi di transazione): è un
+    annunci osservati — prezzi richiesti, non prezzi di transazione. È un
     indicatore, non una valutazione peritale, e non costituisce consulenza
-    all'acquisto o all'investimento.
+    all'acquisto o all'investimento. Nessun punteggio dice nulla
+    sull'autenticità dell'orologio o sull'affidabilità del venditore.
   </footer>
 </div>
 <script>
-  if (!document.getElementById('note').textContent.trim())
-    document.getElementById('note').style.display = 'none';
-
-  const data = [{"t": "2026-08-07", "median": 20999.0, "index": 26947.0}, {"t": "2026-08-08", "median": 22000.0, "index": 26947.0}, {"t": "2026-08-09", "median": 22000.0, "index": 27343.0}, {"t": "2026-08-10", "median": 21500.0, "index": 27210.0}, {"t": "2026-08-11", "median": 21500.0, "index": 27186.0}, {"t": "2026-08-12", "median": 22000.0, "index": 27295.0}, {"t": "2026-08-13", "median": 22000.0, "index": 27343.0}, {"t": "2026-08-14", "median": 22026.0, "index": 27571.0}];
-  const c = document.getElementById('chart');
-  const dpr = window.devicePixelRatio || 1;
-  c.width = c.clientWidth * dpr; c.height = 180 * dpr;
-  const x = c.getContext('2d'); x.scale(dpr, dpr);
-  const W = c.clientWidth, H = 180, P = 26;
-  if (data.length < 2) {
-    x.fillStyle = '#5f708c'; x.font = '13px -apple-system,sans-serif';
-    x.fillText('Servono almeno due rilevazioni per il grafico.', P, H / 2);
-  } else {
-    const vals = data.map(d => d.median);
-    const lo = Math.min(...vals) * 0.99, hi = Math.max(...vals) * 1.01;
-    const px = i => P + i * (W - 2 * P) / (data.length - 1);
-    const py = v => H - P - (v - lo) / (hi - lo) * (H - 2 * P);
-    const grad = x.createLinearGradient(0, 0, 0, H);
+  document.querySelectorAll('canvas.chart').forEach(function (c) {
+    var data = JSON.parse(c.dataset.series || '[]');
+    var dpr = window.devicePixelRatio || 1;
+    c.width = c.clientWidth * dpr; c.height = 150 * dpr;
+    var x = c.getContext('2d'); x.scale(dpr, dpr);
+    var W = c.clientWidth, H = 150, P = 26;
+    if (data.length < 2) {
+      x.fillStyle = '#5f708c'; x.font = '13px -apple-system,sans-serif';
+      x.fillText('Servono almeno due rilevazioni per il grafico.', P, H / 2);
+      return;
+    }
+    var vals = data.map(function (d) { return d.median; });
+    var lo = Math.min.apply(null, vals) * 0.99;
+    var hi = Math.max.apply(null, vals) * 1.01;
+    var px = function (i) { return P + i * (W - 2 * P) / (data.length - 1); };
+    var py = function (v) { return H - P - (v - lo) / (hi - lo) * (H - 2 * P); };
+    var grad = x.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, 'rgba(56,189,248,.35)');
     grad.addColorStop(1, 'rgba(56,189,248,0)');
     x.beginPath(); x.moveTo(px(0), py(vals[0]));
-    vals.forEach((v, i) => x.lineTo(px(i), py(v)));
+    vals.forEach(function (v, i) { x.lineTo(px(i), py(v)); });
     x.lineTo(px(vals.length - 1), H - P); x.lineTo(px(0), H - P); x.closePath();
     x.fillStyle = grad; x.fill();
     x.beginPath(); x.moveTo(px(0), py(vals[0]));
-    vals.forEach((v, i) => x.lineTo(px(i), py(v)));
+    vals.forEach(function (v, i) { x.lineTo(px(i), py(v)); });
     x.strokeStyle = '#38bdf8'; x.lineWidth = 2; x.stroke();
     x.fillStyle = '#8fa0bb'; x.font = '11px -apple-system,sans-serif';
     x.fillText(Math.round(hi).toLocaleString('it-IT') + ' €', 4, 12);
     x.fillText(Math.round(lo).toLocaleString('it-IT') + ' €', 4, H - 6);
-  }
+  });
 </script>
 </body></html>

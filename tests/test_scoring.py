@@ -9,7 +9,14 @@ from radar.fairvalue import FairValueEngine  # noqa: E402
 from radar.models import Listing         # noqa: E402
 from radar.scorer import Scorer, stars   # noqa: E402
 
-CFG = Config.load(Path(__file__).resolve().parent.parent / "config.yaml")
+# Un orologio di prova, per non dipendere dalla configurazione di produzione.
+_REALE = Config.load(Path(__file__).resolve().parent.parent / "config.yaml")
+CFG = Config({**_REALE.raw, "watches": [{
+    "id": "pepsi-test", "brand": "Rolex", "model": "GMT-Master II",
+    "references": ["126710BLRO"],
+    "model_keywords": ["GMT-Master", "GMT", "Pepsi"],
+    "exclude_keywords": ["BLNR", "Batman"],
+}]}).watches[0]
 
 
 def mk(**kw) -> Listing:

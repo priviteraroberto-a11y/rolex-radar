@@ -13,11 +13,13 @@ import argparse
 import logging
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Optional
+from urllib.parse import quote
 
 from . import dashboard as dash
 from . import extract, sources
-from .config import Config
+from .config import Config, WatchView
 from .db import Database
 from .fairvalue import FairValueEngine
 from .fetch import Fetcher
@@ -43,12 +45,44 @@ class Context:
 # raccolta
 # =============================================================================
 
-def collect(cfg: Config, ctx: Context) -> tuple[list[Listing], list[str]]:
+def expand_urls(src_cfg: dict, watch: WatchView) -> dict:
+    """Costruisce gli URL di ricerca di questa fonte per questo orologio.
+
+    Il segnaposto è `{q}`: viene sostituito con ogni termine di ricerca
+    dell'orologio (`search_terms`, o le referenze se non specificati).
+
+    Serve perché le referenze non sono tutte uguali: `126710BLRO` si cerca
+    bene per intero, ma `310.30.42.50.01.002` di uno Speedmaster va cercato
+    come "Speedmaster Moonwatch" — nessun motore di ricerca di un negozio
+    trova una stringa con sei gruppi di cifre puntate.
+    """
+    terms = watch.watch.get("search_terms") or watch.references
+    urls: list[str] = []
+    for tpl in src_cfg.get("start_urls", []):
+        if "{" not in tpl:
+            urls.append(tpl)
+            continue
+        for term in terms:
+            try:
+                urls.append(tpl.format(q=quote(str(term)), ref=term,
+                                       ref6=str(term)[:6]))
+            except (KeyError, IndexError):
+                log.warning("segnaposto sconosciuto in %s", tpl)
+
+    extra = (watch.watch.get("extra_urls") or {}).get(src_cfg.get("name"), [])
+    urls.extend(extra)
+    return {**src_cfg, "start_urls": list(dict.fromkeys(urls))}
+
+
+def collect(cfg: Config, ctx: Context,
+            watch: WatchView | None = None) -> tuple[list[Listing], list[str]]:
     """Ritorna (annunci grezzi, nomi delle fonti che hanno risposto)."""
     all_listings: list[Listing] = []
     healthy: list[str] = []
 
     for src_cfg in cfg.sources:
+        if watch is not None:
+            src_cfg = expand_urls(src_cfg, watch)
         name = src_cfg.get("name", "?")
         try:
             source = sources.build(src_cfg, ctx)
@@ -70,15 +104,15 @@ def collect(cfg: Config, ctx: Context) -> tuple[list[Listing], list[str]]:
     return all_listings, healthy
 
 
-def reject_reason(l: Listing, cfg: Config) -> Optional[str]:
+def reject_reason(l: Listing, cfg) -> Optional[str]:
     """Perché questo annuncio non ci interessa? None = va tenuto.
 
     Tenere la logica di scarto in un posto solo serve a due cose: evitare che
     `check` e `inspect` divergano, e poter spiegare all'utente cosa è successo.
     """
     wanted = cfg.references
-    keywords = cfg.get("watch.model_keywords", [])
-    excluded = cfg.get("watch.exclude_keywords", [])
+    keywords = getattr(cfg, "model_keywords", None) or cfg.get("watch.model_keywords", [])
+    excluded = getattr(cfg, "exclude_keywords", None) or cfg.get("watch.exclude_keywords", [])
     hf = cfg.get("hard_filters", {})
     lo = float(hf.get("absolute_min_price_eur", 0))
     hi = float(hf.get("absolute_max_price_eur", 10**9))
@@ -105,7 +139,7 @@ def reject_reason(l: Listing, cfg: Config) -> Optional[str]:
     return None
 
 
-def filter_relevant(listings: list[Listing], cfg: Config) -> list[Listing]:
+def filter_relevant(listings: list[Listing], cfg) -> list[Listing]:
     """L'unico filtro duro: la referenza. Più i limiti di sanità sul prezzo."""
     # Lo stesso annuncio può arrivare da due pagine della stessa fonte (una
     # categoria e una ricerca) con dettagli diversi. Non basta scartare il
@@ -136,38 +170,42 @@ def _richness(l: Listing) -> int:
 # comandi
 # =============================================================================
 
-def cmd_check(args) -> int:
-    cfg = Config.load(args.config)
-    ctx = Context(cfg, Fetcher(cfg.get("http", {})))
-    db = Database(args.db)
-
+def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
+                    args) -> tuple[dict, list]:
+    """Un giro completo per UN orologio. Ritorna (mercato, decisioni)."""
+    log.info("")
+    log.info("═══ %s  %s", watch.label, ", ".join(watch.references))
     log.info("── raccolta ──────────────────────────────────────────")
-    raw, healthy = collect(cfg, ctx)
-    listings = filter_relevant(raw, cfg)
+
+    raw, healthy = collect(cfg, ctx, watch)
+    listings = filter_relevant(raw, watch)
     log.info("%d annunci grezzi → %d pertinenti", len(raw), len(listings))
 
-    # Il fair value si basa sullo storico + su ciò che vediamo adesso.
-    comparables = db.comparables(cfg.references, int(cfg.get("fair_value.lookback_days", 60)))
+    # Il fair value di questo orologio guarda solo le SUE referenze: mescolare
+    # un Daytona con un GMT produrrebbe una mediana priva di significato.
+    lookback = int(watch.get("fair_value.lookback_days", 60))
+    comparables = db.comparables(watch.references, lookback)
     comparables += [
         {"price_eur": l.price_eur, "year": l.year, "condition": l.condition,
          "bracelet": l.bracelet, "full_set": _i(l.full_set),
          "warranty_region": l.warranty_region, "never_polished": _i(l.never_polished)}
         for l in listings if l.price_eur
     ]
-    engine = FairValueEngine(cfg, comparables)
+    engine = FairValueEngine(watch, comparables)
     market = engine.summary()
-    log.info("── mercato ───────────────────────────────────────────")
+    market["label"] = watch.label
+    market["watch_id"] = watch.id
     log.info("indice %s € su %d campioni (%s)", f"{market['index']:,.0f}",
              market["samples"],
              "data-driven" if market["data_driven"] else "stima di partenza")
 
-    scorer = Scorer(cfg)
+    scorer = Scorer(watch)
     scored: list[tuple[Listing, dict]] = []
     for l in listings:
         engine.evaluate(l)
         scorer.score(l)
-        change = db.upsert(l) if not args.dry_run else {"is_new": True, "old_price": None,
-                                                        "old_score": 0}
+        change = (db.upsert(l, watch.id) if not args.dry_run
+                  else {"is_new": True, "old_price": None, "old_score": 0})
         scored.append((l, change))
 
     scored.sort(key=lambda t: -t[0].score)
@@ -177,42 +215,108 @@ def cmd_check(args) -> int:
                  f"{l.year or '????'}", l.url[:70])
 
     if not args.dry_run:
-        closed = db.mark_inactive_except([l.key for l in listings], healthy)
+        closed = db.mark_inactive_except([l.key for l in listings], healthy, watch.id)
         if closed:
             log.info("%d annunci non più online", closed)
         db.save_market_snapshot(
-            cfg.references[0] if cfg.references else "?",
-            market["samples"], market["median_raw"], market["p25"], market["index"],
+            watch.references[0] if watch.references else "?",
+            market["samples"], market["median_raw"], market["p25"],
+            market["index"], watch.id,
         )
         for name in healthy:
             db.log_run(name, True, len(listings))
 
-    log.info("── notifiche ─────────────────────────────────────────")
-    decisions = decide_notifications(scored, cfg, engine.is_underpriced, force=args.force)
+    decisions = decide_notifications(scored, watch, engine.is_underpriced,
+                                     force=args.force)
     log.info("%d notifiche da inviare", len(decisions))
+    return market, decisions
+
+
+def select_watches(cfg: Config, args) -> tuple[list, str]:
+    """Sceglie quali orologi controllare in questo giro.
+
+    Con nove orologi e dieci fonti un giro solo diventa lungo. La rotazione
+    divide gli orologi in gruppi e ne controlla uno per volta, alternandoli:
+    ogni orologio viene guardato ogni due giri, cioè comunque due volte al
+    giorno. Gli orologi senza gruppo (o con `group: always`) restano in ogni
+    giro — è dove metti quelli che non vuoi perdere di vista.
+    """
+    watches = cfg.watches
+    if getattr(args, "all_watches", False) or not cfg.get("rotation.enabled", False):
+        return watches, "tutti"
+
+    groups = [str(g) for g in (cfg.get("rotation.groups") or [])]
+    if not groups:
+        ordered = [w.watch.get("group") for w in watches if w.watch.get("group")]
+        groups = sorted(set(ordered) - {"always"})
+    if not groups:
+        return watches, "tutti"
+
+    if getattr(args, "group", None):
+        chosen = args.group
+    else:
+        # fascia di 4 ore: i giri delle 8/12/16/20 si alternano da soli
+        slot = int(datetime.now(timezone.utc).timestamp() // (4 * 3600))
+        chosen = groups[slot % len(groups)]
+
+    picked = [w for w in watches
+              if w.watch.get("group") in (chosen, "always", None)]
+    return picked, chosen
+
+
+def cmd_check(args) -> int:
+    cfg = Config.load(args.config)
+    ctx = Context(cfg, Fetcher(cfg.get("http", {})))
+    db = Database(args.db)
+
+    if not cfg.watches:
+        log.error("Nessun orologio configurato: manca la sezione `watches:`")
+        return 1
+    watches, gruppo = select_watches(cfg, args)
+    if not watches:
+        log.warning("Il gruppo '%s' non contiene orologi: niente da fare", gruppo)
+        return 0
+    log.info("Gruppo di turno: %s  (%d di %d orologi)",
+             gruppo, len(watches), len(cfg.watches))
+    log.info("In questo giro: %s", ", ".join(w.label for w in watches))
+
+    markets: list[dict] = []
+    all_decisions: list = []
+    for watch in watches:
+        try:
+            market, decisions = check_one_watch(watch, cfg, ctx, db, args)
+        except Exception as exc:
+            # Un orologio che esplode non deve fermare gli altri.
+            log.error("[%s] giro fallito: %s: %s", watch.id, type(exc).__name__, exc)
+            continue
+        markets.append(market)
+        all_decisions.extend(decisions)
+
+    log.info("")
+    log.info("── rete ──────────────────────────────────────────────")
+    log.info("%s", ctx.fetcher.stats())
+    log.info("── notifiche ─────────────────────────────────────────")
+    log.info("%d notifiche in totale", len(all_decisions))
 
     if args.dry_run:
-        for d in decisions:
+        for d in all_decisions:
             log.info("  [DRY] %-12s %3d/100  %s", d.reason, d.listing.score, d.headline)
     else:
-        # Un problema di notifica non deve mai far fallire il giro: lo storico
-        # e la dashboard valgono comunque, e un run fallito significa DB non
-        # salvato, quindi notifiche duplicate al giro successivo.
         try:
             tg = TelegramNotifier()
-            for d in decisions:
+            for d in all_decisions:
                 if tg.send(d):
                     db.log_notification(d.listing.key, d.reason, d.listing.price_eur,
                                         d.listing.score)
         except Exception as exc:
             log.error("invio Telegram fallito: %s: %s", type(exc).__name__, exc)
         try:
-            if decisions:
-                EmailNotifier().send_digest(decisions, market)
+            if all_decisions:
+                EmailNotifier().send_digest(all_decisions, markets[0] if markets else {})
         except Exception as exc:
             log.error("invio email fallito: %s: %s", type(exc).__name__, exc)
 
-    path = dash.build(db, market, args.dashboard)
+    path = dash.build(db, markets, args.dashboard)
     log.info("dashboard → %s", path)
     db.close()
     return 0
@@ -223,6 +327,7 @@ def cmd_probe(args) -> int:
     cfg = Config.load(args.config)
     ctx = Context(cfg, Fetcher(cfg.get("http", {})))
 
+    watches = cfg.watches
     print("\n  FONTE                 STATO         ANNUNCI  DETTAGLIO")
     print("  " + "─" * 106)
     usable = 0
@@ -231,15 +336,18 @@ def cmd_probe(args) -> int:
         if not src_cfg.get("enabled"):
             print(f"  {name:<21} {'spenta':<13} {'—':>7}  enabled: false")
             continue
-        try:
-            result = sources.build(src_cfg, ctx).collect()
-        except Exception as exc:
-            print(f"  {name:<21} {'ERRORE':<13} {'—':>7}  {type(exc).__name__}: {exc}")
+        relevant, result = [], None
+        for w in watches:
+            try:
+                result = sources.build(expand_urls(src_cfg, w), ctx).collect()
+            except Exception as exc:
+                print(f"  {name:<21} {'ERRORE':<13} {'—':>7}  {type(exc).__name__}: {exc}")
+                result = None
+                break
+            relevant += filter_relevant(
+                [extract.enrich(l, src_cfg) for l in result.listings], w)
+        if result is None:
             continue
-
-        relevant = filter_relevant(
-            [extract.enrich(l, src_cfg) for l in result.listings], cfg
-        )
         if result.ok and relevant:
             state, usable = "OK", usable + 1
         elif result.ok:
@@ -275,8 +383,13 @@ def cmd_inspect(args) -> int:
 
     for src_cfg in targets:
         name = src_cfg.get("name", "?")
+        watch = cfg.watches[0] if cfg.watches else None
+        if args.watch:
+            match = [w for w in cfg.watches if w.id == args.watch]
+            watch = match[0] if match else watch
         try:
-            result = sources.build(src_cfg, ctx).collect()
+            expanded = expand_urls(src_cfg, watch) if watch else src_cfg
+            result = sources.build(expanded, ctx).collect()
         except Exception as exc:
             print(f"\n=== {name}: eccezione {type(exc).__name__}: {exc}")
             continue
@@ -296,7 +409,7 @@ def cmd_inspect(args) -> int:
 
         for i, l in enumerate(result.listings, 1):
             extract.enrich(l, src_cfg)
-            reason = reject_reason(l, cfg)
+            reason = reject_reason(l, watch or cfg)
             mark = "TENUTO " if reason is None else "scartato"
             price = f"{l.price_eur:,.0f} EUR" if l.price_eur else "prezzo n/d"
             print(f"\n  [{i}] {mark}  {price}")
@@ -316,9 +429,13 @@ def cmd_inspect(args) -> int:
 def cmd_dashboard(args) -> int:
     cfg = Config.load(args.config)
     db = Database(args.db)
-    comparables = db.comparables(cfg.references, int(cfg.get("fair_value.lookback_days", 60)))
-    engine = FairValueEngine(cfg, comparables)
-    path = dash.build(db, engine.summary(), args.dashboard)
+    markets = []
+    for w in cfg.watches:
+        comps = db.comparables(w.references, int(w.get("fair_value.lookback_days", 60)))
+        m = FairValueEngine(w, comps).summary()
+        m["label"], m["watch_id"] = w.label, w.id
+        markets.append(m)
+    path = dash.build(db, markets, args.dashboard)
     print(f"dashboard → {path}")
     db.close()
     return 0
@@ -372,6 +489,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dashboard", default="docs/index.html")
     p.add_argument("--dry-run", action="store_true", help="non scrive nulla, non notifica")
     p.add_argument("--force", action="store_true", help="ignora le ore di silenzio")
+    p.add_argument("--group", default=None,
+                   help="forza un gruppo della rotazione (es. a)")
+    p.add_argument("--all-watches", action="store_true",
+                   help="ignora la rotazione e controlla tutti gli orologi")
+    p.add_argument("--watch", default=None,
+                   help="id dell'orologio (solo per inspect)")
     p.add_argument("--verbose", "-v", action="store_true",
                    help="mostra anche il testo grezzo (inspect)")
     args = p.parse_args(argv)

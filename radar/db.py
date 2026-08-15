@@ -12,6 +12,7 @@ from .models import Listing
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS listings (
     key             TEXT PRIMARY KEY,
+    watch_id        TEXT,
     source          TEXT NOT NULL,
     url             TEXT NOT NULL,
     title           TEXT,
@@ -53,12 +54,14 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE TABLE IF NOT EXISTS market_snapshots (
-    ts          TEXT PRIMARY KEY,
+    ts          TEXT NOT NULL,
+    watch_id    TEXT NOT NULL DEFAULT '',
     reference   TEXT,
     n_listings  INTEGER,
     median_eur  REAL,
     p25_eur     REAL,
-    index_value REAL
+    index_value REAL,
+    PRIMARY KEY (ts, watch_id)
 );
 
 CREATE TABLE IF NOT EXISTS run_log (
@@ -74,6 +77,9 @@ CREATE INDEX IF NOT EXISTS idx_price_history_ts ON price_history(ts);
 """
 
 
+DEFAULT_WATCH_ID = "pepsi"
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -84,7 +90,28 @@ class Database:
         self.conn = sqlite3.connect(self.path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        self._migrate()
         self.conn.commit()
+
+    def _migrate(self) -> None:
+        """Aggiunge le colonne nuove ai database gia' esistenti.
+
+        Serve a non buttare via lo storico quando il sistema evolve: il
+        database del Pepsi vive da prima che esistesse il multi-orologio.
+        """
+        cur = self.conn.execute("PRAGMA table_info(listings)")
+        cols = {r[1] for r in cur.fetchall()}
+        if "watch_id" not in cols:
+            self.conn.execute("ALTER TABLE listings ADD COLUMN watch_id TEXT")
+            # gli annunci storici sono tutti del primo orologio monitorato
+            self.conn.execute(
+                "UPDATE listings SET watch_id = ? WHERE watch_id IS NULL",
+                (DEFAULT_WATCH_ID,))
+        cur = self.conn.execute("PRAGMA table_info(market_snapshots)")
+        cols = {r[1] for r in cur.fetchall()}
+        if "watch_id" not in cols:
+            self.conn.execute(
+                "ALTER TABLE market_snapshots ADD COLUMN watch_id TEXT DEFAULT ''")
 
     def close(self) -> None:
         self.conn.close()
@@ -109,10 +136,15 @@ class Database:
         ).fetchall()
         return [dict(r) for r in rows]
 
-    def active_listings(self) -> list[dict]:
-        rows = self.conn.execute(
-            "SELECT * FROM listings WHERE active = 1 ORDER BY score DESC, price_eur ASC"
-        ).fetchall()
+    def active_listings(self, watch_id: str | None = None) -> list[dict]:
+        if watch_id is None:
+            rows = self.conn.execute(
+                "SELECT * FROM listings WHERE active = 1 "
+                "ORDER BY score DESC, price_eur ASC").fetchall()
+        else:
+            rows = self.conn.execute(
+                "SELECT * FROM listings WHERE active = 1 AND watch_id = ? "
+                "ORDER BY score DESC, price_eur ASC", (watch_id,)).fetchall()
         return [dict(r) for r in rows]
 
     def price_series(self, key: str) -> list[tuple[str, float]]:
@@ -121,10 +153,15 @@ class Database:
         ).fetchall()
         return [(r["ts"], r["price_eur"]) for r in rows]
 
-    def market_series(self, limit: int = 180) -> list[dict]:
-        rows = self.conn.execute(
-            "SELECT * FROM market_snapshots ORDER BY ts DESC LIMIT ?", (limit,)
-        ).fetchall()
+    def market_series(self, watch_id: str | None = None, limit: int = 180) -> list[dict]:
+        if watch_id is None:
+            rows = self.conn.execute(
+                "SELECT * FROM market_snapshots ORDER BY ts DESC LIMIT ?",
+                (limit,)).fetchall()
+        else:
+            rows = self.conn.execute(
+                "SELECT * FROM market_snapshots WHERE watch_id = ? "
+                "ORDER BY ts DESC LIMIT ?", (watch_id, limit)).fetchall()
         return [dict(r) for r in reversed(rows)]
 
     def recent_notifications(self, hours: int = 24) -> list[dict]:
@@ -136,7 +173,7 @@ class Database:
 
     # -- scrittura ------------------------------------------------------------
 
-    def upsert(self, listing: Listing) -> dict:
+    def upsert(self, listing: Listing, watch_id: str = DEFAULT_WATCH_ID) -> dict:
         """Inserisce o aggiorna. Ritorna il delta rispetto allo stato precedente."""
         now = _now()
         prev = self.get(listing.key)
@@ -148,7 +185,7 @@ class Database:
 
         payload = json.dumps(listing.to_dict(), ensure_ascii=False, default=str)
         values = (
-            listing.key, listing.source, listing.url, listing.title,
+            listing.key, watch_id, listing.source, listing.url, listing.title,
             listing.reference, listing.year, listing.bracelet, listing.condition,
             _b(listing.full_set), _b(listing.never_polished), listing.warranty_region,
             listing.seller, listing.seller_trust, listing.image,
@@ -159,22 +196,22 @@ class Database:
         if prev is None:
             self.conn.execute(
                 """INSERT INTO listings
-                   (key, source, url, title, reference, year, bracelet, condition,
-                    full_set, never_polished, warranty_region, seller, seller_trust,
-                    image, price_eur, fair_value_eur, delta_pct, score,
+                   (key, watch_id, source, url, title, reference, year, bracelet,
+                    condition, full_set, never_polished, warranty_region, seller,
+                    seller_trust, image, price_eur, fair_value_eur, delta_pct, score,
                     first_seen, last_seen, payload, active)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
                 values,
             )
         else:
             self.conn.execute(
                 """UPDATE listings SET
-                     source=?, url=?, title=?, reference=?, year=?, bracelet=?,
+                     watch_id=?, source=?, url=?, title=?, reference=?, year=?, bracelet=?,
                      condition=?, full_set=?, never_polished=?, warranty_region=?,
                      seller=?, seller_trust=?, image=?, price_eur=?, fair_value_eur=?,
                      delta_pct=?, score=?, last_seen=?, payload=?, active=1
                    WHERE key=?""",
-                (*values[1:18], now, payload, listing.key),
+                (*values[1:19], now, payload, listing.key),
             )
 
         # storico prezzi: una riga al giorno per annuncio
@@ -186,18 +223,28 @@ class Database:
         self.conn.commit()
         return change
 
-    def mark_inactive_except(self, seen_keys: Iterable[str], sources: Iterable[str]) -> int:
-        """Chiude gli annunci non più visti, ma solo per le fonti che hanno risposto."""
+    def mark_inactive_except(self, seen_keys: Iterable[str], sources: Iterable[str],
+                             watch_id: str | None = None) -> int:
+        """Chiude gli annunci non più visti.
+
+        Limitato alle fonti che hanno risposto E all'orologio appena
+        controllato: senza il vincolo sull'orologio, un giro che ne controlla
+        solo alcuni chiuderebbe gli annunci di tutti gli altri.
+        """
         seen = list(seen_keys)
         srcs = list(sources)
         if not srcs:
             return 0
         sp = ",".join("?" for _ in srcs)
         kp = ",".join("?" for _ in seen) or "''"
+        extra, params = "", []
+        if watch_id is not None:
+            extra = " AND watch_id = ?"
+            params = [watch_id]
         cur = self.conn.execute(
             f"UPDATE listings SET active = 0 "
-            f"WHERE active = 1 AND source IN ({sp}) AND key NOT IN ({kp})",
-            (*srcs, *seen),
+            f"WHERE active = 1 AND source IN ({sp}){extra} AND key NOT IN ({kp})",
+            (*srcs, *params, *seen),
         )
         self.conn.commit()
         return cur.rowcount
@@ -210,12 +257,13 @@ class Database:
         self.conn.commit()
 
     def save_market_snapshot(self, reference: str, n: int, median: float | None,
-                             p25: float | None, index_value: float | None) -> None:
+                             p25: float | None, index_value: float | None,
+                             watch_id: str = DEFAULT_WATCH_ID) -> None:
         self.conn.execute(
             """INSERT OR REPLACE INTO market_snapshots
-               (ts, reference, n_listings, median_eur, p25_eur, index_value)
-               VALUES (?,?,?,?,?,?)""",
-            (_now()[:10], reference, n, median, p25, index_value),
+               (ts, watch_id, reference, n_listings, median_eur, p25_eur, index_value)
+               VALUES (?,?,?,?,?,?,?)""",
+            (_now()[:10], watch_id, reference, n, median, p25, index_value),
         )
         self.conn.commit()
 

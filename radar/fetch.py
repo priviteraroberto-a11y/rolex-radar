@@ -26,6 +26,13 @@ class Fetcher:
         })
         self._robots: dict[str, Optional[robotparser.RobotFileParser]] = {}
         self._last_request = 0.0
+        # Con più orologi la stessa pagina viene chiesta più volte: la pagina
+        # catalogo di un dealer, e soprattutto le schede prodotto che ne
+        # derivano. Ricordarle per la durata del giro taglia il tempo e le
+        # richieste ai dealer di un fattore pari al numero di orologi.
+        self._cache: dict[str, tuple[Optional[str], str]] = {}
+        self.hits = 0
+        self.misses = 0
 
     # -- robots ---------------------------------------------------------------
 
@@ -60,6 +67,20 @@ class Fetcher:
 
     def get(self, url: str) -> tuple[Optional[str], str]:
         """Ritorna (html, motivo). html None significa fallimento."""
+        if url in self._cache:
+            self.hits += 1
+            return self._cache[url]
+        self.misses += 1
+        result = self._get_uncached(url)
+        self._cache[url] = result
+        return result
+
+    def stats(self) -> str:
+        tot = self.hits + self.misses
+        return (f"{self.misses} richieste, {self.hits} riusate dalla cache"
+                f" ({self.hits / tot * 100:.0f}% risparmiato)" if tot else "nessuna richiesta")
+
+    def _get_uncached(self, url: str) -> tuple[Optional[str], str]:
         if not self._allowed(url):
             return None, "bloccato da robots.txt"
 

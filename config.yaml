@@ -3,33 +3,224 @@
 # Il cuore del sistema. Il codice non si tocca: si tocca questo file.
 # =============================================================================
 
-watch:
-  brand: Rolex
-  model: GMT-Master II
-  # Riferimenti accettati. Tutto ciò che non matcha viene scartato PRIMA di ogni
-  # altra valutazione (è l'unico filtro davvero rigido del sistema).
-  references:
-    - "126710BLRO"
-  nickname: Pepsi
-  # Serve contro lo spam SEO: molti e-commerce infilano referenze popolari nelle
-  # descrizioni di prodotti che non c'entrano nulla. Se la referenza compare solo
-  # nel corpo dell'annuncio, il titolo deve almeno nominare il modello.
-  model_keywords:
-    - "GMT-Master"
-    - "GMT Master"
-    - "GMTMaster"
-    - "GMT"
-    - "Pepsi"
-  # Stesso modello, orologio diverso. Il Batman condivide le prime 6 cifre col
-  # Pepsi (126710BLNR vs 126710BLRO): senza questo elenco, un annuncio Batman
-  # che cita il Pepsi in una sezione "prodotti correlati" passerebbe.
-  exclude_keywords:
-    - "BLNR"
-    - "Batman"
-    - "Sprite"
-    - "Root Beer"
-    - "Rootbeer"
-    - "BLNR"
+# -----------------------------------------------------------------------------
+# ROTAZIONE
+# Otto orologi per dieci fonti fanno un giro lungo. La rotazione ne controlla
+# un gruppo per volta, alternandoli: ogni orologio viene guardato ogni due
+# giri, cioe' comunque due volte al giorno.
+#
+# Il gruppo di turno si sceglie da solo in base all'ora, quindi i giri delle
+# 8/12/16/20 alternano a - b - a - b senza bisogno di ricordare nulla.
+#
+# `group: always` = controllato a ogni giro, senza aspettare il turno.
+# -----------------------------------------------------------------------------
+rotation:
+  enabled: true
+  groups: [a, b]
+
+# -----------------------------------------------------------------------------
+# OROLOGI MONITORATI
+# Aggiungere un orologio = aggiungere una voce a questa lista.
+# Ogni voce eredita tutte le impostazioni globali piu' in basso, e ridefinisce
+# solo quelle che le servono. Cosi' un Vacheron puo' avere la sua banda di
+# prezzo e la sua curva di deprezzamento senza duplicare l'intero file.
+#
+# Campi obbligatori: id, references. Tutto il resto e' facoltativo.
+# -----------------------------------------------------------------------------
+watches:
+
+  # ---------------------------------------------------------------------------
+  # NOTA SUI PREZZI DI PARTENZA
+  # I `seed_price_eur` qui sotto sono STIME, non rilevazioni. Servono solo
+  # finché il database non raccoglie 10 annunci comparabili. Per gli orologi
+  # ancora sul seed ho alzato la soglia "sotto mercato" al 15%: con una stima
+  # incerta non ha senso gridare all'affare per uno scarto del 6%.
+  # Correggili quando vedi i primi prezzi veri in dashboard.
+  # ---------------------------------------------------------------------------
+
+  - id: monaco-gulf
+    group: b
+    brand: TAG Heuer
+    model: Monaco
+    nickname: Gulf
+    references: ["CAW211P.FC6356"]
+    search_terms: ["CAW211P", "Monaco Gulf"]
+    model_keywords: ["Monaco"]
+    exclude_keywords: ["Carrera", "Formula 1", "Aquaracer"]
+    hard_filters:
+      min_year: 2015
+      max_year: 2027
+      absolute_min_price_eur: 2000
+      absolute_max_price_eur: 14000
+    preferences:
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2022, 2023]
+      tolerated_years: [2020, 2021]
+    fair_value:
+      seed_price_eur: 5200
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+  - id: speedmaster
+    group: b
+    brand: Omega
+    model: Speedmaster Moonwatch Professional
+    references: ["310.30.42.50.01.002"]
+    search_terms: ["310.30.42.50.01.002", "Speedmaster Moonwatch"]
+    model_keywords: ["Speedmaster", "Moonwatch"]
+    exclude_keywords: ["Seamaster", "Constellation", "Snoopy", "Dark Side", "Reduced"]
+    hard_filters:
+      min_year: 2021
+      max_year: 2027
+      absolute_min_price_eur: 3000
+      absolute_max_price_eur: 14000
+    preferences:
+      target_years: [2025, 2026]
+      acceptable_years: [2023, 2024]
+      tolerated_years: [2021, 2022]
+    fair_value:
+      seed_price_eur: 6200
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+  - id: bb-chrono-flamingo
+    group: b
+    brand: Tudor
+    model: Black Bay Chrono
+    nickname: Flamingo Blue
+    # ATTENZIONE: la referenza che mi avevi dato (M7941A1A0NU) è del Black Bay
+    # 41 normale. Il Chrono Flamingo Blue è M79360N-0024.
+    references: ["M79360N-0024"]
+    search_terms: ["M79360N", "Black Bay Chrono"]
+    model_keywords: ["Black Bay", "Blackbay"]
+    exclude_keywords: ["Pelagos", "Ranger", "Royal", "GMT", "Fifty-Eight", "58"]
+    hard_filters:
+      min_year: 2024
+      max_year: 2027
+      absolute_min_price_eur: 2500
+      absolute_max_price_eur: 16000
+    preferences:
+      target_years: [2025, 2026]
+      acceptable_years: [2024]
+      tolerated_years: []
+    fair_value:
+      seed_price_eur: 7200
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+  - id: zenith-ultrathin
+    group: a
+    brand: Zenith
+    model: Elite Ultra Thin
+    references: ["18.2010.681/01.C498"]
+    search_terms: ["18.2010.681", "Zenith Elite"]
+    model_keywords: ["Elite", "Ultra Thin", "Ultrathin"]
+    exclude_keywords: ["Defy", "Pilot", "Chronomaster Sport"]
+    hard_filters:
+      min_year: 2015
+      max_year: 2027
+      absolute_min_price_eur: 4000
+      absolute_max_price_eur: 25000
+    preferences:
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2021, 2022, 2023]
+      tolerated_years: [2018, 2019, 2020]
+    # Referenza che conosco male: il prefisso 18 indica oro rosa, ma la stima
+    # è la più incerta di tutte. Correggila appena vedi un prezzo vero.
+    fair_value:
+      seed_price_eur: 10000
+    notifications:
+      always_notify_if_underpriced_pct: 20.0
+
+  - id: vc-222
+    group: a
+    brand: Vacheron Constantin
+    model: Historiques 222
+    references: ["4200H/222A-B934"]
+    search_terms: ["4200H", "Historiques 222"]
+    model_keywords: ["222", "Historiques"]
+    exclude_keywords: ["Overseas", "Patrimony", "Traditionnelle", "Fiftysix"]
+    hard_filters:
+      min_year: 2022
+      max_year: 2027
+      absolute_min_price_eur: 40000
+      absolute_max_price_eur: 200000
+    preferences:
+      target_years: [2025, 2026]
+      acceptable_years: [2023, 2024]
+      tolerated_years: [2022]
+    fair_value:
+      seed_price_eur: 95000
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+  - id: vc-overseas
+    group: a
+    brand: Vacheron Constantin
+    model: Overseas
+    references: ["4520V/210A-B128"]
+    search_terms: ["4520V", "Overseas"]
+    model_keywords: ["Overseas"]
+    exclude_keywords: ["222", "Patrimony", "Traditionnelle", "Fiftysix", "Malte"]
+    hard_filters:
+      min_year: 2016
+      max_year: 2027
+      absolute_min_price_eur: 12000
+      absolute_max_price_eur: 70000
+    preferences:
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2021, 2022, 2023]
+      tolerated_years: [2018, 2019, 2020]
+    fair_value:
+      seed_price_eur: 30000
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+  - id: royal-oak-15450
+    group: a
+    brand: Audemars Piguet
+    model: Royal Oak 37
+    references: ["15450ST.OO.1256ST.03"]
+    search_terms: ["15450ST", "Royal Oak 15450"]
+    model_keywords: ["Royal Oak"]
+    exclude_keywords: ["Offshore", "Concept", "Code 11.59", "Millenary"]
+    # Prodotto fino al 2021 circa: la finestra anni parte da molto prima.
+    hard_filters:
+      min_year: 2012
+      max_year: 2027
+      absolute_min_price_eur: 15000
+      absolute_max_price_eur: 80000
+    preferences:
+      target_years: [2019, 2020, 2021]
+      acceptable_years: [2016, 2017, 2018]
+      tolerated_years: [2013, 2014, 2015]
+    fair_value:
+      seed_price_eur: 32000
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+  - id: el-primero-a384
+    group: b
+    brand: Zenith
+    model: Chronomaster Revival A384
+    references: ["03.A384.400/3817.M3817"]
+    search_terms: ["A384", "El Primero A384"]
+    model_keywords: ["A384", "El Primero", "Chronomaster"]
+    exclude_keywords: ["Defy", "Pilot", "Elite", "Sport"]
+    hard_filters:
+      min_year: 2019
+      max_year: 2027
+      absolute_min_price_eur: 3000
+      absolute_max_price_eur: 18000
+    preferences:
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2022, 2023]
+      tolerated_years: [2019, 2020, 2021]
+    fair_value:
+      seed_price_eur: 7000
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
 
 # -----------------------------------------------------------------------------
 # FILTRI DURI — usali il meno possibile.
@@ -222,7 +413,7 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
-      - "https://www.pluswatch.it/?s=126710&post_type=product"
+      - "https://www.pluswatch.it/?s={q}&post_type=product"
     item_selector: "li.product, div.product, article.product"
     fields:
       title: "h2, h3, .woocommerce-loop-product__title"
@@ -241,7 +432,6 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
-      - "https://www.dellaroccagioielli.it/plm_10-rolex+gmt-master+.php"
       - "https://www.dellaroccagioielli.it/o_32-Rolex+Professionali.php"
     item_selector: "div.prodotto, div.box_prodotto, td.prodotto"
     fields:
@@ -258,7 +448,7 @@ sources:
     dealer: true
     seller_trust: 5
     start_urls:
-      - "https://shop.davidepedretti.com/?s=126710&post_type=product"
+      - "https://shop.davidepedretti.com/?s={q}&post_type=product"
     item_selector: "li.product, article.product, .product-item, .type-product"
     fields:
       title: "h2, h3, .woocommerce-loop-product__title, .product-item__title"
@@ -274,8 +464,7 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
-      - "https://www.conteorologi.it/rolex/gmt-master-ii/"
-      - "https://www.conteorologi.it/?s=126710BLRO&post_type=product"
+      - "https://www.conteorologi.it/?s={q}&post_type=product"
     item_selector: "li.product, .product, article.product, .type-product"
     fields:
       title: "h2, h3, .woocommerce-loop-product__title"
@@ -309,8 +498,8 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
-      - "https://www.gioielleriabonanno.it/?s=126710&post_type=product"
-      - "https://www.bonannovintage.it/?s=126710"
+      - "https://www.gioielleriabonanno.it/?s={q}&post_type=product"
+      - "https://www.bonannovintage.it/?s={q}"
     item_selector: "li.product, .product, article"
     fields:
       title: "h2, h3, .woocommerce-loop-product__title, .entry-title"
@@ -329,7 +518,7 @@ sources:
     start_urls:
       # La pagina /negozio/ portava 31 annunci grezzi, 0 pertinenti e 90
       # secondi di giro: la ricerca copre gia' tutto il catalogo.
-      - "https://edwatch.it/?s=126710&post_type=product"
+      - "https://edwatch.it/?s={q}&post_type=product"
     item_selector: "li.product, .product, article"
     fields:
       title: "h2, h3, .woocommerce-loop-product__title"
@@ -346,7 +535,7 @@ sources:
     dealer: true
     seller_trust: 3
     start_urls:
-      - "https://www.tempopreziosobologna.com/?s=126710"
+      - "https://www.tempopreziosobologna.com/?s={q}"
       - "https://www.tempopreziosobologna.com/orologi/"
       - "https://www.tempopreziosobologna.com/shop/"
     item_selector: "li.product, .product, article"
@@ -366,8 +555,7 @@ sources:
     dealer: true
     seller_trust: 3
     start_urls:
-      - "https://eorologi.com/?s=126710&post_type=product"
-      - "https://eorologi.com/modello-orologio/rolex-gmt-master/"
+      - "https://eorologi.com/?s={q}&post_type=product"
     item_selector: >
       li.product, .product, .type-product, article.product,
       .elementor-widget-woocommerce-products li, .products > li

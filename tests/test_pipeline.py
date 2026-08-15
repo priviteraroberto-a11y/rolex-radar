@@ -12,7 +12,23 @@ from radar.main import Context, filter_relevant         # noqa: E402
 from radar.scorer import Scorer                         # noqa: E402
 from radar.sources.html_source import HtmlSource        # noqa: E402
 
-CFG = Config.load(Path(__file__).resolve().parent.parent / "config.yaml")
+# I test non devono dipendere da QUALI orologi sono configurati in produzione:
+# altrimenti si rompono ogni volta che ne aggiungi o togli uno. Prendiamo le
+# impostazioni globali dal file vero (moltiplicatori, punteggi, soglie) e ci
+# mettiamo sopra un orologio di prova definito qui.
+_REALE = Config.load(Path(__file__).resolve().parent.parent / "config.yaml")
+
+PEPSI_DI_PROVA = {
+    "id": "pepsi-test", "brand": "Rolex", "model": "GMT-Master II",
+    "nickname": "Pepsi", "references": ["126710BLRO"],
+    "search_terms": ["126710"],
+    "model_keywords": ["GMT-Master", "GMT Master", "GMT", "Pepsi"],
+    "exclude_keywords": ["BLNR", "Batman", "Sprite", "Root Beer"],
+    "fair_value": {"seed_price_eur": 31000},
+}
+
+CFG = Config({**_REALE.raw, "watches": [PEPSI_DI_PROVA]})
+W = CFG.watches[0]
 
 
 class FakeFetcher:
@@ -115,7 +131,7 @@ def test_il_submariner_viene_scartato():
         "https://demo.it/orologio/sub": "<html><body>Rolex Submariner 126610LN</body></html>",
     })
     listings = [extract.enrich(l, SRC_CFG) for l in src.collect().listings]
-    relevant = filter_relevant(listings, CFG)
+    relevant = filter_relevant(listings, W)
     assert len(relevant) == 2
     assert all(l.reference == "126710BLRO" for l in relevant)
 
@@ -189,8 +205,8 @@ def test_giro_completo(tmp_path):
     )
 
     db = Database(tmp_path / "h.db")
-    engine = FairValueEngine(CFG, [])
-    scorer = Scorer(CFG)
+    engine = FairValueEngine(W, [])
+    scorer = Scorer(W)
 
     for l in listings:
         engine.evaluate(l)
@@ -204,9 +220,11 @@ def test_giro_completo(tmp_path):
     assert len(active) == 2
     assert all(0 <= a["score"] <= 100 for a in active)
 
-    out = dashboard.build(db, engine.summary(), tmp_path / "index.html")
+    market = engine.summary()
+    market["label"] = "Rolex GMT-Master II “Pepsi”"
+    out = dashboard.build(db, [market], tmp_path / "index.html")
     html = out.read_text(encoding="utf-8")
-    assert "126710BLRO" in html
+    assert "Pepsi" in html
     assert "33.900" in html and "28.400" in html
     assert "{" not in html.split("<script>")[0].split("<style>")[0]  # niente placeholder
     db.close()
@@ -214,7 +232,7 @@ def test_giro_completo(tmp_path):
 
 def test_dashboard_gestisce_database_vuoto(tmp_path):
     db = Database(tmp_path / "v.db")
-    engine = FairValueEngine(CFG, [])
+    engine = FairValueEngine(W, [])
     out = dashboard.build(db, engine.summary(), tmp_path / "index.html")
     assert "ROLEX RADAR" in out.read_text(encoding="utf-8")
     db.close()
@@ -230,25 +248,25 @@ def test_reject_reason_spiega_lo_scarto():
                  title="Rolex GMT-Master II 126710BLRO Pepsi",
                  raw_text="anno 2025 unworn jubilee", price_eur=31000.0)
     extract.enrich(ok, {})
-    assert reject_reason(ok, CFG) is None
+    assert reject_reason(ok, W) is None
 
     venduto = Listing(source="t", url="https://t.it/2",
                       title="Rolex GMT-Master II 126710BLRO Pepsi",
                       raw_text="VENDUTO anno 2025", price_eur=31000.0)
     extract.enrich(venduto, {})
-    assert "venduto" in reject_reason(venduto, CFG)
+    assert "venduto" in reject_reason(venduto, W)
 
     caro = Listing(source="t", url="https://t.it/3",
                    title="Rolex GMT-Master II 126710BLRO",
                    raw_text="anno 2025", price_eur=250000.0)
     extract.enrich(caro, {})
-    assert "prezzo fuori range" in reject_reason(caro, CFG)
+    assert "prezzo fuori range" in reject_reason(caro, W)
 
     altro = Listing(source="t", url="https://t.it/4",
                     title="Rolex Datejust 126234 Jubilee",
                     raw_text="scheda con 126710BLRO in fondo", price_eur=8000.0)
     extract.enrich(altro, {})
-    assert reject_reason(altro, CFG) is not None
+    assert reject_reason(altro, W) is not None
 
 
 def test_duplicato_vince_la_versione_piu_ricca():
@@ -266,7 +284,285 @@ def test_duplicato_vince_la_versione_piu_ricca():
         extract.enrich(l, {})
 
     for ordine in ((povero, ricco), (ricco, povero)):
-        out = filter_relevant(list(ordine), CFG)
+        out = filter_relevant(list(ordine), W)
         assert len(out) == 1
         assert out[0].price_eur == 20499.0, "ha vinto la versione senza prezzo"
         assert out[0].warranty_region == "IT"
+
+
+# =============================================================================
+# PIÙ OROLOGI
+# =============================================================================
+
+MULTI = {
+    "watches": [
+        {"id": "pepsi", "brand": "Rolex", "model": "GMT-Master II",
+         "nickname": "Pepsi", "references": ["126710BLRO"],
+         "model_keywords": ["GMT-Master", "GMT", "Pepsi"],
+         "exclude_keywords": ["BLNR", "Batman"],
+         "fair_value": {"seed_price_eur": 26900}},
+        {"id": "daytona", "brand": "Rolex", "model": "Daytona",
+         "references": ["116500LN"],
+         "model_keywords": ["Daytona"],
+         "fair_value": {"seed_price_eur": 32000},
+         "notifications": {"min_score": 90}},
+    ],
+    "fair_value": {"min_samples": 10, "lookback_days": 60,
+                   "multipliers": {"year": {"_default": 1.0}}},
+    "notifications": {"min_score": 78, "price_drop_pct": 2.0},
+    "scoring": {"weights": {"price_vs_fair": 40}},
+    "sources": [],
+}
+
+
+def _multi():
+    from radar.config import Config
+    return Config(MULTI)
+
+
+def test_due_orologi_configurati():
+    c = _multi()
+    assert [w.id for w in c.watches] == ["pepsi", "daytona"]
+    assert c.references == ["126710BLRO", "116500LN"]
+
+
+def test_ogni_orologio_ha_il_suo_prezzo_di_partenza():
+    pepsi, daytona = _multi().watches
+    assert pepsi.get("fair_value.seed_price_eur") == 26900
+    assert daytona.get("fair_value.seed_price_eur") == 32000
+
+
+def test_le_impostazioni_globali_vengono_ereditate():
+    pepsi, daytona = _multi().watches
+    # nessuno dei due definisce lookback_days: lo prendono dal globale
+    assert pepsi.get("fair_value.lookback_days") == 60
+    assert daytona.get("fair_value.lookback_days") == 60
+    # ma il Daytona ridefinisce la soglia di notifica
+    assert pepsi.get("notifications.min_score") == 78
+    assert daytona.get("notifications.min_score") == 90
+    # e la regola sul calo di prezzo resta comune
+    assert daytona.get("notifications.price_drop_pct") == 2.0
+
+
+def test_gli_orologi_non_si_contaminano():
+    """Un Daytona non deve mai passare il filtro del Pepsi, e viceversa."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    pepsi, daytona = _multi().watches
+
+    p = Listing(source="t", url="https://t.it/1",
+                title="Rolex GMT-Master II 126710BLRO Pepsi",
+                raw_text="anno 2025", price_eur=25000.0)
+    d = Listing(source="t", url="https://t.it/2",
+                title="Rolex Daytona 116500LN Panda",
+                raw_text="anno 2023", price_eur=33000.0)
+    for l in (p, d):
+        extract.enrich(l, {})
+
+    assert reject_reason(p, pepsi) is None
+    assert reject_reason(d, pepsi) is not None
+    assert reject_reason(d, daytona) is None
+    assert reject_reason(p, daytona) is not None
+
+
+def test_url_espansi_per_ogni_orologio():
+    from radar.main import expand_urls
+    pepsi, daytona = _multi().watches
+    src = {"name": "dealer",
+           "start_urls": ["https://d.it/?s={ref6}", "https://d.it/tutti-rolex"]}
+
+    assert expand_urls(src, pepsi)["start_urls"] == [
+        "https://d.it/?s=126710", "https://d.it/tutti-rolex"]
+    assert expand_urls(src, daytona)["start_urls"] == [
+        "https://d.it/?s=116500", "https://d.it/tutti-rolex"]
+
+
+def test_url_specifici_del_modello():
+    from radar.main import expand_urls
+    c = _multi()
+    w = c.watches[0]
+    w.watch["extra_urls"] = {"dealer": ["https://d.it/gmt-master/"]}
+    urls = expand_urls({"name": "dealer", "start_urls": ["https://d.it/?s={ref6}"]}, w)
+    assert urls["start_urls"] == ["https://d.it/?s=126710", "https://d.it/gmt-master/"]
+    # su un'altra fonte quegli URL non compaiono
+    altra = expand_urls({"name": "altro", "start_urls": ["https://a.it/?s={ref6}"]}, w)
+    assert altra["start_urls"] == ["https://a.it/?s=126710"]
+
+
+def test_database_separa_gli_orologi(tmp_path):
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "m.db")
+
+    p = Listing(source="t", url="https://t.it/p", reference="126710BLRO",
+                price_eur=25000.0, score=80)
+    d = Listing(source="t", url="https://t.it/d", reference="116500LN",
+                price_eur=33000.0, score=70)
+    db.upsert(p, "pepsi")
+    db.upsert(d, "daytona")
+
+    assert len(db.active_listings("pepsi")) == 1
+    assert len(db.active_listings("daytona")) == 1
+    assert len(db.active_listings()) == 2
+    assert db.active_listings("pepsi")[0]["reference"] == "126710BLRO"
+
+    db.save_market_snapshot("126710BLRO", 5, 26000, 24000, 26900, "pepsi")
+    db.save_market_snapshot("116500LN", 4, 33000, 31000, 32000, "daytona")
+    assert len(db.market_series("pepsi")) == 1
+    assert db.market_series("daytona")[0]["index_value"] == 32000
+    db.close()
+
+
+def test_dashboard_con_due_sezioni(tmp_path):
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "d.db")
+    db.upsert(Listing(source="t", url="https://t.it/p", reference="126710BLRO",
+                      price_eur=25000.0, score=80), "pepsi")
+    db.upsert(Listing(source="t", url="https://t.it/d", reference="116500LN",
+                      price_eur=33000.0, score=70), "daytona")
+
+    out = dashboard.build(db, [
+        {"watch_id": "pepsi", "label": "Rolex GMT-Master II “Pepsi”",
+         "index": 26900, "samples": 12, "data_driven": True, "median_raw": 26000},
+        {"watch_id": "daytona", "label": "Rolex Daytona",
+         "index": 32000, "samples": 3, "data_driven": False, "median_raw": None},
+    ], tmp_path / "index.html")
+    html = out.read_text(encoding="utf-8")
+
+    assert "2 orologi monitorati" in html
+    assert "Pepsi" in html and "Daytona" in html
+    assert "25.000" in html and "33.000" in html
+    # il Daytona ha pochi campioni: deve comparire l'avviso
+    assert "Stima di partenza" in html
+    db.close()
+
+
+def test_retrocompatibilita_configurazione_singola():
+    """Le configurazioni con `watch:` invece di `watches:` devono funzionare."""
+    from radar.config import Config
+    c = Config({"watch": {"id": "solo", "references": ["126710BLRO"]}})
+    assert len(c.watches) == 1
+    assert c.watches[0].references == ["126710BLRO"]
+
+
+def test_la_cache_evita_di_riscaricare_la_stessa_pagina():
+    """Con N orologi la stessa pagina veniva chiesta N volte."""
+    from radar.fetch import Fetcher
+
+    f = Fetcher({"delay_between_requests": 0})
+    chiamate = []
+
+    def finto(url):
+        chiamate.append(url)
+        return "<html>ok</html>", "ok"
+
+    f._get_uncached = finto
+    for _ in range(9):
+        assert f.get("https://d.it/catalogo")[0] == "<html>ok</html>"
+    f.get("https://d.it/altra")
+
+    assert chiamate == ["https://d.it/catalogo", "https://d.it/altra"]
+    assert f.misses == 2 and f.hits == 8
+
+
+# =============================================================================
+# ROTAZIONE DEI GRUPPI
+# =============================================================================
+
+ROT = {
+    "rotation": {"enabled": True, "groups": ["a", "b"]},
+    "watches": [
+        {"id": "sempre", "group": "always", "references": ["126710BLRO"]},
+        {"id": "uno", "group": "a", "references": ["4520V/210A-B128"]},
+        {"id": "due", "group": "b", "references": ["A384"]},
+        {"id": "senza-gruppo", "references": ["CAW211P"]},
+    ],
+}
+
+
+class _Args:
+    group = None
+    all_watches = False
+
+
+def _rot():
+    from radar.config import Config
+    return Config(ROT)
+
+
+def test_la_rotazione_alterna_i_gruppi():
+    from radar.main import select_watches
+    a = _Args(); a.group = "a"
+    b = _Args(); b.group = "b"
+    ids_a = [w.id for w in select_watches(_rot(), a)[0]]
+    ids_b = [w.id for w in select_watches(_rot(), b)[0]]
+    assert ids_a == ["sempre", "uno", "senza-gruppo"]
+    assert ids_b == ["sempre", "due", "senza-gruppo"]
+
+
+def test_always_e_senza_gruppo_ci_sono_sempre():
+    from radar.main import select_watches
+    for g in ("a", "b"):
+        args = _Args(); args.group = g
+        ids = [w.id for w in select_watches(_rot(), args)[0]]
+        assert "sempre" in ids, "un orologio 'always' deve essere in ogni giro"
+        assert "senza-gruppo" in ids, "senza gruppo = in ogni giro"
+
+
+def test_all_watches_ignora_la_rotazione():
+    from radar.main import select_watches
+    args = _Args(); args.all_watches = True
+    picked, nome = select_watches(_rot(), args)
+    assert len(picked) == 4 and nome == "tutti"
+
+
+def test_rotazione_spenta_controlla_tutto():
+    from radar.config import Config
+    from radar.main import select_watches
+    spenta = {**ROT, "rotation": {"enabled": False, "groups": ["a", "b"]}}
+    picked, nome = select_watches(Config(spenta), _Args())
+    assert len(picked) == 4 and nome == "tutti"
+
+
+def test_il_gruppo_dipende_dalla_fascia_oraria(monkeypatch):
+    """I giri delle 8/12/16/20 devono alternarsi da soli."""
+    import radar.main as m
+    from datetime import datetime, timezone
+
+    visti = []
+    for ora in (6, 10, 14, 18):
+        finto = datetime(2026, 8, 15, ora, 0, tzinfo=timezone.utc)
+
+        class FakeDT(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return finto
+
+        monkeypatch.setattr(m, "datetime", FakeDT)
+        visti.append(select_watches_group(m, _rot()))
+    assert visti == ["b", "a", "b", "a"], visti
+
+
+def select_watches_group(m, cfg):
+    return m.select_watches(cfg, _Args())[1]
+
+
+def test_un_gruppo_saltato_non_chiude_gli_annunci_degli_altri(tmp_path):
+    """Il bug che la rotazione avrebbe fatto emergere."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "r.db")
+
+    a = Listing(source="dealer", url="https://d.it/a", price_eur=30000.0)
+    b = Listing(source="dealer", url="https://d.it/b", price_eur=7000.0)
+    db.upsert(a, "vc-overseas")
+    db.upsert(b, "el-primero-a384")
+
+    # giro del gruppo A: vede solo il Vacheron, e non lo trova più
+    closed = db.mark_inactive_except([], ["dealer"], "vc-overseas")
+
+    assert closed == 1
+    assert [l["watch_id"] for l in db.active_listings()] == ["el-primero-a384"], \
+        "il giro di un orologio ha chiuso gli annunci di un altro"
+    db.close()
