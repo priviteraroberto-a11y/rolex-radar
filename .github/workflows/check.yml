@@ -15,6 +15,15 @@ on:
         description: "Ignora le ore di silenzio"
         type: boolean
         default: false
+      gruppo:
+        description: "Quale gruppo di orologi controllare"
+        type: choice
+        default: automatico
+        options:
+          - automatico     # decide l'ora, come nei giri programmati
+          - a              # Vacheron 222, Overseas, Royal Oak, Zenith Elite
+          - b              # Speedmaster, Monaco, Black Bay Chrono, Zenith A384
+          - tutti          # tutti e otto, ignora la rotazione
 
 concurrency:
   group: radar
@@ -51,10 +60,21 @@ jobs:
           SMTP_USER:          ${{ secrets.SMTP_USER }}
           SMTP_PASS:          ${{ secrets.SMTP_PASS }}
           REPORT_TO:          ${{ secrets.REPORT_TO }}
+          GRUPPO: ${{ inputs.gruppo }}
+          DRY:    ${{ inputs.dry_run }}
+          FORCE:  ${{ inputs.force }}
+        # Costruire gli argomenti nella shell invece che con le espressioni di
+        # GitHub: si legge, si corregge, e non si sbaglia una parentesi.
         run: |
-          python -m radar.main check \
-            ${{ inputs.dry_run && '--dry-run' || '' }} \
-            ${{ inputs.force && '--force' || '' }}
+          ARGS=""
+          [ "$DRY" = "true" ]   && ARGS="$ARGS --dry-run"
+          [ "$FORCE" = "true" ] && ARGS="$ARGS --force"
+          case "$GRUPPO" in
+            tutti) ARGS="$ARGS --all-watches" ;;
+            a|b)   ARGS="$ARGS --group $GRUPPO" ;;
+          esac
+          echo "Argomenti: ${ARGS:-nessuno (rotazione automatica)}"
+          python -m radar.main check $ARGS
 
       # always(): se il giro fallisce dopo aver notificato, senza questo il DB
       # non verrebbe salvato e al giro dopo riceveresti le stesse notifiche.

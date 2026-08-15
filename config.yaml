@@ -444,8 +444,13 @@ sources:
     imap_user_env: IMAP_USER
     imap_pass_env: IMAP_PASS
     mailbox: Radar
+    # Ogni mittente aggiunto qui va aggiunto ANCHE al filtro Gmail, altrimenti
+    # le mail finiscono in posta in arrivo e il sistema non le vede mai.
     from_contains:
       - chrono24
+      - subito           # privati italiani: l'unico canale che li copre
+      - ebay
+      - catawiki         # aste, molti venditori italiani
       - watchfinder
       - wristler
       - chronohunter
