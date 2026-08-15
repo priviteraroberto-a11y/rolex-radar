@@ -3,219 +3,311 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1120">
-<title>Rolex Radar</title>
+<title>Radar orologi</title>
 <style>
   :root {
     --bg:#0b1120; --card:#131c2e; --line:#233047; --tx:#e8eef8; --mut:#8fa0bb;
-    --g:#22c55e; --y:#eab308; --r:#f43f5e;
+    --g:#22c55e; --y:#eab308; --r:#f43f5e; --acc:#38bdf8;
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent }
   body { margin:0; background:var(--bg); color:var(--tx); font:15px/1.5
     -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     padding:env(safe-area-inset-top) 0 40px }
   .wrap { max-width:760px; margin:0 auto; padding:20px 16px }
+  a { color:inherit; text-decoration:none }
   h1 { font-size:20px; margin:2px 0; letter-spacing:-.01em }
   .eyebrow { font-size:11px; letter-spacing:.18em; color:var(--mut) }
-  .upd { font-size:12px; color:var(--mut); margin-bottom:8px }
-  .watch { border-top:1px solid var(--line); margin-top:26px; padding-top:20px }
-  .watch:first-of-type { border-top:0; margin-top:14px }
-  .wname { font-size:17px; margin:0 0 14px; letter-spacing:-.01em }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-    gap:10px; margin-bottom:16px }
-  .kpi { background:var(--card); border:1px solid var(--line); border-radius:14px;
-    padding:14px }
-  .kpi .l { font-size:11px; letter-spacing:.1em; color:var(--mut);
+  .upd { font-size:12px; color:var(--mut) }
+  .head-k { font-size:13px; color:var(--mut); margin:10px 0 18px }
+  .head-k b { color:var(--tx) }
+
+  /* foto / segnaposto */
+  .ph { width:44px; height:44px; border-radius:12px; object-fit:cover;
+    background:#1c2740; border:1px solid var(--line); flex:0 0 44px }
+  .ph-vuota { display:grid; place-items:center; font-size:13px; font-weight:700;
+    color:#7d90ae; letter-spacing:.04em }
+
+  /* sommario in cima */
+  .sum { background:var(--card); border:1px solid var(--line); border-radius:14px;
+    overflow:hidden; margin-bottom:22px }
+  .srow { display:flex; align-items:center; gap:11px; padding:10px 12px;
+    border-bottom:1px solid var(--line) }
+  .srow:last-child { border-bottom:0 }
+  .srow:active { background:#182338 }
+  .sname { flex:1; font-size:14px; font-weight:600; letter-spacing:-.01em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .sidx { font-size:13px; color:var(--mut); white-space:nowrap }
+  .sstat { font-size:11px; color:var(--mut); width:96px; text-align:right;
+    white-space:nowrap }
+  .sbest { font-size:12px; font-weight:700; color:var(--acc); width:24px;
+    text-align:right }
+  .occ { color:var(--g); font-weight:600 }
+  .mut { color:#5f708c }
+
+  /* sezioni richiudibili */
+  .watch { background:var(--card); border:1px solid var(--line);
+    border-radius:14px; margin-bottom:12px; overflow:hidden }
+  .watch > summary { display:flex; align-items:center; gap:12px; padding:12px;
+    cursor:pointer; list-style:none }
+  .watch > summary::-webkit-details-marker { display:none }
+  .watch > summary::after { content:"⌄"; color:var(--mut); font-size:18px;
+    margin-left:auto; transition:transform .15s }
+  .watch[open] > summary::after { transform:rotate(180deg) }
+  .wtxt { display:flex; flex-direction:column; min-width:0 }
+  .wname { font-size:15px; font-weight:650; letter-spacing:-.01em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .wsub { font-size:12px; color:var(--mut) }
+  .wbody { padding:0 12px 12px }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:10px; margin-bottom:14px }
+  .kpi { background:#182338; border:1px solid var(--line); border-radius:12px;
+    padding:12px }
+  .kpi .l { font-size:10px; letter-spacing:.1em; color:var(--mut);
     text-transform:uppercase }
-  .kpi .v { font-size:23px; font-weight:650; margin-top:4px; letter-spacing:-.02em }
-  .kpi .s { font-size:12px; color:var(--mut) }
-  .pct { font-size:14px; color:var(--mut) }
-  .note { background:#1e293b; border-left:3px solid var(--y); padding:10px 14px;
-    border-radius:0 8px 8px 0; font-size:13px; color:var(--mut); margin-bottom:14px }
+  .kpi .v { font-size:20px; font-weight:650; margin-top:3px; letter-spacing:-.02em }
+  .kpi .s { font-size:11px; color:var(--mut) }
+  .pct { font-size:13px; color:var(--mut) }
+  .note { background:#1e293b; border-left:3px solid var(--y); padding:9px 12px;
+    border-radius:0 8px 8px 0; font-size:12px; color:var(--mut); margin-bottom:12px }
+
   table { width:100%; border-collapse:collapse }
-  td { padding:14px 8px; border-bottom:1px solid var(--line); vertical-align:top }
-  .empty { color:var(--mut); font-size:13px; text-align:center }
-  .sc { width:58px }
-  .ring { width:44px; height:44px; border-radius:50%; display:grid; place-items:center;
-    background:conic-gradient(#38bdf8 calc(var(--v)*1%), #233047 0); font-size:13px;
+  td { padding:12px 6px; border-bottom:1px solid var(--line); vertical-align:top }
+  tr:last-child td { border-bottom:0 }
+  .empty { color:var(--mut); font-size:13px; text-align:center; padding:18px 0 }
+  .sc { width:54px }
+  .ring { width:42px; height:42px; border-radius:50%; display:grid; place-items:center;
+    background:conic-gradient(var(--acc) calc(var(--v)*1%), #233047 0); font-size:12px;
     font-weight:700 }
-  .ring span { width:34px; height:34px; border-radius:50%; background:var(--card);
+  .ring span { width:33px; height:33px; border-radius:50%; background:var(--card);
     display:grid; place-items:center }
-  .pr { font-size:17px; font-weight:650; letter-spacing:-.01em }
+  .pr { font-size:16px; font-weight:650; letter-spacing:-.01em }
   .fv { font-size:12px; color:var(--mut); margin-top:2px }
-  .chips { margin-top:7px }
+  .chips { margin-top:6px }
   .chip { display:inline-block; background:#1c2740; border:1px solid var(--line);
     color:#b8c6dd; border-radius:99px; padding:2px 9px; font-size:11px;
     margin:0 4px 4px 0 }
+  .chip:first-child { background:#14301f; border-color:#1d5236; color:#7ee2a8 }
   .src { font-size:11px; color:#5f708c; margin-top:4px }
   .b { font-weight:600 } .g { color:var(--g) } .y { color:var(--y) }
   .r { color:var(--r) } .n { color:var(--mut) }
-  .go a { color:#38bdf8; text-decoration:none; font-size:22px; padding:6px 4px }
-  canvas.chart { width:100%; height:150px; background:var(--card); border-radius:14px;
-    border:1px solid var(--line); padding:8px; margin-bottom:14px }
+  .go a { color:var(--acc); font-size:22px; padding:6px 4px }
+  /* i piani geografici: l'Italia in evidenza, il resto in tono minore */
+  tr.nearby { opacity:.78 }
+  tr.reference { opacity:.5 }
+  tr.reference .chip:first-child, tr.nearby .chip:first-child {
+    background:#1c2740; border-color:var(--line); color:#9fb0c9 }
+  canvas.chart { width:100%; height:130px; background:#182338; border-radius:12px;
+    border:1px solid var(--line); padding:8px; margin-bottom:12px }
   footer { margin-top:30px; font-size:11px; color:#5f708c; line-height:1.6 }
 </style></head><body>
 <div class="wrap">
-  <div class="eyebrow">ROLEX RADAR</div>
-  <h1>4 orologi monitorati</h1>
-  <div class="upd">aggiornato 15/08/2026 05:26</div>
+  <div class="eyebrow">RADAR OROLOGI</div>
+  <h1>4 modelli monitorati</h1>
+  <div class="upd">aggiornato 15/08/2026 05:58</div>
+  <div class="head-k"><b>2</b> annunci attivi · <b>0</b> sotto mercato</div>
+
+  <div class="sum"><a class="srow" href="#zenith-ultrathin">
+      <div class="ph ph-vuota">ZE</div>
+      <span class="sname">Zenith Elite Ultra Thin</span>
+      <span class="sidx">10.000 €</span>
+      <span class="sstat"><span class="mut">nessun annuncio</span></span>
+      <span class="sbest"></span>
+    </a>
+<a class="srow" href="#vc-222">
+      <div class="ph ph-vuota">VC</div>
+      <span class="sname">Vacheron Constantin Historiques 222</span>
+      <span class="sidx">95.000 €</span>
+      <span class="sstat"><span class="mut">nessun annuncio</span></span>
+      <span class="sbest"></span>
+    </a>
+<a class="srow" href="#vc-overseas">
+      <img class="ph" src="https://www.pluswatch.it/wp-content/uploads/2025/10/Vacheron-Constantin-Overseas-4520V210A-B128-Self-Winding-Blue-Dial-41mm-Automatic-20252-300x300.png" alt="" loading="lazy" onerror="this.replaceWith(document.createRange().createContextualFragment(this.dataset.fb))" data-fb='<div class="ph ph-vuota">VC</div>'>
+      <span class="sname">Vacheron Constantin Overseas</span>
+      <span class="sidx">30.000 €</span>
+      <span class="sstat">2 in Italia</span>
+      <span class="sbest">52</span>
+    </a>
+<a class="srow" href="#royal-oak-15450">
+      <div class="ph ph-vuota">AP</div>
+      <span class="sname">Audemars Piguet Royal Oak 37</span>
+      <span class="sidx">32.000 €</span>
+      <span class="sstat"><span class="mut">nessun annuncio</span></span>
+      <span class="sbest"></span>
+    </a></div>
 
   
-    <section class="watch">
-      <h2 class="wname">Zenith Elite Ultra Thin</h2>
-      <div class="grid">
-        <div class="kpi"><div class="l">Indice di mercato</div>
-          <div class="v">10.000 €</div>
-          <div class="s">0 annunci nel campione</div></div>
-        <div class="kpi"><div class="l">Mediana listini</div>
-          <div class="v">—</div>
-          <div class="s">prezzi non normalizzati</div></div>
-        <div class="kpi"><div class="l">Più economico</div>
-          <div class="v">—</div>
-          <div class="s">fra gli annunci attivi</div></div>
-        <div class="kpi"><div class="l">Sotto mercato</div>
-          <div class="v">0</div>
-          <div class="s">su 0 attivi</div></div>
-        <div class="kpi"><div class="l">Miglior punteggio</div>
-          <div class="v">0<span class="pct">/100</span></div>
-          <div class="s">a —</div></div>
+    <details class="watch" id="zenith-ultrathin">
+      <summary>
+        <div class="ph ph-vuota">ZE</div>
+        <span class="wtxt">
+          <span class="wname">Zenith Elite Ultra Thin</span>
+          <span class="wsub">10.000 € · 0 annunci</span>
+        </span>
+      </summary>
+      <div class="wbody">
+        <div class="grid">
+          <div class="kpi"><div class="l">Indice</div>
+            <div class="v">10.000 €</div>
+            <div class="s">0 campioni</div></div>
+          <div class="kpi"><div class="l">Più economico</div>
+            <div class="v">—</div>
+            <div class="s">fra gli attivi</div></div>
+          <div class="kpi"><div class="l">Miglior punteggio</div>
+            <div class="v">0<span class="pct">/100</span></div>
+            <div class="s">a —</div></div>
+        </div>
+        <div class="note">Stima di partenza: il valore non è ancora calcolato sui dati raccolti.</div>
+        <canvas class="chart" data-series='[]'></canvas>
+        <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo.</td></tr></tbody></table>
       </div>
-      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
-      <canvas class="chart" data-series='[]'></canvas>
-      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
-    </section>
+    </details>
 
-    <section class="watch">
-      <h2 class="wname">Vacheron Constantin Historiques 222</h2>
-      <div class="grid">
-        <div class="kpi"><div class="l">Indice di mercato</div>
-          <div class="v">95.000 €</div>
-          <div class="s">0 annunci nel campione</div></div>
-        <div class="kpi"><div class="l">Mediana listini</div>
-          <div class="v">—</div>
-          <div class="s">prezzi non normalizzati</div></div>
-        <div class="kpi"><div class="l">Più economico</div>
-          <div class="v">—</div>
-          <div class="s">fra gli annunci attivi</div></div>
-        <div class="kpi"><div class="l">Sotto mercato</div>
-          <div class="v">0</div>
-          <div class="s">su 0 attivi</div></div>
-        <div class="kpi"><div class="l">Miglior punteggio</div>
-          <div class="v">0<span class="pct">/100</span></div>
-          <div class="s">a —</div></div>
+    <details class="watch" id="vc-222">
+      <summary>
+        <div class="ph ph-vuota">VC</div>
+        <span class="wtxt">
+          <span class="wname">Vacheron Constantin Historiques 222</span>
+          <span class="wsub">95.000 € · 0 annunci</span>
+        </span>
+      </summary>
+      <div class="wbody">
+        <div class="grid">
+          <div class="kpi"><div class="l">Indice</div>
+            <div class="v">95.000 €</div>
+            <div class="s">0 campioni</div></div>
+          <div class="kpi"><div class="l">Più economico</div>
+            <div class="v">—</div>
+            <div class="s">fra gli attivi</div></div>
+          <div class="kpi"><div class="l">Miglior punteggio</div>
+            <div class="v">0<span class="pct">/100</span></div>
+            <div class="s">a —</div></div>
+        </div>
+        <div class="note">Stima di partenza: il valore non è ancora calcolato sui dati raccolti.</div>
+        <canvas class="chart" data-series='[]'></canvas>
+        <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo.</td></tr></tbody></table>
       </div>
-      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
-      <canvas class="chart" data-series='[]'></canvas>
-      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
-    </section>
+    </details>
 
-    <section class="watch">
-      <h2 class="wname">Vacheron Constantin Overseas</h2>
-      <div class="grid">
-        <div class="kpi"><div class="l">Indice di mercato</div>
-          <div class="v">30.000 €</div>
-          <div class="s">2 annunci nel campione</div></div>
-        <div class="kpi"><div class="l">Mediana listini</div>
-          <div class="v">43.500 €</div>
-          <div class="s">prezzi non normalizzati</div></div>
-        <div class="kpi"><div class="l">Più economico</div>
-          <div class="v">35.000 €</div>
-          <div class="s">fra gli annunci attivi</div></div>
-        <div class="kpi"><div class="l">Sotto mercato</div>
-          <div class="v">0</div>
-          <div class="s">su 2 attivi</div></div>
-        <div class="kpi"><div class="l">Miglior punteggio</div>
-          <div class="v">41<span class="pct">/100</span></div>
-          <div class="s">a 35.000 €</div></div>
-      </div>
-      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
-      <canvas class="chart" data-series='[]'></canvas>
-      <table><tbody><tr>
-      <td class="sc"><div class="ring" style="--v:41">
-        <span>41</span></div></td>
+    <details class="watch" id="vc-overseas" open>
+      <summary>
+        <img class="ph" src="https://www.pluswatch.it/wp-content/uploads/2025/10/Vacheron-Constantin-Overseas-4520V210A-B128-Self-Winding-Blue-Dial-41mm-Automatic-20252-300x300.png" alt="" loading="lazy" onerror="this.replaceWith(document.createRange().createContextualFragment(this.dataset.fb))" data-fb='<div class="ph ph-vuota">VC</div>'>
+        <span class="wtxt">
+          <span class="wname">Vacheron Constantin Overseas</span>
+          <span class="wsub">30.000 € · 2 annunci</span>
+        </span>
+      </summary>
+      <div class="wbody">
+        <div class="grid">
+          <div class="kpi"><div class="l">Indice</div>
+            <div class="v">30.000 €</div>
+            <div class="s">2 campioni</div></div>
+          <div class="kpi"><div class="l">Più economico</div>
+            <div class="v">35.000 €</div>
+            <div class="s">fra gli attivi</div></div>
+          <div class="kpi"><div class="l">Miglior punteggio</div>
+            <div class="v">52<span class="pct">/100</span></div>
+            <div class="s">a 35.000 €</div></div>
+        </div>
+        <div class="note">Stima di partenza: il valore non è ancora calcolato sui dati raccolti.</div>
+        <canvas class="chart" data-series='[]'></canvas>
+        <table><tbody><tr class="home">
+      <td class="sc"><div class="ring" style="--v:52">
+        <span>52</span></div></td>
       <td>
         <div class="pr">35.000 €</div>
         <div class="fv">stima 30.294 € · <span class="b r">sopra -15.5%</span></div>
-        <div class="chips"><span class="chip">2025</span><span class="chip">unworn</span><span class="chip">gar. IT</span><span class="chip">full set</span></div>
+        <div class="chips"><span class="chip">📍 IT</span><span class="chip">2025</span><span class="chip">unworn</span><span class="chip">gar. IT</span><span class="chip">full set</span></div>
         <div class="src">pluswatch</div>
       </td>
       <td class="go"><a href="https://www.pluswatch.it/p/vacheron-constantin-overseas-4520v-210a-b128-self-winding-blue-dial-41mm-automatic-2025/" target="_blank" rel="noopener">→</a></td>
     </tr>
-<tr>
-      <td class="sc"><div class="ring" style="--v:34">
-        <span>34</span></div></td>
+<tr class="home">
+      <td class="sc"><div class="ring" style="--v:46">
+        <span>46</span></div></td>
       <td>
         <div class="pr">51.999 €</div>
         <div class="fv">stima 28.779 € · <span class="b r">sopra -80.7%</span></div>
-        <div class="chips"><span class="chip">2024</span><span class="chip">unworn</span><span class="chip">gar. IT</span></div>
+        <div class="chips"><span class="chip">📍 IT</span><span class="chip">2024</span><span class="chip">unworn</span><span class="chip">gar. IT</span></div>
         <div class="src">pluswatch</div>
       </td>
       <td class="go"><a href="https://www.pluswatch.it/p/vacheron-constantin-overseas-chronograph-chronographer-5520v-210a-b686-425mm-automatic-2024/" target="_blank" rel="noopener">→</a></td>
     </tr></tbody></table>
-    </section>
-
-    <section class="watch">
-      <h2 class="wname">Audemars Piguet Royal Oak 37</h2>
-      <div class="grid">
-        <div class="kpi"><div class="l">Indice di mercato</div>
-          <div class="v">32.000 €</div>
-          <div class="s">0 annunci nel campione</div></div>
-        <div class="kpi"><div class="l">Mediana listini</div>
-          <div class="v">—</div>
-          <div class="s">prezzi non normalizzati</div></div>
-        <div class="kpi"><div class="l">Più economico</div>
-          <div class="v">—</div>
-          <div class="s">fra gli annunci attivi</div></div>
-        <div class="kpi"><div class="l">Sotto mercato</div>
-          <div class="v">0</div>
-          <div class="s">su 0 attivi</div></div>
-        <div class="kpi"><div class="l">Miglior punteggio</div>
-          <div class="v">0<span class="pct">/100</span></div>
-          <div class="s">a —</div></div>
       </div>
-      <div class="note">Stima di partenza: servono più annunci nel database per una valutazione basata sui dati.</div>
-      <canvas class="chart" data-series='[]'></canvas>
-      <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo al momento.</td></tr></tbody></table>
-    </section>
+    </details>
+
+    <details class="watch" id="royal-oak-15450">
+      <summary>
+        <div class="ph ph-vuota">AP</div>
+        <span class="wtxt">
+          <span class="wname">Audemars Piguet Royal Oak 37</span>
+          <span class="wsub">32.000 € · 0 annunci</span>
+        </span>
+      </summary>
+      <div class="wbody">
+        <div class="grid">
+          <div class="kpi"><div class="l">Indice</div>
+            <div class="v">32.000 €</div>
+            <div class="s">0 campioni</div></div>
+          <div class="kpi"><div class="l">Più economico</div>
+            <div class="v">—</div>
+            <div class="s">fra gli attivi</div></div>
+          <div class="kpi"><div class="l">Miglior punteggio</div>
+            <div class="v">0<span class="pct">/100</span></div>
+            <div class="s">a —</div></div>
+        </div>
+        <div class="note">Stima di partenza: il valore non è ancora calcolato sui dati raccolti.</div>
+        <canvas class="chart" data-series='[]'></canvas>
+        <table><tbody><tr><td colspan="3" class="empty">Nessun annuncio attivo.</td></tr></tbody></table>
+      </div>
+    </details>
 
   <footer>
     Dati raccolti automaticamente da fonti pubbliche e dagli alert email dei
-    marketplace. L'“indice di mercato” è una stima statistica costruita sugli
-    annunci osservati — prezzi richiesti, non prezzi di transazione. È un
-    indicatore, non una valutazione peritale, e non costituisce consulenza
-    all'acquisto o all'investimento. Nessun punteggio dice nulla
-    sull'autenticità dell'orologio o sull'affidabilità del venditore.
+    marketplace. L'“indice” è una stima statistica costruita sugli annunci
+    osservati — prezzi richiesti, non prezzi di transazione. È un indicatore,
+    non una valutazione peritale, e non costituisce consulenza all'acquisto o
+    all'investimento. Nessun punteggio dice nulla sull'autenticità
+    dell'orologio o sull'affidabilità del venditore.
   </footer>
 </div>
 <script>
   document.querySelectorAll('canvas.chart').forEach(function (c) {
-    var data = JSON.parse(c.dataset.series || '[]');
-    var dpr = window.devicePixelRatio || 1;
-    c.width = c.clientWidth * dpr; c.height = 150 * dpr;
-    var x = c.getContext('2d'); x.scale(dpr, dpr);
-    var W = c.clientWidth, H = 150, P = 26;
-    if (data.length < 2) {
-      x.fillStyle = '#5f708c'; x.font = '13px -apple-system,sans-serif';
-      x.fillText('Servono almeno due rilevazioni per il grafico.', P, H / 2);
-      return;
+    function disegna() {
+      if (!c.clientWidth) return;
+      var data = JSON.parse(c.dataset.series || '[]');
+      var dpr = window.devicePixelRatio || 1;
+      c.width = c.clientWidth * dpr; c.height = 130 * dpr;
+      var x = c.getContext('2d'); x.scale(dpr, dpr);
+      var W = c.clientWidth, H = 130, P = 24;
+      if (data.length < 2) {
+        x.fillStyle = '#5f708c'; x.font = '12px -apple-system,sans-serif';
+        x.fillText('Servono almeno due rilevazioni.', P, H / 2);
+        return;
+      }
+      var vals = data.map(function (d) { return d.median; });
+      var lo = Math.min.apply(null, vals) * 0.99;
+      var hi = Math.max.apply(null, vals) * 1.01;
+      var px = function (i) { return P + i * (W - 2 * P) / (data.length - 1); };
+      var py = function (v) { return H - P - (v - lo) / (hi - lo) * (H - 2 * P); };
+      var grad = x.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, 'rgba(56,189,248,.35)');
+      grad.addColorStop(1, 'rgba(56,189,248,0)');
+      x.beginPath(); x.moveTo(px(0), py(vals[0]));
+      vals.forEach(function (v, i) { x.lineTo(px(i), py(v)); });
+      x.lineTo(px(vals.length - 1), H - P); x.lineTo(px(0), H - P); x.closePath();
+      x.fillStyle = grad; x.fill();
+      x.beginPath(); x.moveTo(px(0), py(vals[0]));
+      vals.forEach(function (v, i) { x.lineTo(px(i), py(v)); });
+      x.strokeStyle = '#38bdf8'; x.lineWidth = 2; x.stroke();
+      x.fillStyle = '#8fa0bb'; x.font = '11px -apple-system,sans-serif';
+      x.fillText(Math.round(hi).toLocaleString('it-IT') + ' €', 4, 12);
+      x.fillText(Math.round(lo).toLocaleString('it-IT') + ' €', 4, H - 6);
     }
-    var vals = data.map(function (d) { return d.median; });
-    var lo = Math.min.apply(null, vals) * 0.99;
-    var hi = Math.max.apply(null, vals) * 1.01;
-    var px = function (i) { return P + i * (W - 2 * P) / (data.length - 1); };
-    var py = function (v) { return H - P - (v - lo) / (hi - lo) * (H - 2 * P); };
-    var grad = x.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, 'rgba(56,189,248,.35)');
-    grad.addColorStop(1, 'rgba(56,189,248,0)');
-    x.beginPath(); x.moveTo(px(0), py(vals[0]));
-    vals.forEach(function (v, i) { x.lineTo(px(i), py(v)); });
-    x.lineTo(px(vals.length - 1), H - P); x.lineTo(px(0), H - P); x.closePath();
-    x.fillStyle = grad; x.fill();
-    x.beginPath(); x.moveTo(px(0), py(vals[0]));
-    vals.forEach(function (v, i) { x.lineTo(px(i), py(v)); });
-    x.strokeStyle = '#38bdf8'; x.lineWidth = 2; x.stroke();
-    x.fillStyle = '#8fa0bb'; x.font = '11px -apple-system,sans-serif';
-    x.fillText(Math.round(hi).toLocaleString('it-IT') + ' €', 4, 12);
-    x.fillText(Math.round(lo).toLocaleString('it-IT') + ' €', 4, H - 6);
+    disegna();
+    // le sezioni chiuse hanno larghezza zero: si ridisegna all'apertura
+    var d = c.closest('details');
+    if (d) d.addEventListener('toggle', disegna);
   });
 </script>
 </body></html>
