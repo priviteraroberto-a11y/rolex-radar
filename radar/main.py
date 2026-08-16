@@ -200,6 +200,7 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
     engine = FairValueEngine(watch, comparables)
     market = engine.summary()
     market["label"] = watch.label
+    market["group"] = watch.watch.get("group")
     market["watch_id"] = watch.id
     market["photo"] = watch.watch.get("photo")
     geo = watch.get("preferences.geography", {}) or {}
@@ -262,7 +263,22 @@ def select_watches(cfg: Config, args) -> tuple[list, str]:
         return watches, "tutti"
 
     if getattr(args, "group", None):
-        chosen = args.group
+        # Gli alias servono a non rompere niente quando i gruppi vengono
+        # rinominati: un lancio schedulato o un segnalibro con il nome vecchio
+        # continua a funzionare invece di selezionare zero orologi in silenzio.
+        alias = {str(k): str(v) for k, v in (cfg.get("rotation.aliases") or {}).items()}
+        chosen = alias.get(str(args.group), str(args.group))
+        # Un singolo orologio, per id: utile quando ne aggiungi uno e vuoi
+        # vedere subito se le fonti lo trovano, senza aspettare il suo turno.
+        solo = [w for w in watches if w.id == chosen]
+        if solo:
+            return solo, chosen
+        if chosen not in groups:
+            # Meglio un giro completo che un giro quasi vuoto: un nome
+            # sbagliato non deve tradursi in "non ho guardato" senza dirlo.
+            log.warning("'%s' non e' ne' un gruppo (%s) ne' un orologio — controllo tutti",
+                        args.group, ", ".join(groups))
+            return watches, "tutti"
     else:
         # fascia di 4 ore: i giri delle 8/12/16/20 si alternano da soli
         slot = int(datetime.now(timezone.utc).timestamp() // (4 * 3600))
@@ -312,6 +328,7 @@ def cmd_check(args) -> int:
                                int(watch.get("fair_value.lookback_days", 60)))
         m = FairValueEngine(watch, comps).summary()
         m["label"], m["watch_id"] = watch.label, watch.id
+        m["group"] = watch.watch.get("group")
         m["photo"] = watch.watch.get("photo")
         geo = watch.get("preferences.geography", {}) or {}
         m["home"], m["nearby"] = geo.get("home"), geo.get("nearby")
@@ -462,6 +479,7 @@ def cmd_dashboard(args) -> int:
         comps = db.comparables(w.references, int(w.get("fair_value.lookback_days", 60)))
         m = FairValueEngine(w, comps).summary()
         m["label"], m["watch_id"] = w.label, w.id
+        m["group"] = w.watch.get("group")
         m["photo"] = w.watch.get("photo")
         geo = w.get("preferences.geography", {}) or {}
         m["home"], m["nearby"] = geo.get("home"), geo.get("nearby")

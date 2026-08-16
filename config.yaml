@@ -16,7 +16,21 @@
 # -----------------------------------------------------------------------------
 rotation:
   enabled: true
-  groups: [a, b]
+  groups: [222-overseas-royaloak-elite, speedmaster-monaco-blackbay-a384]
+
+  # Il nome del gruppo e' l'elenco degli orologi che contiene. E' lungo, ma e'
+  # l'unica cosa che si legge nel menu a tendina di GitHub (i commenti YAML li'
+  # non si vedono) e nei log: leggendolo sai esattamente cosa sta girando.
+  # Se aggiungi un orologio, aggiungi il suo nome anche qui.
+  #
+  # Nel menu puoi anche scegliere un singolo orologio: basta il suo `id`.
+  #
+  # I nomi vecchi restano validi, cosi' un lancio salvato non si rompe.
+  aliases:
+    a: 222-overseas-royaloak-elite
+    b: speedmaster-monaco-blackbay-a384
+    alta-gamma: 222-overseas-royaloak-elite
+    accessibili: speedmaster-monaco-blackbay-a384
 
 # -----------------------------------------------------------------------------
 # OROLOGI MONITORATI
@@ -48,7 +62,7 @@ watches:
 
   - id: monaco-gulf
     # photo: "https://..."
-    group: b
+    group: speedmaster-monaco-blackbay-a384
     brand: TAG Heuer
     model: Monaco
     nickname: Gulf
@@ -72,7 +86,7 @@ watches:
 
   - id: speedmaster
     # photo: "https://..."
-    group: b
+    group: speedmaster-monaco-blackbay-a384
     brand: Omega
     model: Speedmaster Moonwatch Professional
     references: ["310.30.42.50.01.002"]
@@ -95,7 +109,7 @@ watches:
 
   - id: bb-chrono-flamingo
     # photo: "https://..."
-    group: b
+    group: speedmaster-monaco-blackbay-a384
     brand: Tudor
     model: Black Bay Chrono
     nickname: Flamingo Blue
@@ -121,7 +135,7 @@ watches:
 
   - id: zenith-ultrathin
     # photo: "https://..."
-    group: a
+    group: 222-overseas-royaloak-elite
     brand: Zenith
     model: Elite Ultra Thin
     references: ["18.2010.681/01.C498"]
@@ -146,7 +160,7 @@ watches:
 
   - id: vc-222
     # photo: "https://..."
-    group: a
+    group: 222-overseas-royaloak-elite
     brand: Vacheron Constantin
     model: Historiques 222
     references: ["4200H/222A-B934"]
@@ -169,7 +183,7 @@ watches:
 
   - id: vc-overseas
     # photo: "https://..."
-    group: a
+    group: 222-overseas-royaloak-elite
     brand: Vacheron Constantin
     model: Overseas
     references: ["4520V/210A-B128"]
@@ -192,7 +206,7 @@ watches:
 
   - id: royal-oak-15450
     # photo: "https://..."
-    group: a
+    group: 222-overseas-royaloak-elite
     brand: Audemars Piguet
     model: Royal Oak 37
     references: ["15450ST.OO.1256ST.03"]
@@ -216,7 +230,7 @@ watches:
 
   - id: el-primero-a384
     # photo: "https://..."
-    group: b
+    group: speedmaster-monaco-blackbay-a384
     brand: Zenith
     model: Chronomaster Revival A384
     references: ["03.A384.400/3817.M3817"]

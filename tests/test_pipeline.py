@@ -471,11 +471,12 @@ def test_la_cache_evita_di_riscaricare_la_stessa_pagina():
 # =============================================================================
 
 ROT = {
-    "rotation": {"enabled": True, "groups": ["a", "b"]},
+    "rotation": {"enabled": True, "groups": ["uno-e-tre", "due-e-quattro"],
+                 "aliases": {"a": "uno-e-tre", "b": "due-e-quattro"}},
     "watches": [
         {"id": "sempre", "group": "always", "references": ["126710BLRO"]},
-        {"id": "uno", "group": "a", "references": ["4520V/210A-B128"]},
-        {"id": "due", "group": "b", "references": ["A384"]},
+        {"id": "uno", "group": "uno-e-tre", "references": ["4520V/210A-B128"]},
+        {"id": "due", "group": "due-e-quattro", "references": ["A384"]},
         {"id": "senza-gruppo", "references": ["CAW211P"]},
     ],
 }
@@ -493,7 +494,7 @@ def _rot():
 
 def test_la_rotazione_alterna_i_gruppi():
     from radar.main import select_watches
-    a = _Args(); a.group = "a"
+    a = _Args(); a.group = "uno-e-tre"
     b = _Args(); b.group = "b"
     ids_a = [w.id for w in select_watches(_rot(), a)[0]]
     ids_b = [w.id for w in select_watches(_rot(), b)[0]]
@@ -541,7 +542,7 @@ def test_il_gruppo_dipende_dalla_fascia_oraria(monkeypatch):
 
         monkeypatch.setattr(m, "datetime", FakeDT)
         visti.append(select_watches_group(m, _rot()))
-    assert visti == ["b", "a", "b", "a"], visti
+    assert visti == ["due-e-quattro", "uno-e-tre", "due-e-quattro", "uno-e-tre"], visti
 
 
 def select_watches_group(m, cfg):
@@ -711,3 +712,30 @@ def test_una_fonte_vuota_non_cancella_i_ritrovamenti(tmp_path):
     chiusi = db.mark_inactive_except([altro.key], ["pluswatch"], "vc-overseas")
     assert chiusi == 1
     db.close()
+
+
+def test_gli_alias_dei_gruppi_continuano_a_funzionare():
+    """Rinominare un gruppo non deve far girare a vuoto un lancio vecchio."""
+    from radar.main import select_watches
+    args = _Args(); args.group = "a"
+    picked, nome = select_watches(_rot(), args)
+    assert nome == "uno-e-tre"
+    assert [w.id for w in picked] == ["sempre", "uno", "senza-gruppo"]
+
+
+def test_un_gruppo_inesistente_controlla_tutto_invece_di_niente():
+    """Il fallimento silenzioso peggiore sarebbe un giro che non guarda nulla."""
+    from radar.main import select_watches
+    args = _Args(); args.group = "zzz"
+    picked, nome = select_watches(_rot(), args)
+    assert nome == "tutti"
+    assert len(picked) == 4
+
+
+def test_si_puo_chiedere_un_orologio_solo_per_nome():
+    """Quando ne aggiungi uno vuoi provarlo subito, non al suo turno."""
+    from radar.main import select_watches
+    args = _Args(); args.group = "due"
+    picked, nome = select_watches(_rot(), args)
+    assert [w.id for w in picked] == ["due"]
+    assert nome == "due"

@@ -93,6 +93,13 @@ def build(db, markets, out_path: str | Path = "docs/index.html") -> Path:
     return p
 
 
+def _gruppo(market: dict) -> str:
+    """Etichetta del turno di rotazione, per sapere a colpo d'occhio quando
+    un orologio viene controllato senza dover aprire il config."""
+    g = market.get("group")
+    return f'<span class="tag">{html.escape(str(g))}</span>' if g else ""
+
+
 def _riga_sommario(market: dict, listings: list[dict]) -> str:
     """Riga compatta in cima: colpo d'occhio su tutti gli orologi."""
     qui = [l for l in listings if l.get("_piano") == "home"]
@@ -108,7 +115,7 @@ def _riga_sommario(market: dict, listings: list[dict]) -> str:
         stato = '<span class="mut">nessun annuncio</span>'
     return f"""<a class="srow" href="#{html.escape(str(market.get('watch_id', '')))}">
       {_foto(market, listings)}
-      <span class="sname">{html.escape(market.get('label', 'Orologio'))}</span>
+      <span class="sname">{html.escape(market.get('label', 'Orologio'))}{_gruppo(market)}</span>
       <span class="sidx">{_eur(market.get('index'))}</span>
       <span class="sstat">{stato}</span>
       <span class="sbest">{best['score'] if best else ''}</span>
@@ -236,6 +243,9 @@ _TEMPLATE = """<!doctype html>
     border-bottom:1px solid var(--line) }}
   .srow:last-child {{ border-bottom:0 }}
   .srow:active {{ background:#182338 }}
+  .tag {{ display:inline-block; margin-left:6px; padding:1px 7px; border-radius:99px;
+          background:#e9ecf2; color:#5a6072; font-size:10px; font-weight:600;
+          letter-spacing:.02em; vertical-align:1px; }}
   .sname {{ flex:1; font-size:14px; font-weight:600; letter-spacing:-.01em;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap }}
   .sidx {{ font-size:13px; color:var(--mut); white-space:nowrap }}

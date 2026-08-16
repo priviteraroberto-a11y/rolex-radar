@@ -16,14 +16,23 @@ on:
         type: boolean
         default: false
       gruppo:
-        description: "Quale gruppo di orologi controllare"
+        description: "Quali orologi controllare (gruppo, uno solo, o tutti)"
         type: choice
         default: automatico
         options:
-          - automatico     # decide l'ora, come nei giri programmati
-          - a              # Vacheron 222, Overseas, Royal Oak, Zenith Elite
-          - b              # Speedmaster, Monaco, Black Bay Chrono, Zenith A384
-          - tutti          # tutti e otto, ignora la rotazione
+          - automatico
+          - 222-overseas-royaloak-elite
+          - speedmaster-monaco-blackbay-a384
+          - tutti
+          # oppure un orologio solo:
+          - vc-222
+          - vc-overseas
+          - royal-oak-15450
+          - zenith-ultrathin
+          - speedmaster
+          - monaco-gulf
+          - bb-chrono-flamingo
+          - el-primero-a384
 
 concurrency:
   group: radar
