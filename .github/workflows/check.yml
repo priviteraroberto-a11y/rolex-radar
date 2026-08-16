@@ -76,17 +76,51 @@ jobs:
           echo "Argomenti: ${ARGS:-nessuno (rotazione automatica)}"
           python -m radar.main check $ARGS
 
-      # always(): se il giro fallisce dopo aver notificato, senza questo il DB
-      # non verrebbe salvato e al giro dopo riceveresti le stesse notifiche.
+      # I file generati appartengono al bot: se il remoto e' avanzato nel
+      # frattempo (un altro giro, o un push dal Mac) git non sa fondere un
+      # database binario e si blocca. Qui il conflitto e' previsto e risolto
+      # sempre allo stesso modo: vince la versione appena prodotta.
       - name: Salva storico e dashboard
         if: ${{ always() && !inputs.dry_run }}
         run: |
+          set -u
           git config user.name  "rolex-radar[bot]"
           git config user.email "actions@github.com"
+
           git add -A history.db docs/ 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "radar: $(date -u '+%Y-%m-%d %H:%M') UTC"
-          git pull --rebase --autostash || true
-          git push
+          if git diff --staged --quiet; then
+            echo "Niente da salvare."
+            exit 0
+          fi
+          MSG="radar: $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git commit -m "$MSG"
+
+          # mette da parte i file generati: sono la nostra unica fonte di verita'
+          cp history.db      /tmp/history.db
+          cp docs/index.html /tmp/index.html
+
+          for tentativo in 1 2 3; do
+            git fetch -q origin main
+            if git rebase -q origin/main 2>/dev/null; then
+              :
+            else
+              echo "Conflitto sui file generati: tengo la versione di questo giro."
+              git rebase --abort 2>/dev/null || true
+              git reset -q --hard origin/main
+              cp /tmp/history.db history.db
+              cp /tmp/index.html docs/index.html
+              git add history.db docs/index.html
+              git commit -q -m "$MSG"
+            fi
+            if git push -q; then
+              echo "Salvato al tentativo $tentativo."
+              exit 0
+            fi
+            echo "Push respinto, riprovo."
+            sleep 5
+          done
+          echo "Non sono riuscito a salvare dopo tre tentativi." >&2
+          exit 1
 
       - name: Notifica fallimento
         if: failure()
