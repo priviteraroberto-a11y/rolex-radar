@@ -364,3 +364,26 @@ def test_stessa_forma_diverso_valore_su_ogni_marchio():
 def test_senza_referenza_nel_testo_non_passa():
     t = "Omega Speedmaster Moonwatch Professional"
     assert not extract.is_target_watch(t, t, SPEED, ["Speedmaster"], [])
+
+
+# --- quali email guardare -----------------------------------------------------
+
+def test_criteri_imap_per_finestra_temporale():
+    """Il filtro per data e' robusto: non dipende da chi ha aperto cosa."""
+    from datetime import date, timedelta
+    from radar.sources.email_source import EmailSource
+
+    class Ctx:
+        config = None
+
+    da = date.today() - timedelta(days=7)
+    mesi = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    atteso = f"(SINCE {da.day:02d}-{mesi[da.month - 1]}-{da.year})"
+
+    assert EmailSource({"since_days": 7}, Ctx())._criteri() == atteso
+    assert EmailSource({"unseen_only": True}, Ctx())._criteri() == "(UNSEEN)"
+    assert EmailSource({}, Ctx())._criteri() == "(ALL)"
+    # combinati
+    c = EmailSource({"since_days": 7, "unseen_only": True}, Ctx())._criteri()
+    assert c.startswith("(UNSEEN SINCE ")

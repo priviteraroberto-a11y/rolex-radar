@@ -19,6 +19,7 @@ import imaplib
 import logging
 import os
 import re
+from datetime import date, timedelta
 from email.header import decode_header, make_header
 from typing import Iterator
 from urllib.parse import urljoin
@@ -87,7 +88,7 @@ class EmailSource(BaseSource):
                 typ, unseen_data = imap.search(None, "(UNSEEN)")
                 n_unseen = len(unseen_data[0].split()) if typ == "OK" and unseen_data[0] else 0
 
-                criteria = "(UNSEEN)" if self.cfg.get("unseen_only", True) else "(ALL)"
+                criteria = self._criteri()
                 typ, data = imap.search(None, criteria)
                 if typ != "OK":
                     return SourceResult(self.name, False, [], "ricerca IMAP fallita")
@@ -120,11 +121,33 @@ class EmailSource(BaseSource):
         except Exception as exc:                       # pragma: no cover
             return SourceResult(self.name, False, [], f"{type(exc).__name__}: {exc}")
 
-        detail = (f"cartella '{mailbox}': {n_total} messaggi, {n_unseen} non letti, "
-                  f"{n_matched} dai mittenti cercati, {len(listings)} annunci estratti")
+        finestra = self.cfg.get("since_days")
+        detail = (f"cartella '{mailbox}': {n_total} messaggi"
+                  + (f", ultimi {finestra} giorni" if finestra else "")
+                  + f", {n_unseen} non letti, {n_matched} dai mittenti cercati, "
+                  f"{len(listings)} annunci estratti")
         if other_senders:
             detail += " | mittenti scartati: " + ", ".join(other_senders)
         return SourceResult(self.name, True, listings, detail)
+
+    def _criteri(self) -> str:
+        """Quali messaggi guardare.
+
+        Il filtro per DATA è preferibile a quello per "non letto": lo stato di
+        lettura è fragile, basta aprire l'email dal telefono e il sistema non
+        la vede più. La finestra temporale invece non dipende da cosa fai tu,
+        e la deduplica per URL evita comunque di rinotificare due volte.
+        """
+        parti = []
+        if self.cfg.get("unseen_only", False):
+            parti.append("UNSEEN")
+        giorni = self.cfg.get("since_days")
+        if giorni:
+            da = date.today() - timedelta(days=int(giorni))
+            mesi = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            parti.append(f"SINCE {da.day:02d}-{mesi[da.month - 1]}-{da.year}")
+        return f"({' '.join(parti)})" if parti else "(ALL)"
 
     @staticmethod
     def _list_folders(imap) -> str:

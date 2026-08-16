@@ -464,10 +464,14 @@ sources:
       - dellarocca
       - pedretti
       - paselli
-    # false, non true: nella cartella Radar ci sono 22 messaggi e nessuno non
-    # letto — li avevi aperti tu, e il sistema non li ha mai visti. Rileggerli
-    # tutti a ogni giro costa qualche secondo; la deduplica per URL impedisce
-    # comunque di rinotificare due volte lo stesso annuncio.
+    # Guardiamo gli ultimi 7 giorni, non i "non letti".
+    #
+    # Il filtro per stato di lettura sembrava piu' efficiente ma e' fragile:
+    # basta aprire un'email dal telefono prima del giro e quell'annuncio non
+    # lo vede piu' nessuno. Era gia' successo con 22 messaggi.
+    # La finestra temporale invece non dipende da cosa fai tu, tiene il carico
+    # basso lo stesso, e la deduplica per URL evita di rinotificare due volte.
+    since_days: 7
     unseen_only: false
     mark_seen: false
 
