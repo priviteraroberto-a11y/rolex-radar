@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Optional
 
 from .models import Listing
+
+log = logging.getLogger(__name__)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS listings (
@@ -110,11 +113,31 @@ class Database:
                 (DEFAULT_WATCH_ID,))
         if "seller_country" not in cols:
             self.conn.execute("ALTER TABLE listings ADD COLUMN seller_country TEXT")
+        self._butta_i_non_annunci()
         cur = self.conn.execute("PRAGMA table_info(market_snapshots)")
         cols = {r[1] for r in cur.fetchall()}
         if "watch_id" not in cols:
             self.conn.execute(
                 "ALTER TABLE market_snapshots ADD COLUMN watch_id TEXT DEFAULT ''")
+
+    def _butta_i_non_annunci(self) -> None:
+        """Toglie le righe che non erano annunci.
+
+        Fino al 19/08/2026 il lettore delle email prendeva per annuncio anche
+        i bottoni di servizio dei marketplace — "modifica ricerca salvata" su
+        tutti — e ci abbinava il prezzo dell'annuncio accanto. Il risultato
+        era un affare inesistente in dashboard. Il lettore ora li scarta, ma
+        quelli gia' salvati restano finche' non li si toglie di mezzo.
+        """
+        from .extract import e_pagina_di_servizio
+        cattive = [r["key"] for r in self.conn.execute(
+                       "SELECT key, url FROM listings").fetchall()
+                   if e_pagina_di_servizio(r["url"])]
+        for chiave in cattive:
+            self.conn.execute("DELETE FROM listings WHERE key = ?", (chiave,))
+        n = len(cattive)
+        if n:
+            log.info("tolti %d falsi annunci dal database (link di servizio)", n)
 
     def close(self) -> None:
         self.conn.close()

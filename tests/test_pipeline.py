@@ -739,3 +739,35 @@ def test_si_puo_chiedere_un_orologio_solo_per_nome():
     picked, nome = select_watches(_rot(), args)
     assert [w.id for w in picked] == ["due"]
     assert nome == "due"
+
+
+def test_i_falsi_annunci_gia_salvati_vengono_tolti(tmp_path):
+    """Correggere il lettore non basta: il finto affare era gia' in dashboard."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "p.db")
+    db.upsert(Listing(source="chrono24", price_eur=5612.0,
+                      url="https://www.chrono24.com/user/searchtasks.htm?eeid=XX"), "speedmaster")
+    db.upsert(Listing(source="chrono24", price_eur=7600.0,
+                      url="https://www.chrono24.it/omega/s--id48015818.htm"), "speedmaster")
+    db.conn.commit(); db.close()
+
+    db = Database(tmp_path / "p.db")
+    urls = [r["url"] for r in db.conn.execute("SELECT url FROM listings")]
+    assert len(urls) == 1 and "id48015818" in urls[0], urls
+
+
+def test_la_pulizia_non_tocca_gli_annunci_veri(tmp_path):
+    """I link Chrono24 contengono 'feat-SavedSearch' nel tracciamento: una
+    regola che guardasse anche la query cancellerebbe annunci veri. Successo
+    davvero, 25 righe in una volta."""
+    from radar.db import Database
+    from radar.models import Listing
+    vero = ("https://www.chrono24.it/rolex/gmt-master-ii--id47857408.htm"
+            "?eeid=XX&ikcampaign=feat-SavedSearch&ikterm=AdImageLink")
+    db = Database(tmp_path / "q.db")
+    db.upsert(Listing(source="chrono24", price_eur=22405.0, url=vero), "pepsi")
+    db.conn.commit(); db.close()
+
+    db = Database(tmp_path / "q.db")
+    assert db.conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1

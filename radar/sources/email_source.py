@@ -47,9 +47,34 @@ SENDER_MAP = {
 _SKIP_LINK = re.compile(
     r"unsubscribe|disiscriv|preferenz|privacy|terms|condizioni|help|support|"
     r"facebook|instagram|twitter|linkedin|youtube|apps?\.apple|play\.google|"
-    r"/account|/login|/faq|mailto:|tel:",
+    r"/account|/login|/faq|mailto:|tel:|/cerca|/ricerca|/risultati",
     re.I,
 )
+
+# Chrono24 mette l'id dell'annuncio nel percorso: "...--id47847844.htm".
+# Un link Chrono24 senza quell'id non e' un annuncio, e' un bottone del
+# messaggio ("modifica ricerca salvata", "vedi tutti i risultati", il logo).
+_LISTING_PATTERNS = {
+    "chrono24": re.compile(r"-{1,2}id\d{4,}\b", re.I),
+    "ebay": re.compile(r"/itm/\d+", re.I),
+    "subito": re.compile(r"\.htm|/annunci/", re.I),
+}
+
+
+def _e_annuncio(url: str) -> bool:
+    """Vero solo se l'URL punta a una singola pagina di annuncio.
+
+    Serve una regola positiva, non solo una lista di esclusioni: il link
+    "modifica ricerca salvata" di Chrono24 non contiene nessuna parola
+    sospetta, e senza questo controllo veniva preso per un annuncio e
+    abbinato al prezzo di quello accanto.
+    """
+    if _SKIP_LINK.search(url) or extract.e_pagina_di_servizio(url):
+        return False
+    for dominio, pattern in _LISTING_PATTERNS.items():
+        if dominio in url.lower():
+            return bool(pattern.search(url))
+    return True
 
 
 class EmailSource(BaseSource):
@@ -191,24 +216,13 @@ class EmailSource(BaseSource):
         seen: set[str] = set()
         for a in soup.find_all("a", href=True):
             href = a["href"]
-            if _SKIP_LINK.search(href):
+            if not _e_annuncio(href):
                 continue
 
-            # il blocco annuncio è l'antenato che contiene testo + prezzo
-            block = a
-            for _ in range(5):
-                if block.parent is None:
-                    break
-                block = block.parent
-                text = block.get_text(" ", strip=True)
-                if extract.matches_reference(None, text, wanted) and re.search(
-                    r"[€$£]|\bEUR\b|\bUSD\b", text
-                ):
-                    break
-
+            block = self._blocco(a, wanted)
+            if block is None:
+                continue
             text = block.get_text(" ", strip=True)
-            if not extract.matches_reference(None, text, wanted):
-                continue
 
             clean = _clean_tracking(href)
             if clean in seen:
@@ -227,12 +241,38 @@ class EmailSource(BaseSource):
                 image=img["src"] if img and img.get("src", "").startswith("http") else None,
             )
 
+    @staticmethod
+    def _blocco(a, wanted):
+        """Il piu' piccolo antenato che descrive *questo* annuncio e nessun altro.
+
+        Il criterio decisivo non e' "contiene una referenza e un prezzo" — a
+        forza di salire lo contiene anche il corpo intero del messaggio, e a
+        quel punto il prezzo che si legge appartiene a un altro orologio. Il
+        criterio e' il confine: appena il blocco contiene due link ad annunci,
+        siamo saliti troppo e ci fermiamo. Se non troviamo mai un blocco che
+        contiene un solo annuncio, meglio scartare il link che inventarsi un
+        prezzo.
+        """
+        block = a
+        for _ in range(6):
+            if block.parent is None:
+                return None
+            block = block.parent
+            annunci = [x for x in block.find_all("a", href=True)
+                       if _e_annuncio(x["href"])]
+            if len({x["href"].split("?")[0] for x in annunci}) > 1:
+                return None
+            text = block.get_text(" ", strip=True)
+            if extract.matches_reference(None, text, wanted) and _HA_PREZZO.search(text):
+                return block
+        return None
+
     def _parse_text_email(self, source_name: str, subject: str,
                           body_text: str, wanted: list[str]) -> Iterator[Listing]:
         # email testuali: uno "blocco" per URL trovato
         for m in re.finditer(r"https?://\S+", body_text):
             url = _clean_tracking(m.group(0).rstrip(").,>"))
-            if _SKIP_LINK.search(url):
+            if not _e_annuncio(url):
                 continue
             start = max(0, m.start() - 600)
             block = body_text[start:m.end() + 200]
@@ -280,11 +320,23 @@ def _bodies(msg) -> tuple[str, str]:
 
 
 def _clean_tracking(url: str) -> str:
-    """Toglie i parametri di tracciamento così la dedup funziona davvero."""
+    """Toglie i parametri di tracciamento.
+
+    Non serve alla deduplica (la chiave dell'annuncio ignora gia' tutto cio'
+    che sta dopo il "?"), serve a te: il link che ti arriva su Telegram deve
+    essere condivisibile e leggibile, non una riga di duecento caratteri con
+    dentro l'identificativo della tua casella di posta.
+    """
+    if "chrono24" in url.lower() and _LISTING_PATTERNS["chrono24"].search(url):
+        return url.split("?")[0]          # il percorso identifica gia' l'annuncio
     url = re.sub(r"[?&](utm_[^=&]+|mc_[a-z]+|_hs[a-z]*|gclid|fbclid|"
-                 r"cid|mkt_tok|ea_[a-z]+)=[^&]*", "", url, flags=re.I)
+                 r"cid|mkt_tok|ea_[a-z]+|eeid|recid|ik[a-z]+|"
+                 r"goal_[a-z_]+)=[^&]*", "", url, flags=re.I)
+    url = re.sub(r"\?&+", "?", url)
     return url.rstrip("?&")
 
+
+_HA_PREZZO = re.compile(r"[€$£]|\bEUR\b|\bUSD\b|\bCHF\b|\bGBP\b", re.I)
 
 _PRICE_NEAR = re.compile(
     r"(?:[€$£]|EUR|USD|GBP|CHF)\s?\d[\d.,\s']{2,12}|\d[\d.,\s']{2,12}\s?(?:[€$£]|EUR|USD|GBP|CHF)",

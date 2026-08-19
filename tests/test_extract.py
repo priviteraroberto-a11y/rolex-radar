@@ -387,3 +387,85 @@ def test_criteri_imap_per_finestra_temporale():
     # combinati
     c = EmailSource({"since_days": 7, "unseen_only": True}, Ctx())._criteri()
     assert c.startswith("(UNSEEN SINCE ")
+
+
+# --- email: confini fra un annuncio e l'altro ---------------------------------
+
+_EMAIL_C24 = """
+<html><body>
+ <table>
+  <tr><td class="ad">
+    <a href="https://www.chrono24.it/omega/speedmaster--id48015818.htm?eeid=XX&ikterm=AdImageLink">
+      Omega Speedmaster Professional 310.30.42.50.01.002</a>
+    <span>7.600 &euro; + 50 &euro; di spese di spedizione IT</span>
+  </td></tr>
+  <tr><td class="ad">
+    <a href="https://www.chrono24.it/omega/speedmaster--id48015999.htm?eeid=XX&ikterm=AdImageLink">
+      Omega Speedmaster Professional 310.30.42.50.01.002 2026 new full set</a>
+    <span>5.612 &euro; Spedizione gratuita DE</span>
+  </td></tr>
+  <tr><td class="footer">
+    <a href="https://www.chrono24.com/user/searchtasks.htm?eeid=XX&goal_searchtask_mail=1&ikterm=edit-saved-search">
+      Modifica la tua ricerca salvata</a>
+  </td></tr>
+ </table>
+</body></html>
+"""
+
+
+def _annunci_email(html_body):
+    from bs4 import BeautifulSoup
+    from radar.sources.email_source import EmailSource
+
+    class Cfg:
+        references = ["310.30.42.50.01.002"]
+
+    class Ctx:
+        config = Cfg()
+
+    src = EmailSource({}, Ctx())
+    soup = BeautifulSoup(html_body, "lxml")
+    return list(src._parse_html_email("chrono24", soup, Cfg.references))
+
+
+def test_il_bottone_modifica_ricerca_non_e_un_annuncio():
+    """Il bug del 19/08: 'Modifica ricerca salvata' era finito in dashboard
+    come Speedmaster a 5.612 euro sotto mercato del 25%. Il link non porta a
+    nessun orologio e il prezzo era rubato all'annuncio accanto."""
+    urls = [l.url for l in _annunci_email(_EMAIL_C24)]
+    assert not any("searchtask" in u for u in urls), urls
+
+
+def test_ogni_annuncio_tiene_il_proprio_prezzo():
+    ann = {l.url.rsplit("--", 1)[-1]: l.raw_price for l in _annunci_email(_EMAIL_C24)}
+    assert len(ann) == 2, ann
+    assert "7.600" in ann["id48015818.htm"]
+    assert "5.612" in ann["id48015999.htm"]
+
+
+def test_i_link_chrono24_arrivano_puliti():
+    """Quello che ti arriva su Telegram dev'essere condivisibile."""
+    for l in _annunci_email(_EMAIL_C24):
+        assert "?" not in l.url and "eeid" not in l.url, l.url
+
+
+# --- provenienza negli alert Chrono24 -----------------------------------------
+
+def test_il_paese_in_coda_ai_titoli_chrono24():
+    """Il canale principale dichiara il paese del venditore in fondo al titolo.
+    Senza leggerlo, tutto risultava 'ignoto' e la regola di ripiego lo trattava
+    come europeo: annunci giapponesi promossi a 'vicini'."""
+    casi = {
+        "Rolex GMT-Master II 126710BLRO 20.999 € + 59 € di spese di spedizione FR": "FR",
+        "Rolex GMT-Master II 126710BLRO 23.495 € Spedizione gratuita JP": "JP",
+        "Vacheron Constantin 222 blue 4200H/222A-B934 2026/01 45.353 € + 111 € di spese di spedizione JP": "JP",
+        "Omega Speedmaster 6.086 € + 113 € di spese di spedizione HK": "HK",
+        "Tudor Black Bay Chrono 8.800 € + 30 € di spese di spedizione IT": "IT",
+    }
+    for titolo, atteso in casi.items():
+        assert extract.parse_location(titolo) == atteso, titolo
+
+
+def test_niente_paese_dove_non_ce_n_e():
+    assert extract.parse_location("Omega Speedmaster 7.600 €") is None
+    assert extract.parse_location("") is None

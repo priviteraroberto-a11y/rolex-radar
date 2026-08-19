@@ -505,7 +505,32 @@ def parse_location(text: str) -> Optional[str]:
         for code, pattern in _REGION_PATTERNS:
             if re.search(pattern, finestra):
                 return code
-    return None
+    return _paese_chrono24(text)
+
+
+# Chrono24 chiude il titolo di ogni annuncio con la sigla del paese del
+# venditore, dopo la riga delle spese di spedizione:
+#     "... 20.999 EUR + 59 EUR di spese di spedizione FR"
+#     "... 23.495 EUR Spedizione gratuita JP"
+# Niente re.IGNORECASE: la sigla del paese e' maiuscola per definizione, ed
+# e' l'unica cosa che la distingue dall'ultima parola della frase.
+_PAESE_IN_CODA = re.compile(
+    r"(?:[Ss]pedizion|[Ss]hipping|[Vv]ersand)[^\n]{0,40}?\b([A-Z]{2})\s*$")
+
+
+def _paese_chrono24(text: str) -> Optional[str]:
+    """La sigla in fondo al titolo di un annuncio Chrono24.
+
+    Senza questa lettura ogni annuncio del canale principale risultava di
+    provenienza ignota, e la regola "ignoto = trattalo come europeo" faceva
+    passare per vicini venditori giapponesi o americani — orologi che non
+    andresti mai a vedere di persona.
+    """
+    m = _PAESE_IN_CODA.search((text or "").strip())
+    if not m:
+        return None
+    sigla = m.group(1).upper()
+    return sigla if sigla.isalpha() and sigla not in {"EU", "OR", "DI", "DA"} else None
 
 
 # =============================================================================
@@ -564,3 +589,22 @@ def enrich(listing, source_cfg: dict | None = None):
         listing.seller_country = source_cfg.get("country")
 
     return listing
+
+
+# Pagine di servizio dei marketplace: sembrano link normali, stanno in mezzo
+# agli annunci, ma non portano a nessun orologio.
+_PAGINA_DI_SERVIZIO = re.compile(
+    r"searchtask|saved-?search|/user/|/utente/|/myaccount|/notification|"
+    r"/impostazioni|/settings",
+    re.I,
+)
+
+
+def e_pagina_di_servizio(url: str) -> bool:
+    """Vero se l'URL e' un bottone del messaggio, non un annuncio.
+
+    Guarda solo il percorso, mai la query: i link Chrono24 si portano dietro
+    `ikcampaign=feat-SavedSearch` nella coda di tracciamento, e cercare
+    "savedsearch" nell'URL intero cancellava venticinque annunci veri.
+    """
+    return bool(_PAGINA_DI_SERVIZIO.search((url or "").split("?")[0]))
