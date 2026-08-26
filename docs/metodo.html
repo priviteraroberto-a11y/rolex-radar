@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1120">
+<title>Logiche di selezione — Radar orologi</title>
+<style>
+  :root { --bg:#0b1120; --card:#131c2e; --line:#233047; --tx:#e8eef8;
+          --mut:#8fa0bb; --acc:#38bdf8; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+  body { margin:0; background:var(--bg); color:var(--tx); font:15px/1.65
+    -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:env(safe-area-inset-top) 0 60px }
+  .wrap { max-width:760px; margin:0 auto; padding:20px 16px }
+  a { color:var(--acc) }
+  .eyebrow { font-size:11px; letter-spacing:.18em; color:var(--mut) }
+  h1 { font-size:22px; margin:4px 0 2px; letter-spacing:-.01em }
+  .upd { font-size:12px; color:var(--mut); margin-bottom:22px }
+  .back { display:inline-block; margin-bottom:18px; font-size:13px;
+          text-decoration:none; color:var(--mut) }
+  .back:hover { color:var(--tx) }
+  section { background:var(--card); border:1px solid var(--line);
+            border-radius:14px; padding:16px 18px; margin-bottom:16px }
+  section > h2 { font-size:16px; margin:0 0 4px; letter-spacing:-.01em }
+  section > .sub { font-size:12px; color:var(--mut); margin:0 0 14px }
+  h3 { font-size:14px; margin:20px 0 6px; color:var(--acc) }
+  h4 { font-size:13px; margin:0 0 6px }
+  p { margin:8px 0 }
+  ul { margin:8px 0; padding-left:20px }
+  li { margin:5px 0 }
+  code { background:#1c2740; padding:1px 5px; border-radius:5px; font-size:13px }
+  em { color:var(--mut); font-style:italic }
+  table { width:100%; border-collapse:collapse; margin:10px 0; font-size:13.5px }
+  th { text-align:left; font-weight:600; color:var(--mut); font-size:11px;
+       letter-spacing:.08em; text-transform:uppercase; padding:4px 8px 4px 0 }
+  td { padding:5px 8px 5px 0; border-top:1px solid var(--line);
+       vertical-align:top }
+  td.n, th.n { text-align:right; font-variant-numeric:tabular-nums;
+               white-space:nowrap }
+  td.ref { color:var(--mut); font-size:12.5px }
+  tr.tot td { font-weight:700; border-top:2px solid var(--line) }
+  .ex { background:#182338; border-left:3px solid var(--acc); padding:8px 12px;
+        border-radius:0 8px 8px 0; font-size:13.5px }
+  .nota { background:#1a1526; border:1px solid #3b2a4d; border-radius:10px;
+          padding:12px 14px; margin-top:18px }
+  .nota h4 { color:#c79bf0 }
+  .multgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+              gap:0 22px }
+  .mult h4 { margin-top:14px; color:var(--mut); font-size:11px;
+             letter-spacing:.08em; text-transform:uppercase }
+  .mult table { margin:0; font-size:13px }
+  .orologi td:first-child { min-width:140px }
+  footer { margin-top:26px; font-size:11px; color:#5f708c; line-height:1.6 }
+</style></head><body>
+<div class="wrap">
+  <a class="back" href="index.html">&larr; torna al radar</a>
+  <div class="eyebrow">RADAR OROLOGI</div>
+  <h1>Logiche di selezione</h1>
+  <div class="upd">generata dal config attivo il 26/08/2026 21:46</div>
+
+  <section>
+    <h2>Il principio</h2>
+    <p class="sub">perche' non ci sono filtri stretti</p>
+    <p>Il sistema <b>non filtra per trovare l'orologio giusto: guarda largo e
+    lascia che sia il punteggio a scartare</b>. Un filtro rigido sull'anno o
+    sul prezzo nasconderebbe un 2023 in condizioni eccezionali a un prezzo
+    ottimo — che e' esattamente il caso che vale la pena vedere.</p>
+    <p>Ne discende tutto il resto: un solo criterio puo' escludere davvero
+    (l'identita' dell'orologio), tutti gli altri pesano e basta.</p>
+  </section>
+
+  <section>
+    <h2>1. La selezione</h2>
+    <p class="sub">chi entra, chi viene ignorato, chi entra ma non ti disturba</p>
+    
+<p>Un annuncio attraversa tre cancelli, in quest'ordine. Solo il primo puo'
+escluderlo per sempre.</p>
+
+<h3>1. Identificazione — l'unico filtro assoluto</h3>
+<p>L'annuncio parla di <em>questo</em> orologio? Il riconoscimento avviene in
+due modi, scelti orologio per orologio:</p>
+<ul>
+  <li><b>Per referenza.</b> Vale la referenza completa
+      (<code>4520V/210A-B128</code>) oppure la sua <b>radice</b>
+      (<code>4520V</code>). La radice esiste perche' un venditore su tre scrive
+      la referenza per intero: gli altri scrivono &ldquo;Royal Oak 37mm
+      15450ST&rdquo;, e pretendere la stringa completa significava scartarli
+      tutti.</li>
+  <li><b>Per nome.</b> Per i modelli che nessuno identifica con la referenza —
+      lo Zenith Elite si vende come &ldquo;Elite Classic Automatic Ultra
+      Thin&rdquo; — devono comparire la marca e certe parole obbligatorie.</li>
+</ul>
+<p>In entrambi i casi le <b>parole escluse</b> hanno la precedenza su tutto: se
+il titolo dice &ldquo;Defy&rdquo; o &ldquo;Offshore&rdquo;, l'annuncio esce
+subito, anche se la referenza combacia. Serve contro due cose diverse: i
+modelli-cugini che condividono le prime cifre (Batman e Pepsi, 126710BLNR e
+126710BLRO) e lo spam dei rivenditori che infilano referenze famose nelle
+schede di orologi che non c'entrano.</p>
+
+<h3>2. Sanita' — buttare via i dati sbagliati, non gli annunci brutti</h3>
+<p>Prezzo dentro la banda, anno dentro la finestra, non gia' venduto. Questo
+cancello <b>non fa selezione di merito</b>: serve a scartare un
+&ldquo;126.710&nbsp;&euro;&rdquo; che era una referenza letta come prezzo. Per
+questo le bande sono volutamente larghe — una soglia stretta non protegge da
+niente e nasconde in silenzio proprio l'affare che cercavi.</p>
+
+<h3>3. Geografia — non esclude, decide se disturbarti</h3>
+<table>
+  <tr><th>fascia</th><th>paesi</th><th>cosa succede</th></tr>
+  <tr><td><b>casa</b></td><td>IT, SM</td>
+      <td>notifica con soglia normale (punteggio &ge; 78)</td></tr>
+  <tr><td><b>vicino</b></td><td>EU, CH</td>
+      <td>asticella alzata: punteggio &ge; 88
+          oppure 15.0% sotto mercato</td></tr>
+  <tr><td><b>riferimento</b></td><td>tutto il resto</td>
+      <td>mai notificato, ma <b>conta nell'indice</b></td></tr>
+</table>
+<p>La distinzione e' deliberata: un annuncio giapponese non te lo segnalo
+perche' non andresti a vederlo, ma mi serve per sapere quanto vale l'orologio.
+Ed e' un <b>cancello sulle notifiche, non un ingrediente del punteggio</b>:
+cosi' i punteggi restano confrontabili fra paesi e l'indice non si deforma.</p>
+<p>Se il paese non e' dichiarato, l'annuncio viene trattato come
+<b>nearby</b>: in dubbio si sbaglia verso
+il mostrare, non verso il nascondere.</p>
+
+  </section>
+
+  <section>
+    <h2>2. L'indice di mercato</h2>
+    <p class="sub">come si stabilisce quanto vale davvero</p>
+    
+<p>Confrontare due annunci direttamente non significa niente: un 2023 lucidato
+senza scatola e un 2026 mai indossato full set non sono lo stesso oggetto. Il
+motore fa quindi tre passi — e' quello che in statistica si chiama
+<b>modello edonico</b>, in piccolo.</p>
+
+<h3>Primo: normalizzare</h3>
+<p>Ogni annuncio viene <b>diviso</b> per il prodotto dei suoi moltiplicatori.
+Il risultato e' quanto costerebbe se fosse l'esemplare di riferimento.</p>
+<p class="ex">Un 2023 (&times;0.91) senza
+scatola (&times;0.93) a
+30.000&nbsp;&euro; &rarr; 30.000 &divide; 0,846 = <b>35.460&nbsp;&euro;</b>
+normalizzati.</p>
+<div class='multgrid'><div class='mult'><h4>anno</h4><table><tr><td>2026</td><td class='n'>&times;1.06</td></tr><tr><td>2025</td><td class='n'>&times;1.0</td></tr><tr><td>2024</td><td class='n'>&times;0.95</td></tr><tr><td>2023</td><td class='n'>&times;0.91</td></tr><tr><td>2022</td><td class='n'>&times;0.88</td></tr><tr><td>altro / non dichiarato</td><td class='n'>&times;0.85</td></tr></table></div><div class='mult'><h4>condizioni</h4><table><tr><td>unworn</td><td class='n'>&times;1.0</td></tr><tr><td>new</td><td class='n'>&times;1.0</td></tr><tr><td>mint</td><td class='n'>&times;0.96</td></tr><tr><td>like_new</td><td class='n'>&times;0.94</td></tr><tr><td>excellent</td><td class='n'>&times;0.9</td></tr><tr><td>very_good</td><td class='n'>&times;0.85</td></tr><tr><td>good</td><td class='n'>&times;0.79</td></tr><tr><td>altro / non dichiarato</td><td class='n'>&times;0.9</td></tr></table></div><div class='mult'><h4>bracciale</h4><table><tr><td>jubilee</td><td class='n'>&times;1.0</td></tr><tr><td>oyster</td><td class='n'>&times;0.97</td></tr><tr><td>altro / non dichiarato</td><td class='n'>&times;0.99</td></tr></table></div><div class='mult'><h4>scatola e documenti</h4><table><tr><td>True</td><td class='n'>&times;1.0</td></tr><tr><td>False</td><td class='n'>&times;0.93</td></tr></table></div><div class='mult'><h4>paese di garanzia</h4><table><tr><td>IT</td><td class='n'>&times;1.02</td></tr><tr><td>EU</td><td class='n'>&times;1.01</td></tr><tr><td>CH</td><td class='n'>&times;1.0</td></tr><tr><td>UK</td><td class='n'>&times;1.0</td></tr><tr><td>JP</td><td class='n'>&times;0.99</td></tr><tr><td>US</td><td class='n'>&times;0.98</td></tr><tr><td>AE</td><td class='n'>&times;0.94</td></tr><tr><td>SA</td><td class='n'>&times;0.94</td></tr><tr><td>QA</td><td class='n'>&times;0.94</td></tr><tr><td>altro / non dichiarato</td><td class='n'>&times;0.98</td></tr></table></div><div class='mult'><h4>mai lucidato</h4><table><tr><td>True</td><td class='n'>&times;1.01</td></tr><tr><td>False</td><td class='n'>&times;1.0</td></tr></table></div></div>
+
+<h3>Secondo: la mediana, non la media</h3>
+<p>L'indice e' la <b>mediana</b> dei prezzi normalizzati. La mediana ignora
+l'annuncio-civetta a met&agrave; prezzo e il &ldquo;prezzo su richiesta&rdquo;
+gonfiato: a spostare il centro e' solo chi sta in mezzo. In piu' viene tagliato
+il <b>10% piu' alto e il 10% piu' basso</b>, che sono quasi sempre errori di
+lettura.</p>
+
+<h3>Terzo: tornare indietro</h3>
+<p>Il valore equo di un singolo annuncio e'
+<b>indice &times; i <em>suoi</em> moltiplicatori</b>. E' questo passaggio che
+permette di dire &ldquo;questo 2023 a 26.000&nbsp;&euro; e' un affare migliore
+di quel 2025 a 33.000&nbsp;&euro;&rdquo;, cosa che nessun marketplace ti
+dice.</p>
+
+<div class="nota">
+<h4>Il limite, detto chiaramente</h4>
+<p>Servono <b>10 annunci comparabili</b> degli
+ultimi <b>60 giorni</b> perche' l'indice sia
+calcolato sui dati. Sotto quella soglia il sistema usa una
+<b>stima di partenza scritta a mano</b>, e in dashboard lo dichiara.</p>
+<p>Finche' leggi &ldquo;stima di partenza&rdquo;, i punteggi <b>non sono
+affidabili in valore assoluto</b>: sono calcolati contro un numero ipotizzato.
+Il confronto <em>fra</em> annunci dello stesso orologio resta valido.</p>
+</div>
+
+  </section>
+
+  <section>
+    <h2>3. Il punteggio</h2>
+    <p class="sub">da 0 a 100</p>
+    
+<p>Cento punti in tutto. Il prezzo ne vale <b>40</b>:
+e' la voce che pesa piu' di tutte, ma da sola non basta.</p>
+<table class="pesi">
+  <tr><th>voce</th><th class="n">punti</th></tr>
+  <tr><td>prezzo rispetto al valore equo</td><td class='n'>40</td></tr><tr><td>anno</td><td class='n'>12</td></tr><tr><td>condizioni</td><td class='n'>12</td></tr><tr><td>scatola e documenti</td><td class='n'>10</td></tr><tr><td>paese di garanzia</td><td class='n'>8</td></tr><tr><td>bracciale</td><td class='n'>6</td></tr><tr><td>affidabilit&agrave; del venditore</td><td class='n'>6</td></tr><tr><td>mai lucidato</td><td class='n'>6</td></tr>
+  <tr class="tot"><td>totale</td><td class="n">100</td></tr>
+</table>
+
+<h3>Come si trasforma il prezzo in punti</h3>
+<p>E' una retta, non un gradino:</p>
+<ul>
+  <li><b>10.0% sotto</b> il valore equo o meglio &rarr; punteggio pieno
+      (40 punti)</li>
+  <li>esattamente <b>a valore equo</b> &rarr; 21.8 punti, poco piu' di
+      met&agrave;</li>
+  <li><b>12.0% sopra</b> il valore equo o peggio &rarr; zero punti</li>
+</ul>
+<p>La conseguenza pratica: un annuncio a prezzo giusto ma perfetto in tutto il
+resto arriva intorno a 75-80. Per superare 88 — la soglia dei paesi vicini —
+servono uno sconto vero <em>e</em> buone caratteristiche.</p>
+
+<h3>Due regole che contano piu' di quanto sembri</h3>
+<p><b>Un dato mancante non vale zero, vale circa il 40% del peso.</b> Se il
+bracciale non e' dichiarato l'annuncio prende una frazione dei punti, non
+nessuno. Senza questa regola gli annunci verbosi batterebbero sistematicamente
+quelli scarni, che spesso sono dei privati — cioe' proprio dove capitano i
+prezzi fuori mercato.</p>
+<p><b>Ma l'opacita' si paga.</b> Se mancano quattro o piu' caratteristiche:
+<b>&minus;6</b>. Se il prezzo e' &ldquo;su richiesta&rdquo;: <b>&minus;15</b>.</p>
+<p>Il <b>miglior punteggio</b> che vedi in cima a ogni sezione e' semplicemente
+il massimo fra gli annunci attivi di quell'orologio.</p>
+
+  </section>
+
+  <section>
+    <h2>4. Quando arriva una notifica</h2>
+    <p class="sub">soglie, silenzi, e perche' non ricevi doppioni</p>
+    
+<p>Il punteggio decide la qualita', queste regole decidono il disturbo.</p>
+<table>
+  <tr><td>soglia in Italia e San Marino</td>
+      <td class="n">punteggio &ge; 78</td></tr>
+  <tr><td>oppure, sempre</td>
+      <td class="n">&ge; 6.0% sotto mercato</td></tr>
+  <tr><td>soglia nei paesi vicini</td>
+      <td class="n">&ge; 88 o
+          15.0% sotto</td></tr>
+  <tr><td>ore di silenzio</td>
+      <td class="n">dalle 23 alle 7</td></tr>
+  <tr><td>massimo per giro</td>
+      <td class="n">12 notifiche</td></tr>
+</table>
+
+<h3>Perche' non ricevi due volte lo stesso orologio</h3>
+<p>Ogni annuncio ha un'identita' stabile costruita sul suo indirizzo, ripulito
+dai parametri di tracciamento — senza quella pulizia lo stesso orologio in due
+email diverse sembrerebbe due annunci. Una volta notificato, non torna. Le
+uniche eccezioni sono i <b>cambiamenti veri</b>:</p>
+<ul>
+  <li>il prezzo scende di almeno 2.0%
+      <em>e</em> di almeno 400 €</li>
+  <li>il punteggio migliora di almeno 6 punti
+      (tipicamente perche' il venditore ha aggiunto informazioni)</li>
+</ul>
+
+  </section>
+
+  <section>
+    <h2>5. Come sono impostati i tuoi orologi</h2>
+    <p class="sub">letto dal config attivo</p>
+    
+<p>Come e' impostato oggi ciascun orologio. La <b>stima</b> e' il numero usato
+finche' non ci sono abbastanza annunci veri; la <b>banda</b> e' il cancello di
+sanita', tenuto largo apposta.</p>
+<table class="orologi">
+  <tr><th>orologio</th><th>riconosciuto per</th><th class="n">stima</th>
+      <th class="n">banda di prezzo</th></tr>
+  <tr><td><b>TAG Heuer Monaco “Gulf”</b></td><td class='ref'>CAW211P.FC6356, CAW211P</td><td class='n'>7.000 €</td><td class='n'>2.000 € – 14.000 €</td></tr><tr><td><b>Omega Speedmaster Moonwatch Professional</b></td><td class='ref'>310.30.42.50.01.002, 310.30.42.50.01</td><td class='n'>7.300 €</td><td class='n'>3.000 € – 14.000 €</td></tr><tr><td><b>Tudor Black Bay Chrono “Flamingo Blue”</b></td><td class='ref'>M79360N-0024, 79360N</td><td class='n'>8.800 €</td><td class='n'>2.500 € – 16.000 €</td></tr><tr><td><b>Zenith Elite Ultra Thin</b></td><td class='ref'>nome: Elite</td><td class='n'>3.600 €</td><td class='n'>1.500 € – 12.000 €</td></tr><tr><td><b>Vacheron Constantin Historiques 222</b></td><td class='ref'>4200H/222A-B934, 4200H</td><td class='n'>52.000 €</td><td class='n'>25.000 € – 160.000 €</td></tr><tr><td><b>Vacheron Constantin Overseas</b></td><td class='ref'>4520V/210A-B128, 4520V</td><td class='n'>35.000 €</td><td class='n'>12.000 € – 70.000 €</td></tr><tr><td><b>Audemars Piguet Royal Oak 37</b></td><td class='ref'>15450ST.OO.1256ST.03, 15450ST</td><td class='n'>32.000 €</td><td class='n'>15.000 € – 80.000 €</td></tr><tr><td><b>Zenith Chronomaster Revival A384</b></td><td class='ref'>03.A384.400/21.M384, 03.A384.400/3817.M3817, A384</td><td class='n'>8.000 €</td><td class='n'>3.000 € – 18.000 €</td></tr>
+</table>
+
+  </section>
+
+  <section>
+    <h2>6. Cosa questo sistema non fa</h2>
+    <p class="sub">i limiti, detti prima che ti costino</p>
+    
+<p>Vale la pena sapere cosa questo sistema <b>non</b> fa.</p>
+<ul>
+  <li><b>Non conosce i prezzi di vendita</b>, solo quelli richiesti. Un annuncio
+      fermo da otto mesi a un prezzo fuori mercato pesa nell'indice esattamente
+      come uno appena pubblicato.</li>
+  <li><b>Non dice niente sull'autenticit&agrave;</b> dell'orologio n&eacute;
+      sull'affidabilit&agrave; del venditore. Un punteggio alto su un annuncio
+      troppo conveniente e' un motivo per essere <em>piu'</em> prudenti, non
+      meno.</li>
+  <li><b>Chrono24 non si puo' leggere direttamente</b> — il sito blocca la
+      lettura automatica. L'unica porta sono gli alert email delle tue ricerche
+      salvate, che pero' scattano solo sugli annunci <em>nuovi</em>: quelli
+      gi&agrave; online oggi non arriveranno mai.</li>
+  <li><b>Le stime di partenza sono ipotesi.</b> Si sono gi&agrave; rivelate
+      sbagliate del doppio e del triplo. Correggerle con un prezzo vero e' il
+      singolo intervento che migliora di piu' l'accuratezza dei punteggi.</li>
+</ul>
+
+  </section>
+
+  <footer>
+    Questa pagina e' generata leggendo il file di configurazione attivo: se
+    cambi un peso o una soglia, si aggiorna da sola al giro successivo.
+    L'&ldquo;indice&rdquo; e' una stima statistica costruita su prezzi
+    richiesti, non su prezzi di transazione. E' un indicatore, non una
+    valutazione peritale, e non costituisce consulenza all'acquisto o
+    all'investimento.
+  </footer>
+</div>
+</body></html>

@@ -1,0 +1,440 @@
+"""Genera docs/nuovo.html: il modulo per aggiungere un orologio da monitorare.
+
+Il vincolo da cui parte tutto: GitHub Pages serve file statici, non c'e' nessun
+server dietro. Un form non puo' scrivere in `config.yaml`, e mettere una chiave
+di scrittura in una pagina pubblica sarebbe come lasciare le chiavi di casa
+sullo zerbino.
+
+La strada scelta: il form costruisce il blocco di configurazione nel browser e
+lo consegna a GitHub sotto forma di *richiesta* precompilata. Da li' in poi e'
+automatico — un workflow legge la richiesta, la valida, la scrive nel config e
+la chiude. Tu compili e clicchi; il resto avviene da solo.
+
+Il gruppo di rotazione non lo scegli: viene assegnato al turno meno affollato,
+sia qui (per mostrartelo) sia nel workflow (che e' quello che decide davvero).
+"""
+from __future__ import annotations
+
+import html
+import json
+import re
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+ROME = ZoneInfo("Europe/Rome")
+
+
+def gruppo_meno_affollato(cfg) -> str:
+    """Il turno con meno orologi. A pari merito, il primo dichiarato.
+
+    Vive qui perche' la usano in due: questa pagina per mostrarti dove finira'
+    l'orologio, e lo script che scrive davvero nel config. Che diano la stessa
+    risposta non e' un dettaglio estetico — se divergessero, la pagina ti
+    direbbe una cosa e il sistema ne farebbe un'altra.
+    """
+    gruppi = [str(g) for g in (cfg.get("rotation.groups") or [])]
+    if not gruppi:
+        return ""
+    conteggio = Counter(str(w.watch.get("group") or "") for w in cfg.watches)
+    return min(gruppi, key=lambda g: (conteggio.get(g, 0), gruppi.index(g)))
+
+
+def conteggi(cfg) -> dict:
+    gruppi = [str(g) for g in (cfg.get("rotation.groups") or [])]
+    c = Counter(str(w.watch.get("group") or "") for w in cfg.watches)
+    return {g: c.get(g, 0) for g in gruppi}
+
+
+def repo_da_config(cfg) -> str:
+    """`utente/repo` per costruire il link alla richiesta."""
+    return str(cfg.get("repo", "priviteraroberto-a11y/rolex-radar"))
+
+
+def build(cfg, out_path: str | Path = "docs/nuovo.html") -> Path:
+    ids = sorted(w.id for w in cfg.watches)
+    doc = _TEMPLATE.format(
+        css=_CSS,
+        updated=datetime.now(ROME).strftime("%d/%m/%Y %H:%M"),
+        repo=html.escape(repo_da_config(cfg)),
+        conteggi=json.dumps(conteggi(cfg), ensure_ascii=False),
+        prossimo=html.escape(gruppo_meno_affollato(cfg)),
+        ids=json.dumps(ids, ensure_ascii=False),
+        riepilogo=_riepilogo(cfg),
+    )
+    p = Path(out_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(doc, encoding="utf-8")
+    return p
+
+
+def _riepilogo(cfg) -> str:
+    righe = []
+    for g, n in conteggi(cfg).items():
+        righe.append(f"<tr><td>{html.escape(g)}</td><td class='n'>{n} orologi</td></tr>")
+    return "".join(righe)
+
+
+_SLUG = re.compile(r"[^a-z0-9]+")
+
+
+def slug(*parti: str) -> str:
+    """Identificativo stabile e leggibile a partire da marca e modello."""
+    testo = " ".join(p for p in parti if p)
+    return _SLUG.sub("-", testo.lower()).strip("-")[:40] or "nuovo-modello"
+
+
+_CSS = """
+  :root { --bg:#0b1120; --card:#131c2e; --line:#233047; --tx:#e8eef8;
+          --mut:#8fa0bb; --acc:#38bdf8; --g:#22c55e; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+  body { margin:0; background:var(--bg); color:var(--tx); font:15px/1.6
+    -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:env(safe-area-inset-top) 0 60px }
+  .wrap { max-width:680px; margin:0 auto; padding:20px 16px }
+  a { color:var(--acc) }
+  .back { display:inline-block; margin-bottom:18px; font-size:13px;
+          text-decoration:none; color:var(--mut) }
+  .eyebrow { font-size:11px; letter-spacing:.18em; color:var(--mut) }
+  h1 { font-size:22px; margin:4px 0 2px }
+  .upd { font-size:12px; color:var(--mut); margin-bottom:22px }
+  section { background:var(--card); border:1px solid var(--line);
+            border-radius:14px; padding:16px 18px; margin-bottom:16px }
+  h2 { font-size:15px; margin:0 0 3px }
+  .sub { font-size:12px; color:var(--mut); margin:0 0 16px }
+  label { display:block; font-size:12px; color:var(--mut); margin:14px 0 4px;
+          letter-spacing:.02em }
+  label .opt { color:#5f708c; font-style:italic }
+  input[type=text], input[type=number], textarea, select {
+    width:100%; background:#0e1626; border:1px solid var(--line); color:var(--tx);
+    border-radius:9px; padding:9px 11px; font:inherit; font-size:14px }
+  input:focus, textarea:focus, select:focus { outline:none; border-color:var(--acc) }
+  .hint { font-size:11.5px; color:#6d7f9c; margin-top:4px }
+  .riga { display:flex; gap:12px } .riga > div { flex:1 }
+  .radio { display:flex; gap:10px; margin-top:6px }
+  .radio label { display:flex; align-items:center; gap:7px; margin:0; flex:1;
+    background:#0e1626; border:1px solid var(--line); border-radius:9px;
+    padding:10px 12px; font-size:13px; color:var(--tx); cursor:pointer }
+  .radio label.on { border-color:var(--acc); background:#132335 }
+  table { width:100%; border-collapse:collapse; font-size:13px }
+  td { padding:4px 0; border-top:1px solid var(--line) }
+  td.n { text-align:right; color:var(--mut) }
+  .bottoni { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px }
+  button, .btn { flex:1; min-width:180px; border:0; border-radius:10px;
+    padding:13px 16px; font:inherit; font-size:14px; font-weight:600;
+    cursor:pointer; text-align:center; text-decoration:none }
+  .primario { background:var(--acc); color:#06263a }
+  .secondario { background:#1c2740; color:var(--tx); border:1px solid var(--line) }
+  button:disabled { opacity:.45; cursor:not-allowed }
+  pre { background:#0e1626; border:1px solid var(--line); border-radius:10px;
+    padding:12px; overflow-x:auto; font-size:12px; line-height:1.5;
+    white-space:pre; margin:14px 0 0 }
+  .err { color:#f43f5e; font-size:12.5px; margin-top:10px; min-height:1.2em }
+  .ok { color:var(--g) }
+  .gruppo { background:#132335; border:1px solid #24455c; border-radius:9px;
+    padding:10px 12px; font-size:13px; margin-top:6px }
+  footer { margin-top:26px; font-size:11px; color:#5f708c; line-height:1.6 }
+"""
+
+_TEMPLATE = """<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1120">
+<title>Nuovo modello — Radar orologi</title>
+<style>{css}</style></head><body>
+<div class="wrap">
+  <a class="back" href="index.html">&larr; torna al radar</a>
+  <div class="eyebrow">RADAR OROLOGI</div>
+  <h1>Nuovo modello da monitorare</h1>
+  <div class="upd">turni aggiornati al {updated}</div>
+
+  <section>
+    <h2>L'orologio</h2>
+    <p class="sub">le due righe che servono davvero</p>
+
+    <div class="riga">
+      <div>
+        <label for="marca">Marca</label>
+        <input type="text" id="marca" placeholder="Omega" autocomplete="off">
+      </div>
+      <div>
+        <label for="modello">Modello</label>
+        <input type="text" id="modello" placeholder="Seamaster 300" autocomplete="off">
+      </div>
+    </div>
+
+    <label for="nick">Soprannome <span class="opt">— facoltativo</span></label>
+    <input type="text" id="nick" placeholder="Pepsi, Flamingo Blue, Gulf&hellip;" autocomplete="off">
+  </section>
+
+  <section>
+    <h2>Come riconoscerlo</h2>
+    <p class="sub">e' la scelta che decide se lo troverai o no</p>
+
+    <div class="radio" id="modo">
+      <label data-modo="reference" class="on">
+        <input type="radio" name="modo" value="reference" checked> Per referenza
+      </label>
+      <label data-modo="name">
+        <input type="radio" name="modo" value="name"> Per nome
+      </label>
+    </div>
+    <div class="hint" id="spiegaModo"></div>
+
+    <div id="bloccoRef">
+      <label for="ref">Referenza completa</label>
+      <input type="text" id="ref" placeholder="210.30.42.20.03.001" autocomplete="off">
+      <div class="hint">Copiala da un annuncio vero, non dal sito della marca.</div>
+
+      <label for="radice">Radice <span class="opt">— proposta automaticamente</span></label>
+      <input type="text" id="radice" placeholder="210.30.42.20" autocomplete="off">
+      <div class="hint">La parte che i venditori scrivono davvero. Se la lasci
+      cos&igrave; com'&egrave;, passeranno solo gli annunci con la referenza per
+      intero &mdash; cio&egrave; circa un terzo.</div>
+
+      <label for="escluseRef">Varianti da scartare <span class="opt">— facoltativo</span></label>
+      <input type="text" id="escluseRef" placeholder="210.30.42.20.01.001" autocomplete="off">
+      <div class="hint">Referenze simili che <b>non</b> vuoi. Vengono scartate
+      solo quando il venditore le dichiara: se l'annuncio &egrave; ambiguo, lo
+      vedi lo stesso.</div>
+    </div>
+
+    <div id="bloccoNome" style="display:none">
+      <label for="obbligatorie">Parole che devono comparire tutte</label>
+      <input type="text" id="obbligatorie" placeholder="Elite, Ultra Thin" autocomplete="off">
+      <div class="hint">Separate da virgola. Servono <b>tutte</b>: &egrave; quello
+      che separa un &ldquo;Elite Ultra Thin&rdquo; da un &ldquo;Elite
+      Chronomaster&rdquo;.</div>
+    </div>
+
+    <label for="escluse">Parole escluse <span class="opt">— facoltativo</span></label>
+    <input type="text" id="escluse" placeholder="Offshore, Chronograph, Lady" autocomplete="off">
+    <div class="hint">Modelli cugini che condividono il nome o le prime cifre.
+    Hanno la precedenza su tutto il resto.</div>
+  </section>
+
+  <section>
+    <h2>Quanto vale, all'incirca</h2>
+    <p class="sub">un numero approssimativo va bene; serve solo finch&eacute; non
+    arrivano annunci veri</p>
+
+    <div class="riga">
+      <div>
+        <label for="prezzo">Prezzo indicativo in euro</label>
+        <input type="number" id="prezzo" placeholder="5000" min="100" step="100">
+      </div>
+      <div>
+        <label for="anno">Anno pi&ugrave; vecchio accettabile</label>
+        <input type="number" id="anno" value="2015" min="1950" max="2030">
+      </div>
+    </div>
+    <div class="hint" id="banda"></div>
+
+    <label for="foto">Foto <span class="opt">— facoltativo</span></label>
+    <input type="text" id="foto" placeholder="https://&hellip;" autocomplete="off">
+    <div class="hint">Tasto destro su un'immagine &rarr; &ldquo;Copia indirizzo
+    immagine&rdquo;. Se la lasci vuota, il sistema user&agrave; la foto di uno
+    degli annunci che trover&agrave;.</div>
+  </section>
+
+  <section>
+    <h2>Turno di rotazione</h2>
+    <p class="sub">assegnato al gruppo meno affollato, per tenerli in pari</p>
+    <table>{riepilogo}</table>
+    <div class="gruppo">Questo orologio finir&agrave; in
+      <b id="gruppoScelto">{prossimo}</b>.</div>
+    <div class="hint">La scelta viene rifatta anche al momento della scrittura,
+    perch&eacute; nel frattempo i turni possono essere cambiati.</div>
+  </section>
+
+  <section>
+    <h2>Invio</h2>
+    <p class="sub">GitHub Pages non ha un server dietro: la pagina prepara la
+    richiesta, il resto lo fa il repository</p>
+
+    <div class="bottoni">
+      <button class="primario" id="invia">Apri la richiesta su GitHub</button>
+      <button class="secondario" id="copia">Copia il blocco</button>
+    </div>
+    <div class="err" id="errore"></div>
+    <div class="hint" style="margin-top:12px">Il primo bottone apre GitHub con
+    tutto gi&agrave; scritto: ti resta da premere <b>Create</b>. Da l&igrave; un
+    automatismo scrive nel config, aggiorna la rotazione e chiude la richiesta.
+    Il secondo serve se preferisci incollare a mano in
+    <code>config.yaml</code>.</div>
+
+    <pre id="anteprima"></pre>
+  </section>
+
+  <footer>
+    Solo le richieste aperte dal proprietario del repository vengono scritte nel
+    config: il repository &egrave; pubblico, e chiunque potrebbe altrimenti
+    aggiungere orologi al tuo radar.
+  </footer>
+</div>
+
+<script>
+(function () {{
+  var REPO = "{repo}";
+  var CONTEGGI = {conteggi};
+  var ESISTENTI = {ids};
+
+  var $ = function (id) {{ return document.getElementById(id); }};
+  var campi = ["marca","modello","nick","ref","radice","escluseRef",
+               "obbligatorie","escluse","prezzo","anno","foto"];
+
+  function modo() {{
+    var r = document.querySelector('input[name=modo]:checked');
+    return r ? r.value : "reference";
+  }}
+
+  function lista(v) {{
+    return (v || "").split(",").map(function (s) {{ return s.trim(); }})
+                    .filter(function (s) {{ return s.length > 0; }});
+  }}
+
+  function ident() {{
+    var base = ($("marca").value + " " + $("modello").value + " " + $("nick").value);
+    var s = base.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "").slice(0, 40);
+    return s || "nuovo-modello";
+  }}
+
+  // La radice proposta: la referenza senza l'ultimo gruppo. E' un'ipotesi
+  // ragionevole per la maggior parte delle marche, e resta modificabile.
+  function radiceProposta(ref) {{
+    if (!ref) return "";
+    var pezzi = ref.split(/[.\\/\\-]/);
+    if (pezzi.length < 2) return ref;
+    var sep = ref.indexOf(".") >= 0 ? "." : (ref.indexOf("/") >= 0 ? "/" : "-");
+    return pezzi.slice(0, pezzi.length - 1).join(sep);
+  }}
+
+  function q(s) {{ return '"' + String(s).replace(/"/g, '\\\\"') + '"'; }}
+  function arr(v) {{ return "[" + v.map(q).join(", ") + "]"; }}
+
+  function blocco() {{
+    var prezzo = parseFloat($("prezzo").value) || 0;
+    var anno = parseInt($("anno").value, 10) || 2015;
+    var ora = new Date().getFullYear();
+    var r = [];
+    r.push("  - id: " + ident());
+    if ($("foto").value.trim()) r.push("    photo: " + q($("foto").value.trim()));
+    r.push("    group: " + $("gruppoScelto").textContent);
+    r.push("    brand: " + $("marca").value.trim());
+    r.push("    model: " + $("modello").value.trim());
+    if ($("nick").value.trim()) r.push("    nickname: " + $("nick").value.trim());
+
+    if (modo() === "name") {{
+      r.push("    identify_by: name");
+      r.push("    must_include: " + arr(lista($("obbligatorie").value)));
+      r.push("    references: []");
+    }} else {{
+      r.push("    references: " + arr([$("ref").value.trim()]));
+      var rad = $("radice").value.trim();
+      if (rad && rad !== $("ref").value.trim()) {{
+        r.push("    reference_stems: " + arr([rad]));
+      }}
+      var ex = lista($("escluseRef").value);
+      if (ex.length) r.push("    exclude_references: " + arr(ex));
+    }}
+    var kw = lista($("escluse").value);
+    if (kw.length) r.push("    exclude_keywords: " + arr(kw));
+
+    r.push("    hard_filters:");
+    r.push("      min_year: " + anno);
+    r.push("      max_year: " + (ora + 1));
+    r.push("      absolute_min_price_eur: " + Math.round(prezzo * 0.45));
+    r.push("      absolute_max_price_eur: " + Math.round(prezzo * 2.2));
+    r.push("    preferences:");
+    r.push("      target_years: [" + [ora - 1, ora, ora + 1].join(", ") + "]");
+    r.push("    fair_value:");
+    r.push("      seed_price_eur: " + Math.round(prezzo));
+    r.push("    notifications:");
+    r.push("      always_notify_if_underpriced_pct: 15.0");
+    return r.join("\\n");
+  }}
+
+  function problemi() {{
+    var p = [];
+    if (!$("marca").value.trim()) p.push("manca la marca");
+    if (!$("modello").value.trim()) p.push("manca il modello");
+    if (modo() === "reference" && !$("ref").value.trim()) p.push("manca la referenza");
+    if (modo() === "name" && lista($("obbligatorie").value).length === 0)
+      p.push("servono le parole obbligatorie");
+    if (!(parseFloat($("prezzo").value) > 0)) p.push("manca il prezzo indicativo");
+    if (ESISTENTI.indexOf(ident()) >= 0) p.push("questo orologio c'e' gia'");
+    return p;
+  }}
+
+  function aggiorna() {{
+    var perNome = modo() === "name";
+    $("bloccoRef").style.display = perNome ? "none" : "";
+    $("bloccoNome").style.display = perNome ? "" : "none";
+    $("spiegaModo").textContent = perNome
+      ? "Per i modelli che nessuno identifica con la referenza: lo Zenith Elite si vende come \\u201cElite Classic Automatic Ultra Thin\\u201d."
+      : "Il modo normale. Funziona quando la referenza compare negli annunci, come per Rolex e Omega.";
+    Array.prototype.forEach.call(document.querySelectorAll("#modo label"), function (l) {{
+      l.classList.toggle("on", l.dataset.modo === modo());
+    }});
+
+    if (!$("radice").value && $("ref").value) {{
+      $("radice").placeholder = radiceProposta($("ref").value.trim());
+    }}
+    var prezzo = parseFloat($("prezzo").value) || 0;
+    $("banda").textContent = prezzo > 0
+      ? "Gli annunci verranno accettati fra " + Math.round(prezzo * 0.45).toLocaleString("it-IT")
+        + " e " + Math.round(prezzo * 2.2).toLocaleString("it-IT")
+        + " \\u20ac. Larga di proposito: una soglia stretta nasconde in silenzio proprio l'affare che cerchi."
+      : "";
+
+    var p = problemi();
+    $("errore").textContent = p.length ? "Da completare: " + p.join(", ") + "." : "";
+    $("errore").className = p.length ? "err" : "err ok";
+    $("invia").disabled = p.length > 0;
+    $("anteprima").textContent = p.length ? "" : blocco();
+  }}
+
+  campi.forEach(function (c) {{
+    var el = $(c);
+    if (el) el.addEventListener("input", aggiorna);
+  }});
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=modo]'), function (r) {{
+    r.addEventListener("change", function () {{
+      if (!$("radice").value) $("radice").value = "";
+      aggiorna();
+    }});
+  }});
+  $("ref").addEventListener("blur", function () {{
+    if (!$("radice").value) $("radice").value = radiceProposta($("ref").value.trim());
+    aggiorna();
+  }});
+
+  $("invia").addEventListener("click", function () {{
+    var titolo = "Nuovo modello: " + $("marca").value.trim() + " " + $("modello").value.trim();
+    var corpo = "Aggiungi questo orologio al radar.\\n\\n```yaml\\n" + blocco() + "\\n```\\n";
+    var url = "https://github.com/" + REPO + "/issues/new"
+            + "?labels=nuovo-modello"
+            + "&title=" + encodeURIComponent(titolo)
+            + "&body=" + encodeURIComponent(corpo);
+    window.open(url, "_blank", "noopener");
+  }});
+
+  $("copia").addEventListener("click", function () {{
+    var testo = blocco();
+    if (!testo) {{ aggiorna(); return; }}
+    navigator.clipboard.writeText(testo).then(function () {{
+      $("copia").textContent = "Copiato";
+      setTimeout(function () {{ $("copia").textContent = "Copia il blocco"; }}, 1800);
+    }}, function () {{
+      $("anteprima").textContent = testo;
+    }});
+  }});
+
+  aggiorna();
+}})();
+</script>
+</body></html>
+"""

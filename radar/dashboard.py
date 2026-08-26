@@ -233,6 +233,8 @@ _TEMPLATE = """<!doctype html>
     border:1px solid var(--line); background:var(--card); border-radius:99px;
     padding:6px 13px; white-space:nowrap; letter-spacing:-.01em }}
   .btn-met:active {{ background:#1c2740 }}
+  .azioni {{ display:flex; flex-direction:column; align-items:flex-end; gap:6px }}
+  .btn-add {{ color:var(--g); border-color:#1d4b32 }}
   .upd {{ font-size:12px; color:var(--mut) }}
   .head-k {{ font-size:13px; color:var(--mut); margin:10px 0 18px }}
   .head-k b {{ color:var(--tx) }}
@@ -324,7 +326,10 @@ _TEMPLATE = """<!doctype html>
   <div class="eyebrow">RADAR OROLOGI</div>
   <div class="hdr">
     <h1>{n_watches} modelli monitorati</h1>
-    <a class="btn-met" href="metodo.html">Logiche di selezione</a>
+    <div class="azioni">
+      <a class="btn-met" href="metodo.html">Logiche di selezione</a>
+      <a class="btn-met btn-add" href="nuovo.html">+ nuovo modello da monitorare</a>
+    </div>
   </div>
   <div class="upd">aggiornato {updated}</div>
   <div class="head-k"><b>{totale}</b> annunci attivi · <b>{occasioni}</b> sotto mercato</div>

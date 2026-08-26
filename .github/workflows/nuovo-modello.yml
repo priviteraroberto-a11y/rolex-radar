@@ -1,0 +1,72 @@
+name: Nuovo modello
+
+# Il form su .../nuovo.html apre una richiesta con dentro un blocco YAML.
+# Qui la si valida e la si scrive in config.yaml.
+#
+# Il repository e' pubblico: senza il controllo sull'autore, chiunque potrebbe
+# aggiungere orologi al radar di qualcun altro.
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: config-write
+  cancel-in-progress: false
+
+jobs:
+  aggiungi:
+    if: >
+      github.event.issue.user.login == github.repository_owner &&
+      contains(github.event.issue.labels.*.name, 'nuovo-modello')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install pyyaml
+
+      - name: Prendi il testo della richiesta
+        env:
+          CORPO: ${{ github.event.issue.body }}
+        run: printf '%s' "$CORPO" > /tmp/richiesta.md
+
+      - name: Scrivi nel config
+        id: scrivi
+        run: |
+          set +e
+          python tools/aggiungi_modello.py \
+            --body /tmp/richiesta.md \
+            --config config.yaml \
+            --out-message /tmp/esito.md
+          echo "codice=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Salva
+        if: steps.scrivi.outputs.codice == '0'
+        run: |
+          git config user.name  "radar"
+          git config user.email "radar@users.noreply.github.com"
+          git add config.yaml
+          git commit -m "Nuovo modello da richiesta #${{ github.event.issue.number }}"
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && break
+            sleep $((i * 5))
+          done
+
+      - name: Rispondi e chiudi
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body-file /tmp/esito.md || true
+          if [ "${{ steps.scrivi.outputs.codice }}" = "0" ]; then
+            gh issue close ${{ github.event.issue.number }} || true
+          fi

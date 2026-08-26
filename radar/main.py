@@ -20,6 +20,7 @@ from urllib.parse import quote
 
 from . import dashboard as dash
 from . import metodo
+from . import nuovo_modello
 from . import extract, sources
 from .config import Config, WatchView
 from .db import Database
@@ -394,6 +395,7 @@ def cmd_check(args) -> int:
 
     path = dash.build(db, markets, args.dashboard)
     metodo.build(cfg, Path(args.dashboard).with_name("metodo.html"))
+    nuovo_modello.build(cfg, Path(args.dashboard).with_name("nuovo.html"))
     log.info("dashboard → %s", path)
     db.close()
     return 0
@@ -518,6 +520,7 @@ def cmd_dashboard(args) -> int:
         markets.append(m)
     path = dash.build(db, markets, args.dashboard)
     metodo.build(cfg, Path(args.dashboard).with_name("metodo.html"))
+    nuovo_modello.build(cfg, Path(args.dashboard).with_name("nuovo.html"))
     print(f"dashboard → {path}")
     db.close()
     return 0
