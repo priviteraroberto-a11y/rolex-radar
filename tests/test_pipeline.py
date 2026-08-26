@@ -1084,3 +1084,36 @@ def test_una_variante_esclusa_non_vince_su_una_cercata():
                 title="Omega Speedmaster 310.30.42.50.01.002",
                 raw_text="Disponibile anche in versione 310.30.42.50.01.001")
     assert reject_reason(l, _speedmaster()) is None
+
+
+def test_i_prodotti_correlati_non_decidono_quale_orologio_e():
+    """Il caso vero del 27/08, e il piu' insidioso della serie.
+
+    La scheda PlusWatch di un Hesalite nomina nove volte il `...01.001` nel
+    titolo e nel corpo, e una volta sola il `...01.002` — in fondo, fra i
+    "prodotti correlati", che e' un altro annuncio. Quell'unica volta bastava
+    a far concludere "e' quello che cerchi" e l'orologio sbagliato passava,
+    con punteggio 92 e in cima alla lista.
+    """
+    from radar.main import reject_reason
+    from radar.models import Listing
+    titolo = "Omega Speedmaster Moonwatch 310.30.42.50.01.001 31030425001001 42mm Black"
+    corpo = (titolo + " Scheda Tecnica Numero di referenza 310.30.42.50.01.001 "
+             "Stato Unworn ... Prodotti correlati: Omega Speedmaster Professional "
+             "Co-Axial Chronometer 310.30.42.50.01.002 Sapphire 42mm")
+    l = Listing(source="pluswatch", url="https://www.pluswatch.it/p/omega-001/",
+                title=titolo, raw_text=corpo, price_eur=6700.0)
+    motivo = reject_reason(l, _speedmaster())
+    assert motivo and "variante esclusa" in motivo, motivo
+
+
+def test_il_titolo_ha_l_ultima_parola_anche_al_contrario():
+    """Simmetrico: se il titolo dice 002, un 001 citato nel corpo non conta."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    l = Listing(source="pluswatch", url="https://www.pluswatch.it/p/omega-002/",
+                title="Omega Speedmaster Professional 310.30.42.50.01.002 Sapphire",
+                raw_text="Prodotti correlati: Speedmaster 310.30.42.50.01.001 Hesalite "
+                         "310.30.42.50.01.001 310.30.42.50.01.001",
+                price_eur=7600.0)
+    assert reject_reason(l, _speedmaster()) is None

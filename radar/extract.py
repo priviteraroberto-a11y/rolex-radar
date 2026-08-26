@@ -736,27 +736,43 @@ def togli_eco_ricerca(soup) -> None:
             tag.decompose()
 
 
+def _quante_volte(testo: str, ref: str) -> int:
+    """Quante volte compare una referenza, ignorando come e' punteggiata."""
+    hay = re.sub(r"[\s\-_/.]", "", norm(testo or "").upper())
+    ago = re.sub(r"[\s\-_/.]", "", (ref or "").upper())
+    return hay.count(ago) if ago else 0
+
+
 def referenza_esclusa(title: str, text: str, cercate: list[str],
                       escluse: list[str]) -> Optional[str]:
     """Una variante che NON vuoi, nominata esplicitamente.
 
-    La logica e' a tre stati, non a due, e l'ordine conta:
+    Logica a tre stati: la referenza cercata vince, quella esclusa scarta, il
+    silenzio lascia passare. L'ambiguo va tenuto, perche' molti venditori si
+    fermano prima dell'ultimo gruppo e scartarli costerebbe piu' annunci buoni
+    di quanti errori eviterebbe.
 
-      - c'e' la referenza che cerchi        -> e' lui, punto
-      - non c'e' nessuna delle due          -> ambiguo, lo tieni comunque
-      - c'e' solo quella esclusa            -> non e' lui
+    **Il titolo decide per primo, e da solo.** Il corpo di una scheda prodotto
+    non parla di un orologio: parla anche dei "prodotti correlati" in fondo
+    alla pagina. Su PlusWatch la scheda di un Hesalite nomina nove volte il
+    `...01.001` e una volta sola il `...01.002` di un altro annuncio in
+    vetrina — e quell'unica volta bastava a far passare l'orologio sbagliato.
 
-    Il caso ambiguo va tenuto: mezzo mercato scrive "Speedmaster Moonwatch
-    42mm" senza suffisso, e scartarli tutti significherebbe perdere piu'
-    annunci buoni di quanti se ne evitino di sbagliati. Lo scarto scatta solo
-    quando il venditore ha detto chiaramente che e' l'altro.
+    Solo se il titolo tace si guarda il corpo, e li' vince chi compare piu'
+    spesso: il prodotto della pagina, non quello suggerito a margine.
     """
     if not escluse:
         return None
-    tutto = f"{title or ''} {text or ''}"
-    if matches_reference(None, tutto, cercate):
+
+    if matches_reference(None, title, cercate):
         return None
     for r in escluse:
-        if matches_reference(None, tutto, [r]):
+        if matches_reference(None, title, [r]):
+            return r
+
+    corpo = f"{title or ''} {text or ''}"
+    voluti = max((_quante_volte(corpo, c) for c in cercate), default=0)
+    for r in escluse:
+        if _quante_volte(corpo, r) > voluti:
             return r
     return None
