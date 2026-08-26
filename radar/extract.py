@@ -305,6 +305,33 @@ def is_target_watch(title: str, text: str, wanted: list[str],
     return any(norm(k) in nt for k in model_keywords)
 
 
+def matches_by_name(title: str, text: str, brand: str | None,
+                    must_include: list[str],
+                    exclude_keywords: list[str] | None = None) -> bool:
+    """Riconosce un orologio dal nome invece che dalla referenza.
+
+    Serve per i modelli che i venditori non identificano quasi mai con la
+    referenza completa: uno Zenith Elite viene messo in vendita come "Zenith
+    Elite Classic Automatic Ultra Thin", e cercare `18.2010.681/01.C498` in
+    quel titolo non trova niente.
+
+    La regola e' volutamente severa: *tutte* le parole di `must_include`
+    devono comparire, non una qualsiasi. E' quello che distingue un "Elite
+    Ultra Thin" da un "Elite Chronomaster", che condividono la prima parola.
+    """
+    nt = norm(title or "")
+    for k in (exclude_keywords or []):
+        if norm(k) in nt:
+            return False
+    tutto = norm(f"{title or ''} {text or ''}")
+    if brand and norm(brand) not in tutto:
+        return False
+    # Sul titolo se e' abbastanza descrittivo, altrimenti sul corpo: alcune
+    # fonti mettono nel link solo "Zenith" e il resto nella scheda.
+    campo = nt if len(nt) >= 12 else tutto
+    return bool(must_include) and all(norm(k) in campo for k in must_include)
+
+
 # =============================================================================
 # DISPONIBILITA
 # =============================================================================

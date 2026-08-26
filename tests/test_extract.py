@@ -417,15 +417,16 @@ def _annunci_email(html_body):
     from bs4 import BeautifulSoup
     from radar.sources.email_source import EmailSource
 
-    class Cfg:
-        references = ["310.30.42.50.01.002"]
+    from radar.config import Config
+    cfg = Config({"watches": [{"id": "speedmaster", "brand": "Omega",
+                              "references": ["310.30.42.50.01.002"]}]})
 
     class Ctx:
-        config = Cfg()
+        config = cfg
 
     src = EmailSource({}, Ctx())
     soup = BeautifulSoup(html_body, "lxml")
-    return list(src._parse_html_email("chrono24", soup, Cfg.references))
+    return list(src._parse_html_email("chrono24", soup, cfg.references))
 
 
 def test_il_bottone_modifica_ricerca_non_e_un_annuncio():
@@ -469,3 +470,48 @@ def test_il_paese_in_coda_ai_titoli_chrono24():
 def test_niente_paese_dove_non_ce_n_e():
     assert extract.parse_location("Omega Speedmaster 7.600 €") is None
     assert extract.parse_location("") is None
+
+
+# --- riconoscere un orologio dal nome -----------------------------------------
+
+def test_lo_zenith_elite_si_riconosce_dal_nome():
+    """Il caso reale: quattro annunci su Chrono24, zero nel radar, perche'
+    nessuno scrive la referenza 18.2010.681/01.C498 nel titolo."""
+    reali = [
+        "Zenith Elite Classic Automatic Ultra Thin",
+        "Zenith Elite Ultra Thin Lady 33mm acciaio",
+        "ZENITH ELITE 6150 ULTRA THIN 42MM",
+    ]
+    for titolo in reali:
+        assert extract.matches_by_name(
+            titolo, "", "Zenith", ["Elite", "Ultra Thin"],
+            ["Defy", "Pilot", "Chronomaster"]), titolo
+
+
+def test_il_nome_non_apre_le_porte_a_tutti_gli_zenith():
+    must = ["Elite", "Ultra Thin"]
+    esclusi = ["Defy", "Pilot", "Chronomaster"]
+    for titolo in ["Zenith Elite Chronomaster Open",     # parola esclusa
+                   "Zenith Elite 6150 42mm",             # manca 'Ultra Thin'
+                   "Zenith Defy Skyline Ultra Thin",     # parola esclusa
+                   "Omega De Ville Ultra Thin Elite"]:   # marca sbagliata
+        assert not extract.matches_by_name(titolo, "", "Zenith", must, esclusi), titolo
+
+
+def test_lo_scarto_dice_quale_parola_manca():
+    """`inspect` deve spiegare, non solo rifiutare."""
+    from radar.config import Config
+    from radar.main import reject_reason
+    from radar.models import Listing
+    cfg = Config({"watches": [{
+        "id": "zenith-ultrathin", "brand": "Zenith", "identify_by": "name",
+        "must_include": ["Elite", "Ultra Thin"], "references": [],
+        "exclude_keywords": ["Defy"],
+    }]})
+    w = cfg.watches[0]
+    assert reject_reason(Listing(source="x", url="https://a/1",
+                                 title="Zenith Elite 6150 42mm"), w) == \
+        "nome incompleto, manca: Ultra Thin"
+    assert reject_reason(Listing(source="x", url="https://a/2",
+                                 title="Zenith Elite Classic Automatic Ultra Thin",
+                                 price_eur=6900.0), w) is None

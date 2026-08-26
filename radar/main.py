@@ -126,9 +126,19 @@ def reject_reason(l: Listing, cfg) -> Optional[str]:
 
     text = f"{l.title} {l.raw_text}"
 
-    if not extract.matches_reference(l.reference, text, wanted):
+    if getattr(cfg, "identify_by", "reference") == "name":
+        if not extract.matches_by_name(l.title, text, cfg.brand,
+                                       cfg.must_include, excluded):
+            low = extract.norm(l.title)
+            for k in excluded:
+                if extract.norm(k) in low:
+                    return f"modello escluso: {k}"
+            mancanti = [k for k in cfg.must_include
+                        if extract.norm(k) not in extract.norm(f"{l.title} {text}")]
+            return f"nome incompleto, manca: {', '.join(mancanti) or 'la marca'}"
+    elif not extract.matches_reference(l.reference, text, wanted):
         return "referenza assente dal testo"
-    if not extract.is_target_watch(l.title, text, wanted, keywords, excluded):
+    elif not extract.is_target_watch(l.title, text, wanted, keywords, excluded):
         low = extract.norm(l.title)
         for k in excluded:
             if extract.norm(k) in low:

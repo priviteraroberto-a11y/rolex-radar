@@ -771,3 +771,63 @@ def test_la_pulizia_non_tocca_gli_annunci_veri(tmp_path):
 
     db = Database(tmp_path / "q.db")
     assert db.conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 1
+
+
+# --- riconoscere gli orologi come li scrivono i venditori ---------------------
+
+_TITOLI_VERI = {
+    "monaco-gulf":        ("TAG Heuer Monaco Gulf Special Edition CAW211P", True),
+    "speedmaster":        ("Omega Speedmaster Moonwatch Professional 310.30.42.50.01.002", True),
+    "bb-chrono-flamingo": ("Tudor Black Bay Chrono 79360N Flamingo Blue", True),
+    "zenith-ultrathin":   ("Zenith Elite Classic Automatic Ultra Thin", True),
+    "vc-222":             ("Vacheron Constantin Historiques 222 acciaio 4200H", True),
+    "vc-overseas":        ("Vacheron Constantin Overseas Automatic 41mm 4520V", True),
+    "royal-oak-15450":    ("Audemars Piguet Royal Oak 37mm 15450ST blu", True),
+    "el-primero-a384":    ("Zenith El Primero A384 Revival 37mm 2023", True),
+}
+
+
+def _config_vera():
+    from radar.config import Config
+    return Config.load("config.yaml")
+
+
+def test_ogni_orologio_si_riconosce_da_come_lo_scrivono_davvero():
+    """Il 20/08 sette orologi su otto erano invisibili: passavano solo i
+    titoli con la referenza completa, che quasi nessuno scrive."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    for w in _config_vera().watches:
+        if w.id not in _TITOLI_VERI:
+            continue
+        titolo, atteso = _TITOLI_VERI[w.id]
+        motivo = reject_reason(Listing(source="x", url="https://a/" + w.id,
+                                       title=titolo), w)
+        assert (motivo is None) is atteso, f"{w.id}: {titolo} -> {motivo}"
+
+
+def test_lo_speedmaster_zaffiro_resta_fuori():
+    """Il .04.001 e' la cassa zaffiro: altro orologio, altro prezzo. Era gia'
+    stato escluso una volta, le radici di referenza rischiavano di riaprirlo."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    w = next(x for x in _config_vera().watches if x.id == "speedmaster")
+    motivo = reject_reason(Listing(
+        source="x", url="https://a/z",
+        title="Omega Speedmaster Professional Moonwatch 310.30.42.50.04.001"), w)
+    assert motivo is not None, "lo Speedmaster zaffiro non deve passare"
+
+
+def test_le_radici_non_aprono_ad_altri_modelli():
+    from radar.main import reject_reason
+    from radar.models import Listing
+    fuori = {
+        "monaco-gulf": "TAG Heuer Carrera CBN2A1B.BA0643",
+        "bb-chrono-flamingo": "Tudor Black Bay 58 79030N",
+        "vc-overseas": "Vacheron Constantin Historiques 222 4200H",
+        "royal-oak-15450": "Audemars Piguet Royal Oak 41mm 15500ST.OO.1220ST.01",
+    }
+    for w in _config_vera().watches:
+        if w.id in fuori:
+            l = Listing(source="x", url="https://a/x", title=fuori[w.id])
+            assert reject_reason(l, w) is not None, f"{w.id}: {fuori[w.id]}"

@@ -67,6 +67,7 @@ watches:
     model: Monaco
     nickname: Gulf
     references: ["CAW211P.FC6356"]
+    reference_stems: ["CAW211P"]
     search_terms: ["CAW211P", "Monaco Gulf"]
     model_keywords: ["Monaco"]
     exclude_keywords: ["Carrera", "Formula 1", "Aquaracer"]
@@ -90,6 +91,10 @@ watches:
     brand: Omega
     model: Speedmaster Moonwatch Professional
     references: ["310.30.42.50.01.002"]
+    # Radice lunga di proposito: ".01" e' il fondello a vetro dell'Hesalite,
+    # ".04" e' la versione zaffiro, altro orologio e altro prezzo. Tagliando
+    # prima si riaprirebbe uno scambio gia' successo.
+    reference_stems: ["310.30.42.50.01"]
     search_terms: ["310.30.42.50.01.002", "Speedmaster Moonwatch"]
     model_keywords: ["Speedmaster", "Moonwatch"]
     exclude_keywords: ["Seamaster", "Constellation", "Snoopy", "Dark Side", "Reduced"]
@@ -116,6 +121,7 @@ watches:
     # ATTENZIONE: la referenza che mi avevi dato (M7941A1A0NU) è del Black Bay
     # 41 normale. Il Chrono Flamingo Blue è M79360N-0024.
     references: ["M79360N-0024"]
+    reference_stems: ["79360N"]
     search_terms: ["M79360N", "Black Bay Chrono"]
     model_keywords: ["Black Bay", "Blackbay"]
     exclude_keywords: ["Pelagos", "Ranger", "Royal", "GMT", "Fifty-Eight", "58"]
@@ -138,10 +144,21 @@ watches:
     group: 222-overseas-royaloak-elite
     brand: Zenith
     model: Elite Ultra Thin
-    references: ["18.2010.681/01.C498"]
-    search_terms: ["18.2010.681", "Zenith Elite"]
+    # Riconosciuto dal NOME, non dalla referenza.
+    #
+    # Nessuno vende questo orologio citando la referenza completa: su Chrono24
+    # compare come "Zenith Elite Classic Automatic Ultra Thin". Cercare una
+    # referenza in quel titolo non trova mai niente, ed e' il motivo per cui
+    # il radar diceva "nessun annuncio" mentre su Chrono24 ce n'erano quattro.
+    #
+    # `must_include` sono parole che devono comparire TUTTE: e' quello che
+    # separa un Elite Ultra Thin da un Elite Chronomaster.
+    identify_by: name
+    must_include: ["Elite", "Ultra Thin"]
+    references: []
+    search_terms: ["Zenith Elite Ultra Thin", "Zenith Elite Classic"]
     model_keywords: ["Elite", "Ultra Thin", "Ultrathin"]
-    exclude_keywords: ["Defy", "Pilot", "Chronomaster Sport"]
+    exclude_keywords: ["Defy", "Pilot", "Chronomaster", "Captain", "Port Royal"]
     hard_filters:
       min_year: 2015
       max_year: 2027
@@ -151,8 +168,8 @@ watches:
       target_years: [2024, 2025, 2026]
       acceptable_years: [2021, 2022, 2023]
       tolerated_years: [2018, 2019, 2020]
-    # Referenza che conosco male: il prefisso 18 indica oro rosa, ma la stima
-    # è la più incerta di tutte. Correggila appena vedi un prezzo vero.
+    # La stima e' la piu' incerta di tutte: correggila appena vedi un prezzo
+    # vero in dashboard.
     fair_value:
       seed_price_eur: 12500    # nessun dato: alzato del 25% come gli altri
     notifications:
@@ -164,6 +181,7 @@ watches:
     brand: Vacheron Constantin
     model: Historiques 222
     references: ["4200H/222A-B934"]
+    reference_stems: ["4200H"]
     search_terms: ["4200H", "Historiques 222"]
     model_keywords: ["222", "Historiques"]
     exclude_keywords: ["Overseas", "Patrimony", "Traditionnelle", "Fiftysix"]
@@ -187,6 +205,7 @@ watches:
     brand: Vacheron Constantin
     model: Overseas
     references: ["4520V/210A-B128"]
+    reference_stems: ["4520V"]
     search_terms: ["4520V", "Overseas"]
     model_keywords: ["Overseas"]
     exclude_keywords: ["222", "Patrimony", "Traditionnelle", "Fiftysix", "Malte"]
@@ -210,6 +229,7 @@ watches:
     brand: Audemars Piguet
     model: Royal Oak 37
     references: ["15450ST.OO.1256ST.03"]
+    reference_stems: ["15450ST"]
     search_terms: ["15450ST", "Royal Oak 15450"]
     model_keywords: ["Royal Oak"]
     exclude_keywords: ["Offshore", "Concept", "Code 11.59", "Millenary"]
@@ -234,6 +254,7 @@ watches:
     brand: Zenith
     model: Chronomaster Revival A384
     references: ["03.A384.400/3817.M3817"]
+    reference_stems: ["A384"]
     search_terms: ["A384", "El Primero A384"]
     model_keywords: ["A384", "El Primero", "Chronomaster"]
     exclude_keywords: ["Defy", "Pilot", "Elite", "Sport"]

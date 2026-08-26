@@ -219,7 +219,7 @@ class EmailSource(BaseSource):
             if not _e_annuncio(href):
                 continue
 
-            block = self._blocco(a, wanted)
+            block = self._blocco(a, self.ctx.config.riguarda_un_orologio)
             if block is None:
                 continue
             text = block.get_text(" ", strip=True)
@@ -242,7 +242,7 @@ class EmailSource(BaseSource):
             )
 
     @staticmethod
-    def _blocco(a, wanted):
+    def _blocco(a, riguarda):
         """Il piu' piccolo antenato che descrive *questo* annuncio e nessun altro.
 
         Il criterio decisivo non e' "contiene una referenza e un prezzo" — a
@@ -263,7 +263,7 @@ class EmailSource(BaseSource):
             if len({x["href"].split("?")[0] for x in annunci}) > 1:
                 return None
             text = block.get_text(" ", strip=True)
-            if extract.matches_reference(None, text, wanted) and _HA_PREZZO.search(text):
+            if riguarda(text) and _HA_PREZZO.search(text):
                 return block
         return None
 
@@ -276,7 +276,7 @@ class EmailSource(BaseSource):
                 continue
             start = max(0, m.start() - 600)
             block = body_text[start:m.end() + 200]
-            if not extract.matches_reference(None, block, wanted):
+            if not self.ctx.config.riguarda_un_orologio(block):
                 continue
             yield Listing(
                 source=source_name,

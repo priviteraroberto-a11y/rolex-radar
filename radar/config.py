@@ -51,6 +51,19 @@ class Config:
             out.extend(w.references)
         return out
 
+    def riguarda_un_orologio(self, testo: str) -> bool:
+        """Filtro grossolano: questo testo nomina uno degli orologi seguiti?
+
+        Lo usa il lettore delle email per decidere se un blocco vale la pena
+        di essere estratto. Deve essere generoso: e' il primo setaccio, e chi
+        passa viene comunque ripesato dal filtro vero.
+        """
+        from .extract import matches_reference
+        if matches_reference(None, testo, self.references):
+            return True
+        return any(w.matches(testo, testo) for w in self.watches
+                   if w.identify_by == "name")
+
     @property
     def watches(self) -> list["WatchView"]:
         """Gli orologi monitorati.
@@ -94,11 +107,54 @@ class WatchView:
 
     @property
     def references(self) -> list[str]:
-        return [str(r).upper().replace(" ", "") for r in self.watch.get("references", [])]
+        """Referenze complete piu' le radici che bastano a riconoscerle.
+
+        Un venditore su tre scrive la referenza per intero. Gli altri scrivono
+        "Royal Oak 37mm 15450ST", "Black Bay Chrono 79360N", "El Primero
+        A384": la radice c'e', il suffisso del quadrante no. Pretendere la
+        stringa completa significava scartarli tutti — sette orologi su otto
+        erano di fatto invisibili.
+
+        Il rischio e' accettare un quadrante diverso da quello che volevi. E'
+        il rischio giusto da correre: e' l'orologio che cerchi, il punteggio
+        e le parole escluse fanno il resto, e vederne uno in piu' costa molto
+        meno che perderne uno.
+        """
+        grezze = list(self.watch.get("references", []))
+        grezze += list(self.watch.get("reference_stems", []))
+        return [str(r).upper().replace(" ", "") for r in grezze if str(r).strip()]
 
     @property
     def model_keywords(self) -> list[str]:
         return self.watch.get("model_keywords", [])
+
+    @property
+    def brand(self) -> str:
+        return str(self.watch.get("brand", "") or "")
+
+    @property
+    def identify_by(self) -> str:
+        """`reference` (predefinito) oppure `name`.
+
+        Il modo giusto dipende dall'orologio, non dal sistema: per un Rolex
+        la referenza e' nel titolo di ogni annuncio, per uno Zenith Elite
+        quasi mai.
+        """
+        return str(self.watch.get("identify_by", "reference")).lower()
+
+    @property
+    def must_include(self) -> list[str]:
+        """Parole che devono comparire tutte, quando si riconosce dal nome."""
+        return list(self.watch.get("must_include") or self.model_keywords)
+
+    def matches(self, title: str, text: str) -> bool:
+        """Questo annuncio parla di questo orologio?"""
+        from . import extract
+        if self.identify_by == "name":
+            return extract.matches_by_name(title, text, self.brand,
+                                           self.must_include, self.exclude_keywords)
+        return extract.is_target_watch(title, text, self.references,
+                                       self.model_keywords, self.exclude_keywords)
 
     @property
     def exclude_keywords(self) -> list[str]:
