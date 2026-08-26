@@ -831,3 +831,78 @@ def test_le_radici_non_aprono_ad_altri_modelli():
         if w.id in fuori:
             l = Listing(source="x", url="https://a/x", title=fuori[w.id])
             assert reject_reason(l, w) is not None, f"{w.id}: {fuori[w.id]}"
+
+
+def test_lo_zenith_accetta_i_prezzi_veri_osservati():
+    """I tre annunci italiani del 26/08: 3.490, 3.500, 4.300 euro. La vecchia
+    soglia minima di 4.000 ne scartava due su tre, e la stima di 12.500 li
+    avrebbe fatti sembrare tutti affari del settanta per cento."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    w = next(x for x in _config_vera().watches if x.id == "zenith-ultrathin")
+    for prezzo in (3490.0, 3500.0, 4300.0):
+        l = Listing(source="x", url=f"https://a/{prezzo}",
+                    title="Zenith Elite Classic Automatic Ultra Thin",
+                    price_eur=prezzo)
+        assert reject_reason(l, w) is None, prezzo
+    seed = float(w.get("fair_value.seed_price_eur"))
+    assert 3000 <= seed <= 4500, f"stima fuori dai prezzi osservati: {seed}"
+
+
+def test_la_famiglia_elite_entra_tutta_ma_il_resto_di_zenith_no():
+    """Hai chiesto di prenderne qualcuno in piu' piuttosto che in meno."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    w = next(x for x in _config_vera().watches if x.id == "zenith-ultrathin")
+    dentro = ["Zenith Elite Classic Automatic Ultra Thin",
+              "Zenith Elite 6150 Ultra Thin 42mm acciaio",
+              "Zenith Elite Classic 33mm automatico"]
+    fuori = ["Zenith Chronomaster Open Elite calibro",
+             "Zenith Defy Skyline 41mm",
+             "Zenith El Primero A384 Revival",
+             "Omega De Ville Prestige Ultra Thin"]
+    for t in dentro:
+        assert reject_reason(Listing(source="x", url="https://a/"+t[:9],
+                                     title=t, price_eur=3600.0), w) is None, t
+    for t in fuori:
+        assert reject_reason(Listing(source="x", url="https://a/"+t[:9],
+                                     title=t, price_eur=3600.0), w) is not None, t
+
+
+# --- guardie strutturali sul config ------------------------------------------
+#
+# Non verificano che le stime siano giuste — nessun test puo' farlo — ma che
+# non siano messe in modo da nascondere annunci. E' la differenza fra sbagliare
+# un numero e non vedere un'occasione.
+
+def test_la_soglia_minima_non_taglia_via_gli_affari():
+    """Un annuncio molto sotto mercato deve poter entrare.
+
+    Il caso vero: sullo Zenith la soglia era 4.000 euro e i prezzi reali
+    stavano fra 3.490 e 4.300. Due annunci su tre venivano scartati come
+    'prezzo implausibile' senza che nessuno se ne accorgesse.
+    """
+    for w in _config_vera().watches:
+        seed = float(w.get("fair_value.seed_price_eur"))
+        minimo = float(w.get("hard_filters", {}).get("absolute_min_price_eur", 0))
+        assert minimo <= seed * 0.55, (
+            f"{w.id}: soglia minima {minimo:,.0f} troppo vicina alla stima "
+            f"{seed:,.0f} — un affare vero verrebbe scartato")
+
+
+def test_la_soglia_massima_lascia_spazio_al_mercato():
+    """Se il mercato sale, il tetto non deve azzerare la fonte."""
+    for w in _config_vera().watches:
+        seed = float(w.get("fair_value.seed_price_eur"))
+        massimo = float(w.get("hard_filters", {}).get("absolute_max_price_eur", 0))
+        assert massimo >= seed * 1.8, f"{w.id}: tetto {massimo:,.0f} troppo basso"
+
+
+def test_ogni_orologio_e_identificabile():
+    """Senza referenze e senza modo 'name' un orologio e' invisibile e basta.
+    Era la situazione dello Zenith, con una referenza che non esisteva."""
+    for w in _config_vera().watches:
+        if w.identify_by == "name":
+            assert w.must_include, f"{w.id}: modo 'name' senza parole da cercare"
+        else:
+            assert w.references, f"{w.id}: nessuna referenza e nessun nome"

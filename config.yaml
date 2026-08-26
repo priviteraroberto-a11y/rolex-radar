@@ -135,7 +135,9 @@ watches:
       acceptable_years: [2024]
       tolerated_years: []
     fair_value:
-      seed_price_eur: 8500    # osservato 8.800 da Pedretti, full set italiano
+      # 8.800 chiesti da Davide Pedretti in Italia; all'estero l'usato sta
+      # fra 9.000 e 10.500 euro. Meglio ancorarsi al mercato italiano.
+      seed_price_eur: 8800
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -151,29 +153,43 @@ watches:
     # referenza in quel titolo non trova mai niente, ed e' il motivo per cui
     # il radar diceva "nessun annuncio" mentre su Chrono24 ce n'erano quattro.
     #
-    # `must_include` sono parole che devono comparire TUTTE: e' quello che
-    # separa un Elite Ultra Thin da un Elite Chronomaster.
+    # `must_include` = una sola parola, di proposito. Con "Elite" + "Ultra
+    # Thin" restavano fuori l'Elite 6150 e l'Elite Classic 33mm, che sono la
+    # stessa famiglia scritta in altro modo. Hai chiesto di prenderne qualcuno
+    # in piu' piuttosto che in meno: il lavoro di scarto lo fanno le parole
+    # escluse qui sotto e il punteggio.
     identify_by: name
-    must_include: ["Elite", "Ultra Thin"]
+    must_include: ["Elite"]
     references: []
-    search_terms: ["Zenith Elite Ultra Thin", "Zenith Elite Classic"]
+    search_terms: ["Zenith Elite", "Zenith Elite Ultra Thin"]
     model_keywords: ["Elite", "Ultra Thin", "Ultrathin"]
-    exclude_keywords: ["Defy", "Pilot", "Chronomaster", "Captain", "Port Royal"]
+    # "Elite" e' anche il nome del calibro, e finisce nelle schede di modelli
+    # che non c'entrano: senza queste esclusioni entrerebbe mezzo catalogo.
+    exclude_keywords: ["Defy", "Pilot", "Chronomaster", "Captain", "Port Royal",
+                       "El Primero", "Rainbow", "Academy", "Star ", "Stratos"]
+    # Banda larga: i tre annunci veri stanno fra 3.490 e 4.300 euro, e la
+    # vecchia soglia minima di 4.000 ne avrebbe scartati due su tre.
     hard_filters:
-      min_year: 2015
+      min_year: 2005
       max_year: 2027
-      absolute_min_price_eur: 4000
-      absolute_max_price_eur: 25000
+      absolute_min_price_eur: 1500
+      absolute_max_price_eur: 12000
     preferences:
-      target_years: [2024, 2025, 2026]
-      acceptable_years: [2021, 2022, 2023]
-      tolerated_years: [2018, 2019, 2020]
-    # La stima e' la piu' incerta di tutte: correggila appena vedi un prezzo
-    # vero in dashboard.
+      target_years: [2022, 2023, 2024, 2025, 2026]
+      acceptable_years: [2016, 2017, 2018, 2019, 2020, 2021]
+      tolerated_years: [2010, 2011, 2012, 2013, 2014, 2015]
     fair_value:
-      seed_price_eur: 12500    # nessun dato: alzato del 25% come gli altri
+      # Osservati su Chrono24 Italia il 26/08/2026: 3.490, 3.500, 4.300 euro.
+      # La mia stima precedente era 12.500: sbagliata di tre volte e mezzo,
+      # perche' l'avevo dedotta da una referenza che mi ero inventato. Con
+      # quella, ogni annuncio sarebbe sembrato un affare del 70%.
+      # Sono tre modelli diversi fra loro, quindi e' una mediana grossolana:
+      # servira' finche' il database non raccoglie annunci veri.
+      seed_price_eur: 3600
     notifications:
-      always_notify_if_underpriced_pct: 20.0
+      # 12% invece di 20: ora la stima poggia su prezzi osservati, non su
+      # un'ipotesi, e puo' permettersi una soglia piu' stretta.
+      always_notify_if_underpriced_pct: 12.0
 
   - id: vc-222
     # photo: "https://..."
@@ -181,6 +197,9 @@ watches:
     brand: Vacheron Constantin
     model: Historiques 222
     references: ["4200H/222A-B934"]
+    # La radice prende anche il 4200H/222J-B935, la versione in oro giallo:
+    # e' un altro orologio e costa quasi il doppio, ma la banda di prezzo
+    # arriva fin la' apposta per non nasconderlo se capita a un buon prezzo.
     reference_stems: ["4200H"]
     search_terms: ["4200H", "Historiques 222"]
     model_keywords: ["222", "Historiques"]
@@ -188,14 +207,21 @@ watches:
     hard_filters:
       min_year: 2022
       max_year: 2027
-      absolute_min_price_eur: 40000
-      absolute_max_price_eur: 200000
+      # Minimo abbassato da 40.000: con la stima corretta a ~52.000, una
+      # soglia a 40.000 avrebbe scartato in silenzio proprio l'affare vero.
+      absolute_min_price_eur: 25000
+      absolute_max_price_eur: 160000
     preferences:
       target_years: [2025, 2026]
       acceptable_years: [2023, 2024]
       tolerated_years: [2022]
     fair_value:
-      seed_price_eur: 105000    # nessun dato: alzato del 10%
+      # Corretta il 26/08/2026 sui prezzi di mercato: l'acciaio si vende fra
+      # 47.000 e 60.000 euro, non 105.000. L'errore era dello stesso tipo
+      # dello Zenith — una stima dedotta invece che osservata — e produceva
+      # l'effetto peggiore: ogni annuncio normale sembrava un affare del 50%.
+      # L'unico annuncio visto finora, giapponese, chiedeva 45.353 euro.
+      seed_price_eur: 52000
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -244,7 +270,9 @@ watches:
       acceptable_years: [2016, 2017, 2018]
       tolerated_years: [2013, 2014, 2015]
     fair_value:
-      seed_price_eur: 37000    # nessun dato: alzato del 16%
+      # Rivista: un 37mm quadrante bianco del 2016 e' passato a ~30.500
+      # dollari, il modello e' fuori produzione e in salita del 18% sull'anno.
+      seed_price_eur: 32000    # nessun dato: alzato del 16%
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -253,7 +281,11 @@ watches:
     group: speedmaster-monaco-blackbay-a384
     brand: Zenith
     model: Chronomaster Revival A384
-    references: ["03.A384.400/3817.M3817"]
+    # Due referenze, non una: la prima e' l'A384 Revival classico, la seconda
+    # e' l'A3817 (quadrante blu, edizione boutique) che avevo scritto per
+    # errore al posto sua. Sono due orologi diversi della stessa famiglia e li
+    # tengo entrambi, visto che preferisci vederne uno in piu'.
+    references: ["03.A384.400/21.M384", "03.A384.400/3817.M3817"]
     reference_stems: ["A384"]
     search_terms: ["A384", "El Primero A384"]
     model_keywords: ["A384", "El Primero", "Chronomaster"]
