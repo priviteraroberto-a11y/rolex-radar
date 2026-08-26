@@ -906,3 +906,52 @@ def test_ogni_orologio_e_identificabile():
             assert w.must_include, f"{w.id}: modo 'name' senza parole da cercare"
         else:
             assert w.references, f"{w.id}: nessuna referenza e nessun nome"
+
+
+# --- la pagina che spiega l'algoritmo -----------------------------------------
+
+def test_la_pagina_del_metodo_si_genera_senza_buchi(tmp_path):
+    from radar import metodo
+    import re
+    p = metodo.build(_config_vera(), tmp_path / "metodo.html")
+    testo = p.read_text(encoding="utf-8")
+    assert not re.findall(r"\{[a-z_]+\}", testo), "segnaposto non sostituiti"
+    for atteso in ("Logiche di selezione", "modello edonico", "mediana",
+                   "Identificazione", "index.html"):
+        assert atteso in testo, atteso
+
+
+def test_la_pagina_del_metodo_segue_il_config(tmp_path):
+    """Il punto di generarla dal config: non puo' diventare falsa.
+
+    Una spiegazione scritta a mano avrebbe smesso di essere vera alla prima
+    modifica di un peso, e sarebbe rimasta li' a sembrare autorevole.
+    """
+    from radar.config import Config
+    from radar import metodo
+    base = {"watches": [{"id": "x", "brand": "Omega", "references": ["A"],
+                         "fair_value": {"seed_price_eur": 1000},
+                         "hard_filters": {"absolute_min_price_eur": 100,
+                                          "absolute_max_price_eur": 9000}}],
+            "scoring": {"weights": {"price_vs_fair": 40, "year": 12}},
+            "notifications": {"min_score": 78}}
+    testo = metodo.build(Config(base), tmp_path / "a.html").read_text()
+    assert ">40<" in testo and "78" in testo
+
+    base["scoring"]["weights"]["price_vs_fair"] = 55
+    base["notifications"]["min_score"] = 91
+    testo2 = metodo.build(Config(base), tmp_path / "b.html").read_text()
+    assert ">55<" in testo2 and "91" in testo2, "la pagina non ha seguito il config"
+
+
+def test_il_pulsante_e_in_cima_alla_dashboard(tmp_path):
+    from radar import dashboard
+    from radar.db import Database
+    db = Database(tmp_path / "d.db")
+    p = dashboard.build(db, [{"watch_id": "x", "label": "Prova"}],
+                        tmp_path / "index.html")
+    testo = p.read_text(encoding="utf-8")
+    assert 'href="metodo.html"' in testo and "Logiche di selezione" in testo
+    # sulla stessa riga del titolo, non sotto
+    riga = testo[testo.index('<div class="hdr">'):testo.index("</div>", testo.index('<div class="hdr">')) + 200]
+    assert "modelli monitorati" in riga and "Logiche di selezione" in riga

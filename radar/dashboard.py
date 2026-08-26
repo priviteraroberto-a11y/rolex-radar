@@ -226,6 +226,13 @@ _TEMPLATE = """<!doctype html>
   a {{ color:inherit; text-decoration:none }}
   h1 {{ font-size:20px; margin:2px 0; letter-spacing:-.01em }}
   .eyebrow {{ font-size:11px; letter-spacing:.18em; color:var(--mut) }}
+  /* titolo a sinistra, accesso alla spiegazione a destra, sulla stessa riga */
+  .hdr {{ display:flex; align-items:center; justify-content:space-between;
+    gap:12px; flex-wrap:wrap }}
+  .btn-met {{ flex:0 0 auto; font-size:12px; font-weight:600; color:var(--acc);
+    border:1px solid var(--line); background:var(--card); border-radius:99px;
+    padding:6px 13px; white-space:nowrap; letter-spacing:-.01em }}
+  .btn-met:active {{ background:#1c2740 }}
   .upd {{ font-size:12px; color:var(--mut) }}
   .head-k {{ font-size:13px; color:var(--mut); margin:10px 0 18px }}
   .head-k b {{ color:var(--tx) }}
@@ -315,7 +322,10 @@ _TEMPLATE = """<!doctype html>
 </style></head><body>
 <div class="wrap">
   <div class="eyebrow">RADAR OROLOGI</div>
-  <h1>{n_watches} modelli monitorati</h1>
+  <div class="hdr">
+    <h1>{n_watches} modelli monitorati</h1>
+    <a class="btn-met" href="metodo.html">Logiche di selezione</a>
+  </div>
   <div class="upd">aggiornato {updated}</div>
   <div class="head-k"><b>{totale}</b> annunci attivi · <b>{occasioni}</b> sotto mercato</div>
 

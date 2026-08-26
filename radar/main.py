@@ -13,11 +13,13 @@ import argparse
 import logging
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.parse import quote
 
 from . import dashboard as dash
+from . import metodo
 from . import extract, sources
 from .config import Config, WatchView
 from .db import Database
@@ -372,6 +374,7 @@ def cmd_check(args) -> int:
             log.error("invio email fallito: %s: %s", type(exc).__name__, exc)
 
     path = dash.build(db, markets, args.dashboard)
+    metodo.build(cfg, Path(args.dashboard).with_name("metodo.html"))
     log.info("dashboard → %s", path)
     db.close()
     return 0
@@ -495,6 +498,7 @@ def cmd_dashboard(args) -> int:
         m["home"], m["nearby"] = geo.get("home"), geo.get("nearby")
         markets.append(m)
     path = dash.build(db, markets, args.dashboard)
+    metodo.build(cfg, Path(args.dashboard).with_name("metodo.html"))
     print(f"dashboard → {path}")
     db.close()
     return 0
