@@ -26,6 +26,22 @@ log = logging.getLogger("radar.html")
 
 class HtmlSource(BaseSource):
 
+    def _url_valido(self, url: str, base_url: str) -> bool:
+        """Un annuncio deve avere un indirizzo suo.
+
+        Tre modi di sbagliare, tutti visti sui dati veri:
+          - la vetrina del negozio (`/vendita-orologi-di-lusso-bologna/`)
+          - la foto ingrandita della galleria (`.../IMG_5010.webp`)
+          - la pagina che stiamo leggendo in quel momento
+        In tutti e tre i casi il prezzo che si legge appartiene a un altro
+        orologio, e l'annuncio finisce in dashboard come affare inesistente.
+        """
+        if not url or not extract.e_url_di_annuncio(url):
+            return False
+        if _same_page(url, base_url):
+            return False
+        return not any(_same_page(url, u) for u in self.cfg.get("start_urls", []))
+
     def collect(self) -> SourceResult:
         listings: list[Listing] = []
         errors: list[str] = []
@@ -38,6 +54,7 @@ class HtmlSource(BaseSource):
                 continue
             pages_ok += 1
             soup = BeautifulSoup(html, "lxml")
+            extract.togli_eco_ricerca(soup)
 
             found = list(self._from_jsonld(soup, url))
             if not found:
@@ -82,10 +99,13 @@ class HtmlSource(BaseSource):
 
                 if not (name or url):
                     continue
+                pieno = urljoin(base_url, str(url)) if url else base_url
+                if not self._url_valido(pieno, base_url):
+                    continue
 
                 l = Listing(
                     source=self.name,
-                    url=urljoin(base_url, str(url)) if url else base_url,
+                    url=pieno,
                     title=name,
                     raw_text=f"{name} {desc}",
                     raw_price=str(price) if price is not None else None,
@@ -115,11 +135,7 @@ class HtmlSource(BaseSource):
             if not url:
                 a = node.find("a", href=True)
                 url = urljoin(base_url, a["href"]) if a else None
-            if not url:
-                continue
-            # Se il "link all'annuncio" è la pagina di ricerca stessa, non è un
-            # annuncio: è un frammento di layout che ha ingannato il selettore.
-            if _same_page(url, base_url):
+            if not self._url_valido(url, base_url):
                 continue
             yield Listing(
                 source=self.name,
@@ -147,7 +163,7 @@ class HtmlSource(BaseSource):
             if href.startswith(("#", "javascript:", "mailto:", "tel:")):
                 continue
             url = urljoin(base_url, href)
-            if url in seen or _same_page(url, base_url):
+            if url in seen or not self._url_valido(url, base_url):
                 continue
 
             block = None
@@ -159,8 +175,10 @@ class HtmlSource(BaseSource):
                 text = node.get_text(" ", strip=True)
                 if not extract.matches_reference(None, text, wanted):
                     continue
-                if len(node.find_all("a", href=True)) > 3:
-                    break                       # siamo risaliti troppo: è la griglia
+                altri = {x["href"].split("?")[0] for x in node.find_all("a", href=True)
+                         if self._url_valido(urljoin(base_url, x["href"]), base_url)}
+                if len(altri) > 1:
+                    break        # il blocco contiene due annunci: è la griglia
                 block = node
                 break
 

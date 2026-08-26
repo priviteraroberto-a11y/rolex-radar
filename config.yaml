@@ -91,10 +91,16 @@ watches:
     brand: Omega
     model: Speedmaster Moonwatch Professional
     references: ["310.30.42.50.01.002"]
-    # Radice lunga di proposito: ".01" e' il fondello a vetro dell'Hesalite,
-    # ".04" e' la versione zaffiro, altro orologio e altro prezzo. Tagliando
-    # prima si riaprirebbe uno scambio gia' successo.
+    # La radice si ferma prima dell'ultimo gruppo, che e' quello che distingue
+    # le due versioni: ...01.001 e' l'Hesalite, ...01.002 e' lo zaffiro.
+    # Cosi' entrano anche gli annunci che scrivono solo "Speedmaster Moonwatch
+    # 42mm" senza suffisso, che sono la maggioranza.
     reference_stems: ["310.30.42.50.01"]
+    # ...e questa li richiude quando il venditore dichiara l'Hesalite.
+    # Tre stati, non due: 002 esplicito entra, nessuno dei due entra lo
+    # stesso, 001 esplicito esce. Vuoi solo lo zaffiro, ma non al prezzo di
+    # perdere tutti gli annunci scritti male.
+    exclude_references: ["310.30.42.50.01.001"]
     search_terms: ["310.30.42.50.01.002", "Speedmaster Moonwatch"]
     model_keywords: ["Speedmaster", "Moonwatch"]
     exclude_keywords: ["Seamaster", "Constellation", "Snoopy", "Dark Side", "Reduced"]

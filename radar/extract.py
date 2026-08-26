@@ -635,3 +635,128 @@ def e_pagina_di_servizio(url: str) -> bool:
     "savedsearch" nell'URL intero cancellava venticinque annunci veri.
     """
     return bool(_PAGINA_DI_SERVIZIO.search((url or "").split("?")[0]))
+
+
+# Estensioni di file: un link a un'immagine non e' un annuncio, e' la foto
+# ingrandita della galleria.
+_ASSET = re.compile(r"\.(?:jpe?g|png|webp|gif|svg|avif|bmp|tiff?|pdf|zip|"
+                    r"mp4|webm|mov|css|js|ico)$", re.I)
+
+# Pagine di elenco: categorie, vetrine, carrello. Contengono molti orologi e
+# nessuno in particolare, quindi qualsiasi prezzo ci si legga appartiene a
+# un altro annuncio.
+_PAGINA_DI_ELENCO = re.compile(
+    r"^/(?:categoria|category|collezion\w*|collections?|shop|negozio|store|"
+    r"catalogo|catalog|brands?|marche?|tag|page|blog|news)(?:/|$)|"
+    r"/vendita-|/orologi-usati|/chi-siamo|/contatt|/carrello|/cart(?:/|$)|"
+    r"/checkout|/wishlist|/il-negozio",
+    re.I,
+)
+
+
+def e_url_di_annuncio(url: str) -> bool:
+    """Questo indirizzo punta a un singolo orologio in vendita?
+
+    Serve una regola esplicita perche' i due modi di sbagliare sono entrambi
+    silenziosi e producono la stessa cosa: un annuncio inventato, con il
+    prezzo rubato a qualcun altro.
+
+      - il link alla foto ingrandita (`.../IMG_5010.webp`)
+      - il link alla vetrina (`.../vendita-orologi-di-lusso-bologna/`)
+
+    Guarda solo il percorso: nella query finiscono parametri di tracciamento
+    che contengono di tutto, e cercarci parole chiave ha gia' cancellato per
+    sbaglio venticinque annunci veri.
+    """
+    from urllib.parse import urlparse
+    if not url or e_pagina_di_servizio(url):
+        return False
+    percorso = urlparse(url).path or "/"
+    if _ASSET.search(percorso):
+        return False
+    return not _PAGINA_DI_ELENCO.search(percorso)
+
+
+# Marche note: servono solo a riconoscere che un titolo parla di un ALTRO
+# orologio. Non e' un elenco di cose monitorate, e' un elenco di cose che,
+# se compaiono nel titolo al posto della marca giusta, dicono "non e' lui".
+_MARCHE = [
+    "rolex", "omega", "tudor", "tag heuer", "heuer", "zenith",
+    "vacheron constantin", "audemars piguet", "patek philippe", "iwc",
+    "panerai", "breitling", "cartier", "jaeger", "hublot", "chopard",
+    "blancpain", "grand seiko", "seiko", "longines", "baume", "bell & ross",
+    "montblanc", "oris", "tissot", "glashutte", "nomos", "bulgari", "piaget",
+    "girard", "ulysse nardin", "franck muller", "richard mille", "chanel",
+]
+
+
+def altra_marca_nel_titolo(title: str, brand: str | None) -> Optional[str]:
+    """Il titolo nomina una marca diversa da quella cercata?
+
+    Guardia trasversale: qualunque cosa sia andata storta a monte — un blocco
+    che ha invaso l'annuncio accanto, una pagina di risultati che riecheggia
+    la tua ricerca — se il titolo dice "Rolex GMT-Master" e stiamo cercando un
+    Omega, non e' lui. Costa poco e taglia una classe intera di errori.
+    """
+    if not brand or not title:
+        return None
+    nt = norm(title)
+    nb = norm(brand)
+    if nb in nt:
+        return None
+    for m in _MARCHE:
+        if norm(m) in nb:          # la marca cercata, scritta in altro modo
+            continue
+        if norm(m) in nt:
+            return m
+    return None
+
+
+# Le pagine di ricerca dei negozi riecheggiano quello che hai cercato:
+# "Risultati di ricerca per 15450ST". Quell'eco basta a far sembrare che la
+# referenza sia presente, anche quando la pagina non contiene quell'orologio.
+_ECO_RICERCA = re.compile(
+    r"risultati?\s+di\s+ricerca|search\s+results?|hai\s+cercato|"
+    r"nessun\s+risultato|no\s+results?\s+found|suchergebnis",
+    re.I,
+)
+
+
+def togli_eco_ricerca(soup) -> None:
+    """Cancella dal documento il testo che ripete la ricerca fatta.
+
+    Modifica il documento in luogo, prima che qualcuno ci cerchi dentro una
+    referenza. Senza questo, cercare "15450ST" su un negozio che non ha
+    nessun Royal Oak restituiva comunque una corrispondenza: quella con la
+    tua stessa domanda.
+    """
+    for tag in list(soup.find_all(["h1", "h2", "h3", "p", "span", "div", "title"])):
+        testo = tag.get_text(" ", strip=True)
+        if len(testo) <= 120 and _ECO_RICERCA.search(testo):
+            tag.decompose()
+
+
+def referenza_esclusa(title: str, text: str, cercate: list[str],
+                      escluse: list[str]) -> Optional[str]:
+    """Una variante che NON vuoi, nominata esplicitamente.
+
+    La logica e' a tre stati, non a due, e l'ordine conta:
+
+      - c'e' la referenza che cerchi        -> e' lui, punto
+      - non c'e' nessuna delle due          -> ambiguo, lo tieni comunque
+      - c'e' solo quella esclusa            -> non e' lui
+
+    Il caso ambiguo va tenuto: mezzo mercato scrive "Speedmaster Moonwatch
+    42mm" senza suffisso, e scartarli tutti significherebbe perdere piu'
+    annunci buoni di quanti se ne evitino di sbagliati. Lo scarto scatta solo
+    quando il venditore ha detto chiaramente che e' l'altro.
+    """
+    if not escluse:
+        return None
+    tutto = f"{title or ''} {text or ''}"
+    if matches_reference(None, tutto, cercate):
+        return None
+    for r in escluse:
+        if matches_reference(None, tutto, [r]):
+            return r
+    return None

@@ -124,20 +124,41 @@ class Database:
         """Toglie le righe che non erano annunci.
 
         Fino al 19/08/2026 il lettore delle email prendeva per annuncio anche
-        i bottoni di servizio dei marketplace — "modifica ricerca salvata" su
-        tutti — e ci abbinava il prezzo dell'annuncio accanto. Il risultato
-        era un affare inesistente in dashboard. Il lettore ora li scarta, ma
-        quelli gia' salvati restano finche' non li si toglie di mezzo.
+        i bottoni di servizio dei marketplace, le vetrine dei negozi e
+        perfino i link alle foto ingrandite, abbinandoci il prezzo
+        dell'annuncio accanto. Il risultato era un affare inesistente in
+        dashboard — un Royal Oak a 20.400 euro che non esisteva. I lettori
+        ora li scartano, ma quelli gia' salvati restano finche' non li si
+        toglie di mezzo.
         """
-        from .extract import e_pagina_di_servizio
+        from .extract import e_url_di_annuncio
         cattive = [r["key"] for r in self.conn.execute(
                        "SELECT key, url FROM listings").fetchall()
-                   if e_pagina_di_servizio(r["url"])]
+                   if not e_url_di_annuncio(r["url"])]
         for chiave in cattive:
             self.conn.execute("DELETE FROM listings WHERE key = ?", (chiave,))
         n = len(cattive)
         if n:
             log.info("tolti %d falsi annunci dal database (link di servizio)", n)
+
+    def close_unmonitored(self, monitorati: set[str]) -> int:
+        """Mette a riposo gli annunci di orologi tolti dal config.
+
+        Quando hai smesso di cercare il Pepsi, i suoi trentasette annunci sono
+        rimasti marcati come attivi per sempre: nessun giro li guardava piu',
+        quindi nessuno poteva chiuderli. Restano nel database — lo storico dei
+        prezzi e' la cosa piu' preziosa che abbiamo — ma smettono di contare
+        come "in vendita adesso".
+        """
+        if not monitorati:
+            return 0
+        segnaposto = ",".join("?" * len(monitorati))
+        cur = self.conn.execute(
+            f"UPDATE listings SET active = 0 "
+            f"WHERE active = 1 AND (watch_id IS NULL OR watch_id NOT IN ({segnaposto}))",
+            tuple(monitorati))
+        self.conn.commit()
+        return cur.rowcount
 
     def close(self) -> None:
         self.conn.close()

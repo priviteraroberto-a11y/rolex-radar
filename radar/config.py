@@ -125,6 +125,23 @@ class WatchView:
         return [str(r).upper().replace(" ", "") for r in grezze if str(r).strip()]
 
     @property
+    def references_esatte(self) -> list[str]:
+        """Solo le referenze complete, senza le radici.
+
+        Distinzione necessaria: la radice `310.30.42.50.01` combacia sia con
+        l'Hesalite sia con lo zaffiro, quindi non puo' essere usata per
+        decidere quale delle due varianti sta davanti.
+        """
+        return [str(r).upper().replace(" ", "")
+                for r in self.watch.get("references", []) if str(r).strip()]
+
+    @property
+    def exclude_references(self) -> list[str]:
+        """Varianti da scartare quando il venditore le dichiara."""
+        return [str(r).upper().replace(" ", "")
+                for r in self.watch.get("exclude_references", [])]
+
+    @property
     def model_keywords(self) -> list[str]:
         return self.watch.get("model_keywords", [])
 

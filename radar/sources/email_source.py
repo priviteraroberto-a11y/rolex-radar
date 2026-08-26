@@ -69,7 +69,7 @@ def _e_annuncio(url: str) -> bool:
     sospetta, e senza questo controllo veniva preso per un annuncio e
     abbinato al prezzo di quello accanto.
     """
-    if _SKIP_LINK.search(url) or extract.e_pagina_di_servizio(url):
+    if _SKIP_LINK.search(url) or not extract.e_url_di_annuncio(url):
         return False
     for dominio, pattern in _LISTING_PATTERNS.items():
         if dominio in url.lower():

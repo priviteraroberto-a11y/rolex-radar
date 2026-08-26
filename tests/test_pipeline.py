@@ -955,3 +955,132 @@ def test_il_pulsante_e_in_cima_alla_dashboard(tmp_path):
     # sulla stessa riga del titolo, non sotto
     riga = testo[testo.index('<div class="hdr">'):testo.index("</div>", testo.index('<div class="hdr">')) + 200]
     assert "modelli monitorati" in riga and "Logiche di selezione" in riga
+
+
+def test_il_lettore_dei_dealer_scarta_vetrine_e_foto(tmp_path):
+    """Il Royal Oak inesistente veniva dall'euristica sui link della pagina."""
+    from bs4 import BeautifulSoup
+    from radar.sources.html_source import HtmlSource
+    from radar.config import Config
+
+    pagina = """
+    <html><body>
+      <nav><a href="/vendita-orologi-di-lusso-bologna/">Vendita orologi</a></nav>
+      <div class="p">
+        <a href="/prodotto/ap-royal-oak-15450st/">Audemars Piguet Royal Oak 15450ST</a>
+        <span>32.900 &euro;</span>
+        <a href="/wp-content/uploads/2026/03/IMG_5010.webp">foto</a>
+      </div>
+    </body></html>
+    """
+
+    class Ctx:
+        config = Config({"watches": [{"id": "ro", "brand": "Audemars Piguet",
+                                      "references": ["15450ST.OO.1256ST.03"],
+                                      "reference_stems": ["15450ST"]}]})
+        fetcher = None
+
+    src = HtmlSource({"name": "pedretti", "fetch_detail": False,
+                      "start_urls": ["https://shop.davidepedretti.com/orologi/"]}, Ctx())
+    soup = BeautifulSoup(pagina, "lxml")
+    urls = [l.url for l in src._from_heuristic(soup, "https://shop.davidepedretti.com/orologi/")]
+    assert any("/prodotto/" in u for u in urls), urls
+    assert not any(".webp" in u or "vendita-orologi" in u for u in urls), urls
+
+
+def test_i_falsi_dei_dealer_spariscono_dal_database(tmp_path):
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "v.db")
+    db.upsert(Listing(source="pedretti", price_eur=20400.0,
+                      url="https://shop.davidepedretti.com/vendita-orologi-di-lusso-bologna/"),
+              "royal-oak-15450")
+    db.upsert(Listing(source="edwatch", price_eur=12500.0,
+                      url="https://edwatch.it/wp-content/uploads/2026/03/IMG_5010.webp"),
+              "el-primero-a384")
+    db.upsert(Listing(source="edwatch", price_eur=8500.0,
+                      url="https://edwatch.it/prodotto/tudor-black-bay-chrono-79360n-3/"),
+              "bb-chrono-flamingo")
+    db.conn.commit(); db.close()
+
+    db = Database(tmp_path / "v.db")
+    urls = [r["url"] for r in db.conn.execute("SELECT url FROM listings")]
+    assert len(urls) == 1 and "/prodotto/" in urls[0], urls
+
+
+def test_gli_annunci_di_orologi_tolti_dal_config_vanno_a_riposo(tmp_path):
+    """I 37 Pepsi erano rimasti 'attivi' per sempre: nessun giro li guardava
+    piu', quindi nessuno poteva chiuderli."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "r.db")
+    db.upsert(Listing(source="x", url="https://a/1", price_eur=22000.0), "pepsi")
+    db.upsert(Listing(source="x", url="https://a/2", price_eur=7300.0), "speedmaster")
+    db.conn.commit()
+
+    assert db.close_unmonitored({"speedmaster", "vc-222"}) == 1
+    attivi = [r["watch_id"] for r in
+              db.conn.execute("SELECT watch_id FROM listings WHERE active=1")]
+    assert attivi == ["speedmaster"]
+    # lo storico resta: la riga non viene cancellata
+    assert db.conn.execute("SELECT count(*) FROM listings").fetchone()[0] == 2
+
+
+def test_una_pagina_di_vetrina_non_diventa_un_annuncio():
+    """Il controllo sull'indirizzo vale per qualunque fonte, non solo per i
+    lettori che l'hanno prodotto."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    w = next(x for x in _config_vera().watches if x.id == "royal-oak-15450")
+    l = Listing(source="davidepedretti", price_eur=20400.0, title="Shop",
+                raw_text="Risultati di ricerca per 15450ST ... 24 risultati",
+                url="https://shop.davidepedretti.com/vendita-orologi-di-lusso-bologna/")
+    assert reject_reason(l, w) is not None
+
+
+# --- Hesalite contro zaffiro: tre stati, non due ------------------------------
+
+def _speedmaster():
+    return next(x for x in _config_vera().watches if x.id == "speedmaster")
+
+
+def test_lo_zaffiro_dichiarato_entra():
+    from radar.main import reject_reason
+    from radar.models import Listing
+    l = Listing(source="x", url="https://a/1", price_eur=7600.0,
+                title="Omega Speedmaster Professional Moonwatch 310.30.42.50.01.002")
+    assert reject_reason(l, _speedmaster()) is None
+
+
+def test_l_hesalite_dichiarato_esce():
+    """Tre notifiche del 26/08 erano di questo, che non ti interessa."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    for titolo in ["OMEGA SPEEDMASTER MOONWATCH – 310.30.42.50.01.001",
+                   "Omega Speedmaster Moonwatch 310.30.42.50.01.001 31030425001001 42mm"]:
+        l = Listing(source="x", url="https://a/2", price_eur=6700.0, title=titolo)
+        motivo = reject_reason(l, _speedmaster())
+        assert motivo and "variante esclusa" in motivo, titolo
+
+
+def test_l_annuncio_ambiguo_resta_dentro():
+    """Molti venditori si fermano prima dell'ultimo gruppo. Scartarli
+    costerebbe piu' annunci buoni di quanti errori eviterebbe: lo scarto
+    scatta solo quando l'Hesalite e' dichiarato."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    l = Listing(source="x", url="https://a/3", price_eur=7000.0,
+                title="Omega Speedmaster Moonwatch Professional 310.30.42.50.01 42mm",
+                raw_text="full set garanzia italiana 2025")
+    assert reject_reason(l, _speedmaster()) is None
+
+
+def test_una_variante_esclusa_non_vince_su_una_cercata():
+    """Se l'annuncio nomina entrambe — capita nelle schede comparative —
+    conta quella che cerchi."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    l = Listing(source="x", url="https://a/4", price_eur=7500.0,
+                title="Omega Speedmaster 310.30.42.50.01.002",
+                raw_text="Disponibile anche in versione 310.30.42.50.01.001")
+    assert reject_reason(l, _speedmaster()) is None

@@ -515,3 +515,73 @@ def test_lo_scarto_dice_quale_parola_manca():
     assert reject_reason(Listing(source="x", url="https://a/2",
                                  title="Zenith Elite Classic Automatic Ultra Thin",
                                  price_eur=6900.0), w) is None
+
+
+# --- cosa e' un annuncio e cosa no --------------------------------------------
+
+def test_gli_indirizzi_veri_dei_dealer_passano():
+    veri = [
+        "https://www.pluswatch.it/p/tag-heuer-monaco-calibre-11-caw211p-fc6356/",
+        "https://edwatch.it/prodotto/omega-speedmaster-moonwatch-310-30-42-50-01-001/",
+        "https://www.gioielleriabonanno.it/prodotto/omega-speedmaster-fullset/",
+        "https://shop.davidepedretti.com/prodotto/tudor-black-bay-chrono-79360n/",
+        "https://www.chrono24.it/omega/speedmaster--id48171098.htm",
+        # con la coda di tracciamento: guardare la query cancello' 25 righe vere
+        "https://www.chrono24.it/vc/222--id48033138.htm?ikcampaign=feat-SavedSearch",
+    ]
+    for u in veri:
+        assert extract.e_url_di_annuncio(u), u
+
+
+def test_le_vetrine_e_le_foto_non_sono_annunci():
+    """I due falsi del 26/08, presi dai dati veri.
+
+    Il Royal Oak a 20.400 euro 'sotto mercato del 36%' era la vetrina del
+    negozio; lo Zenith a 12.500 era il link alla foto ingrandita. In entrambi
+    i casi il prezzo apparteneva a un altro orologio.
+    """
+    falsi = [
+        "https://shop.davidepedretti.com/vendita-orologi-di-lusso-bologna/",
+        "https://edwatch.it/wp-content/uploads/2026/03/IMG_5010.webp",
+        "https://www.chrono24.com/user/searchtasks.htm?eeid=X",
+        "https://edwatch.it/categoria/orologi/",
+        "https://www.pluswatch.it/shop/",
+        "https://x.it/carrello/",
+        "https://x.it/wp-content/uploads/2026/03/foto.JPG",
+    ]
+    for u in falsi:
+        assert not extract.e_url_di_annuncio(u), u
+
+
+# --- l'eco della ricerca e la marca sbagliata ---------------------------------
+
+def test_l_eco_della_ricerca_non_conta_come_referenza():
+    """Il caso vero del 26/08: cercando "15450ST" su Davide Pedretti, il
+    negozio non aveva nessun Royal Oak ma la pagina diceva "Risultati di
+    ricerca per 15450ST". Quell'eco bastava a far credere che la referenza
+    ci fosse, e il radar ha notificato un affare fatto di ventiquattro
+    orologi diversi."""
+    from bs4 import BeautifulSoup
+    pagina = """<html><body>
+      <h1>Risultati di ricerca per &ldquo;15450ST&rdquo;</h1>
+      <div>Baume &amp; Mercier Clifton 2.550,00 &euro;</div>
+    </body></html>"""
+    soup = BeautifulSoup(pagina, "lxml")
+    assert extract.matches_reference(None, soup.get_text(" "), ["15450ST"])
+    extract.togli_eco_ricerca(soup)
+    assert not extract.matches_reference(None, soup.get_text(" "), ["15450ST"])
+
+
+def test_un_titolo_di_un_altra_marca_non_e_lui():
+    """Guardia trasversale: qualunque cosa vada storta a monte, un Rolex non
+    diventa un Omega."""
+    assert extract.altra_marca_nel_titolo(
+        "Rolex GMT-Master II 126710BLRO Pepsi", "Omega") == "rolex"
+    assert extract.altra_marca_nel_titolo(
+        "Omega Speedmaster Moonwatch 310.30.42.50.01.002", "Omega") is None
+    # marca scritta in modo diverso: non deve dare falsi allarmi
+    assert extract.altra_marca_nel_titolo(
+        "TAG Heuer Monaco Gulf CAW211P", "TAG Heuer") is None
+    assert extract.altra_marca_nel_titolo(
+        "Vacheron Constantin Overseas 4520V", "Vacheron Constantin") is None
+    assert extract.altra_marca_nel_titolo("Shop", "Audemars Piguet") is None

@@ -128,6 +128,21 @@ def reject_reason(l: Listing, cfg) -> Optional[str]:
 
     text = f"{l.title} {l.raw_text}"
 
+    # Il controllo sull'indirizzo sta qui, non solo dentro le fonti: cosi'
+    # vale per qualunque origine e `inspect` lo spiega come tutti gli altri.
+    if not extract.e_url_di_annuncio(l.url):
+        return "non e' la pagina di un annuncio (vetrina, categoria o immagine)"
+
+    altra = extract.altra_marca_nel_titolo(l.title, getattr(cfg, "brand", None))
+    if altra:
+        return f"il titolo parla di {altra}, non di {cfg.brand}"
+
+    variante = extract.referenza_esclusa(
+        l.title, l.raw_text, getattr(cfg, "references_esatte", []) or [],
+        getattr(cfg, "exclude_references", []) or [])
+    if variante:
+        return f"variante esclusa: {variante}"
+
     if getattr(cfg, "identify_by", "reference") == "name":
         if not extract.matches_by_name(l.title, text, cfg.brand,
                                        cfg.must_include, excluded):
@@ -309,6 +324,10 @@ def cmd_check(args) -> int:
     if not cfg.watches:
         log.error("Nessun orologio configurato: manca la sezione `watches:`")
         return 1
+    chiusi = db.close_unmonitored({w.id for w in cfg.watches})
+    if chiusi:
+        log.info("%d annunci di orologi non piu' monitorati messi a riposo", chiusi)
+
     watches, gruppo = select_watches(cfg, args)
     if not watches:
         log.warning("Il gruppo '%s' non contiene orologi: niente da fare", gruppo)
