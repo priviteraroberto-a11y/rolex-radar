@@ -59,7 +59,7 @@
   <a class="back" href="index.html">&larr; torna al radar</a>
   <div class="eyebrow">RADAR OROLOGI</div>
   <h1>Nuovo modello da monitorare</h1>
-  <div class="upd">turni aggiornati al 01/09/2026 22:30</div>
+  <div class="upd">turni aggiornati al 02/09/2026 12:26</div>
 
   <section>
     <h2>L'orologio</h2>
@@ -114,16 +114,20 @@
 
     <div id="bloccoNome" style="display:none">
       <label for="obbligatorie">Parole che devono comparire tutte</label>
-      <input type="text" id="obbligatorie" placeholder="Elite, Ultra Thin" autocomplete="off">
-      <div class="hint">Separate da virgola. Servono <b>tutte</b>: &egrave; quello
-      che separa un &ldquo;Elite Ultra Thin&rdquo; da un &ldquo;Elite
-      Chronomaster&rdquo;.</div>
+      <input type="text" id="obbligatorie" placeholder="una o due parole, non di piu'" autocomplete="off">
+      <div class="hint">Separate da virgola, e servono <b>tutte</b>. Meno sono,
+      meglio &egrave;: gi&agrave; con tre parole quasi nessun annuncio le scrive
+      tutte, e non ne vedrai nessuno. Per il Silver Snoopy basta
+      &ldquo;Snoopy&rdquo;.</div>
+      <div class="hint" id="allarmeParole" style="color:#eab308"></div>
     </div>
 
-    <label for="escluse">Parole escluse <span class="opt">— facoltativo</span></label>
-    <input type="text" id="escluse" placeholder="Offshore, Chronograph, Lady" autocomplete="off">
-    <div class="hint">Modelli cugini che condividono il nome o le prime cifre.
-    Hanno la precedenza su tutto il resto.</div>
+    <label for="escluse">Parole escluse <span class="opt">— facoltativo, e nel dubbio lasciala vuota</span></label>
+    <input type="text" id="escluse" placeholder="lascia vuoto se non sei sicuro" autocomplete="off">
+    <div class="hint">Solo i <b>nomi di altri modelli</b> che condividono
+    qualcosa con il tuo. Hanno la precedenza su tutto: se metti una parola che
+    compare negli annunci giusti, non ne vedrai piu' nessuno. &ldquo;Chronograph&rdquo;
+    in uno Speedmaster escluderebbe l'intero mercato.</div>
   </section>
 
   <section>
@@ -153,9 +157,9 @@
   <section>
     <h2>Turno di rotazione</h2>
     <p class="sub">assegnato al gruppo meno affollato, per tenerli in pari</p>
-    <table><tr><td>222-overseas-royaloak-elite</td><td class='n'>4 orologi</td></tr><tr><td>speedmaster-monaco-blackbay-a384</td><td class='n'>4 orologi</td></tr></table>
+    <table><tr><td>222-overseas-royaloak-elite-snoopy</td><td class='n'>5 orologi</td></tr><tr><td>speedmaster-monaco-blackbay-a384</td><td class='n'>4 orologi</td></tr></table>
     <div class="gruppo">Questo orologio finir&agrave; in
-      <b id="gruppoScelto">222-overseas-royaloak-elite</b>.</div>
+      <b id="gruppoScelto">speedmaster-monaco-blackbay-a384</b>.</div>
     <div class="hint">La scelta viene rifatta anche al momento della scrittura,
     perch&eacute; nel frattempo i turni possono essere cambiati.</div>
   </section>
@@ -189,8 +193,8 @@
 <script>
 (function () {
   var REPO = "priviteraroberto-a11y/rolex-radar";
-  var CONTEGGI = {"222-overseas-royaloak-elite": 4, "speedmaster-monaco-blackbay-a384": 4};
-  var ESISTENTI = ["bb-chrono-flamingo", "el-primero-a384", "monaco-gulf", "royal-oak-15450", "speedmaster", "vc-222", "vc-overseas", "zenith-ultrathin"];
+  var CONTEGGI = {"222-overseas-royaloak-elite-snoopy": 5, "speedmaster-monaco-blackbay-a384": 4};
+  var ESISTENTI = ["bb-chrono-flamingo", "el-primero-a384", "monaco-gulf", "royal-oak-15450", "speedmaster", "speedmaster-snoopy", "vc-222", "vc-overseas", "zenith-ultrathin"];
 
   var $ = function (id) { return document.getElementById(id); };
   var campi = ["marca","modello","nick","ref","radice","escluseRef",
@@ -299,6 +303,12 @@
       ? "Gli annunci verranno accettati fra " + Math.round(prezzo * 0.45).toLocaleString("it-IT")
         + " e " + Math.round(prezzo * 2.2).toLocaleString("it-IT")
         + " \u20ac. Larga di proposito: una soglia stretta nasconde in silenzio proprio l'affare che cerchi."
+      : "";
+
+    var np = lista($("obbligatorie").value).length;
+    $("allarmeParole").textContent = (perNome && np >= 3)
+      ? "⚠ " + np + " parole obbligatorie sono tante: devono comparire tutte "
+        + "nello stesso annuncio, e quasi nessun venditore le scrive tutte."
       : "";
 
     var p = problemi();
