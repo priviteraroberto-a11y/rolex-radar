@@ -59,7 +59,7 @@
   <a class="back" href="index.html">&larr; torna al radar</a>
   <div class="eyebrow">RADAR OROLOGI</div>
   <h1>Nuovo modello da monitorare</h1>
-  <div class="upd">turni aggiornati al 02/09/2026 12:26</div>
+  <div class="upd">turni aggiornati al 02/09/2026 13:02</div>
 
   <section>
     <h2>L'orologio</h2>
@@ -246,6 +246,11 @@
       r.push("    identify_by: name");
       r.push("    must_include: " + arr(lista($("obbligatorie").value)));
       r.push("    references: []");
+      // Senza questi, con le referenze vuote non verrebbe interrogata
+      // nessuna fonte: zero annunci e nessun errore.
+      var parole = lista($("obbligatorie").value).join(" ");
+      r.push("    search_terms: " + arr([
+        ($("modello").value.trim() + " " + parole).trim(), parole]));
     } else {
       r.push("    references: " + arr([$("ref").value.trim()]));
       var rad = $("radice").value.trim();
