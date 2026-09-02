@@ -79,9 +79,14 @@ jobs:
           ARGS=""
           [ "$DRY" = "true" ]   && ARGS="$ARGS --dry-run"
           [ "$FORCE" = "true" ] && ARGS="$ARGS --force"
+          # Elencare i valori validi qui era una trappola: i gruppi sono stati
+          # rinominati e il "a|b" e' rimasto indietro, cosi' la scelta veniva
+          # buttata via in silenzio e il giro partiva in rotazione automatica.
+          # Ora l'elenco sta in un posto solo, il menu qui sopra.
           case "$GRUPPO" in
-            tutti) ARGS="$ARGS --all-watches" ;;
-            a|b)   ARGS="$ARGS --group $GRUPPO" ;;
+            automatico|"") ;;
+            tutti)         ARGS="$ARGS --all-watches" ;;
+            *)             ARGS="$ARGS --group $GRUPPO" ;;
           esac
           echo "Argomenti: ${ARGS:-nessuno (rotazione automatica)}"
           python -m radar.main check $ARGS

@@ -770,8 +770,16 @@ def referenza_esclusa(title: str, text: str, cercate: list[str],
         if matches_reference(None, title, [r]):
             return r
 
+    # Senza una referenza da cercare non c'e' niente con cui confrontare, e il
+    # conteggio nel corpo diventa "una sola menzione basta a scartare". Su una
+    # pagina di risultati dove l'Apollo XIII sta accanto al 50esimo, questo
+    # buttava via proprio l'orologio giusto. Per gli orologi riconosciuti dal
+    # nome decide quindi solo il titolo, che parla di un pezzo solo.
+    if not cercate:
+        return None
+
     corpo = f"{title or ''} {text or ''}"
-    voluti = max((_quante_volte(corpo, c) for c in cercate), default=0)
+    voluti = max(_quante_volte(corpo, c) for c in cercate)
     for r in escluse:
         if _quante_volte(corpo, r) > voluti:
             return r

@@ -1143,3 +1143,31 @@ def test_il_ripiego_funziona_anche_senza_termini_scritti():
     }]})
     termini = cfg.watches[0].search_terms
     assert termini and any("Snoopy" in t for t in termini), termini
+
+
+def test_lo_snoopy_giusto_sopravvive_a_quello_sbagliato_accanto():
+    """PlusWatch ha entrambi in vetrina, uno sotto l'altro: il 50esimo a
+    14.000 e l'Apollo XIII del 2004 a 15.200. Cercando "Snoopy" escono
+    insieme, e il testo della pagina nomina tutte e due le referenze.
+
+    Con `references: []` — che e' la norma per gli orologi riconosciuti dal
+    nome — non c'era niente con cui confrontare, e una sola menzione della
+    referenza esclusa bastava a scartare l'orologio giusto.
+    """
+    from radar.main import reject_reason
+    from radar.models import Listing
+    w = next(x for x in _config_vera().watches if x.id == "speedmaster-snoopy")
+    pagina = ("Risultati di ricerca per: Snoopy  Omega Speedmaster Professional "
+              "Moonwatch Snoopy Award 3578.51 357851 Limited Ed. 11/2004 15200.00 € "
+              "Omega Speedmaster 'Silver Snoopy Award' 310.32.42.50.02.001 14000.00 €")
+
+    giusto = Listing(source="pluswatch", price_eur=14000.0, raw_text=pagina,
+                     url="https://www.pluswatch.it/p/omega-speedmaster-silver-snoopy-award/",
+                     title="Omega Speedmaster 'Silver Snoopy Award' 310.32.42.50.02.001")
+    assert reject_reason(giusto, w) is None, reject_reason(giusto, w)
+
+    vecchio = Listing(source="pluswatch", price_eur=15200.0, raw_text=pagina,
+                      url="https://www.pluswatch.it/p/omega-speedmaster-snoopy-award-3578-51/",
+                      title="Omega Speedmaster Professional Moonwatch Snoopy Award "
+                            "3578.51 357851 Limited Ed. 11/2004")
+    assert reject_reason(vecchio, w) is not None
