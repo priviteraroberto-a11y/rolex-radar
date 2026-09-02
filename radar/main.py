@@ -59,7 +59,7 @@ def expand_urls(src_cfg: dict, watch: WatchView) -> dict:
     come "Speedmaster Moonwatch" — nessun motore di ricerca di un negozio
     trova una stringa con sei gruppi di cifre puntate.
     """
-    terms = watch.watch.get("search_terms") or watch.references
+    terms = watch.search_terms
     urls: list[str] = []
     for tpl in src_cfg.get("start_urls", []):
         if "{" not in tpl:

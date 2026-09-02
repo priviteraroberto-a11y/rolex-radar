@@ -335,6 +335,10 @@ watches:
     identify_by: name
     must_include: ["Snoopy"]
     references: []
+    # Senza questa riga il radar non avrebbe cercato NIENTE: le referenze sono
+    # vuote, e i negozi si interrogano con i termini di ricerca. Ora c'e' anche
+    # un ripiego automatico, ma scriverli a mano resta meglio.
+    search_terms: ["Speedmaster Snoopy", "Silver Snoopy", "310.32.42.50.02.001"]
     # Gli altri due Snoopy, che costano il doppio o il triplo:
     #   3578.51.00              Apollo XIII, 2003
     #   311.32.42.30.04.003     45esimo anniversario, 2015

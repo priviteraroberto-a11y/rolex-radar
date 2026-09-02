@@ -1117,3 +1117,29 @@ def test_il_titolo_ha_l_ultima_parola_anche_al_contrario():
                          "310.30.42.50.01.001 310.30.42.50.01.001",
                 price_eur=7600.0)
     assert reject_reason(l, _speedmaster()) is None
+
+
+def test_ogni_orologio_e_cercabile():
+    """Senza termini di ricerca non si interroga nessuna fonte.
+
+    Lo Speedmaster Snoopy era finito in questo stato: riconoscimento per nome,
+    quindi `references: []`, e nessun `search_terms`. Il radar non e' che non
+    lo trovasse — non lo stava cercando, e i log non dicevano niente.
+    """
+    from radar.main import expand_urls
+    cfg = _config_vera()
+    fonte = {"name": "prova", "start_urls": ["https://x.it/?s={q}"]}
+    for w in cfg.watches:
+        assert w.search_terms, f"{w.id}: nessun termine di ricerca"
+        urls = expand_urls(fonte, w)["start_urls"]
+        assert urls, f"{w.id}: nessun indirizzo da interrogare"
+
+
+def test_il_ripiego_funziona_anche_senza_termini_scritti():
+    from radar.config import Config
+    cfg = Config({"watches": [{
+        "id": "x", "brand": "Omega", "model": "Speedmaster Moonwatch",
+        "identify_by": "name", "must_include": ["Snoopy"], "references": [],
+    }]})
+    termini = cfg.watches[0].search_terms
+    assert termini and any("Snoopy" in t for t in termini), termini

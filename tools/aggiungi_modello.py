@@ -71,6 +71,9 @@ def valida(blocco: str, config: dict) -> dict:
         if not w.get("must_include"):
             raise ValueError("Riconoscimento per nome senza `must_include`: "
                              "sarebbe invisibile.")
+        if not w.get("search_terms"):
+            raise ValueError("Riconoscimento per nome senza `search_terms`: "
+                             "non verrebbe interrogata nessuna fonte.")
     elif not w.get("references"):
         raise ValueError("Nessuna referenza e nessun `must_include`: "
                          "l'orologio non sarebbe riconoscibile.")

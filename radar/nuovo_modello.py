@@ -335,6 +335,11 @@ _TEMPLATE = """<!doctype html>
       r.push("    identify_by: name");
       r.push("    must_include: " + arr(lista($("obbligatorie").value)));
       r.push("    references: []");
+      // Senza questi, con le referenze vuote non verrebbe interrogata
+      // nessuna fonte: zero annunci e nessun errore.
+      var parole = lista($("obbligatorie").value).join(" ");
+      r.push("    search_terms: " + arr([
+        ($("modello").value.trim() + " " + parole).trim(), parole]));
     }} else {{
       r.push("    references: " + arr([$("ref").value.trim()]));
       var rad = $("radice").value.trim();

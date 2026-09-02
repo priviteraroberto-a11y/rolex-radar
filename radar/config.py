@@ -125,6 +125,28 @@ class WatchView:
         return [str(r).upper().replace(" ", "") for r in grezze if str(r).strip()]
 
     @property
+    def search_terms(self) -> list[str]:
+        """Cosa scrivere nella casella di ricerca dei negozi.
+
+        Il ripiego non e' un dettaglio: un orologio riconosciuto per nome ha
+        `references: []`, e senza ripiego la lista resta vuota. Nessun termine
+        significa nessun indirizzo da interrogare, quindi nessuna fonte
+        contattata e zero annunci — senza un errore, senza una riga nei log.
+        E' successo davvero, allo Speedmaster Snoopy: il radar non e' che non
+        lo trovasse, non lo stava proprio cercando.
+        """
+        propri = [str(t) for t in (self.watch.get("search_terms") or []) if str(t).strip()]
+        if propri:
+            return propri
+        if self.references:
+            return self.references
+        parole = " ".join(self.must_include)
+        ripiego = [f"{self.watch.get('model', '')} {parole}".strip(),
+                   parole.strip(),
+                   f"{self.brand} {self.watch.get('model', '')}".strip()]
+        return [t for t in dict.fromkeys(ripiego) if t]
+
+    @property
     def references_esatte(self) -> list[str]:
         """Solo le referenze complete, senza le radici.
 
