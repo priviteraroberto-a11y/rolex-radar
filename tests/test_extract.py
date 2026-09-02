@@ -585,3 +585,49 @@ def test_un_titolo_di_un_altra_marca_non_e_lui():
     assert extract.altra_marca_nel_titolo(
         "Vacheron Constantin Overseas 4520V", "Vacheron Constantin") is None
     assert extract.altra_marca_nel_titolo("Shop", "Audemars Piguet") is None
+
+
+# --- la vetrina in fondo alla pagina ------------------------------------------
+
+_SCHEDA_PLUSWATCH = (
+    "Omega Speedmaster 'Silver Snoopy Award' 310.32.42.50.02.001 31032425002001 "
+    "-12% 15999.00 € Il prezzo originale era: 15999.00 €. 14000.00 € Il prezzo "
+    "attuale e': 14000.00 €. Disponibile su ordinazione. L' Omega Speedmaster Ref. "
+    "310.32.42.50.02.001 (Snoopy) e' un orologio iconico di grande valore "
+    "collezionistico, con calibro 3861 a carica manuale e cassa in acciaio da 42 mm. "
+    "Prodotti correlati Omega Speedmaster Professional Moonwatch 310.32.42.50.01.002 "
+    "6600.00 € Omega Seamaster 300M 36mm Blue Dial 2263.80 226380 03/05/2006 "
+    "8712U 2200.00 € Omega Speedmaster Reduced Michael Schumacher 3510.61 3200.00 €"
+)
+
+
+def test_l_anno_non_si_prende_dai_prodotti_correlati():
+    """Il caso vero del 02/09: la scheda del Silver Snoopy finisce con un
+    Seamaster del 2006 in vetrina. Il lettore dell'anno prendeva "03/05/2006",
+    lo assegnava allo Snoopy, e la finestra anni lo buttava fuori. Un orologio
+    da 14.000 euro invisibile per colpa della vetrina di un altro."""
+    assert extract.parse_year(_SCHEDA_PLUSWATCH) == 2006
+    assert extract.parse_year(extract.taglia_vetrina(_SCHEDA_PLUSWATCH)) != 2006
+
+
+def test_il_taglio_non_amputa_la_descrizione():
+    """Se la frase compare subito non e' una vetrina, e tagliare li' vorrebbe
+    dire buttare via l'annuncio stesso."""
+    breve = "Prodotti correlati a questo Rolex GMT-Master II 126710BLRO del 2025"
+    assert extract.taglia_vetrina(breve) == breve
+    assert extract.taglia_vetrina("") == ""
+    assert "Snoopy" in extract.taglia_vetrina(_SCHEDA_PLUSWATCH)
+
+
+def test_vince_il_prezzo_scontato_non_quello_barrato():
+    """WooCommerce scrive tutti e due i prezzi. Leggere quello barrato sposta
+    il confronto col valore stimato e puo' far saltare una notifica."""
+    casi = [
+        ("15999.00 € Il prezzo originale era: 15999.00 €. 14000.00 € "
+         "Il prezzo attuale e': 14000.00 €.", 14000.0),
+        ("Original price was: 15,999.00 €. Current price is: 14,000.00 €.", 14000.0),
+        ("23.700 €", 23700.0),
+        ("Prezzo su richiesta", None),
+    ]
+    for testo, atteso in casi:
+        assert extract.parse_price(testo)[0] == atteso, testo

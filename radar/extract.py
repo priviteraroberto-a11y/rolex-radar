@@ -60,6 +60,38 @@ _REF_NUMBER = re.compile(
 )
 
 
+# WooCommerce, che e' il motore di quasi tutti questi negozi, scrive entrambi
+# i prezzi: "Il prezzo originale era: 15999,00 €. Il prezzo attuale e': 14000,00 €".
+# Senza questa lettura vince il primo che si incontra, cioe' quello barrato.
+_PREZZO_ATTUALE = re.compile(
+    r"(?:il\s+)?prezzo\s+attuale\s+(?:e'|e|è)?\s*:?\s*"
+    r"([€$£]?\s?[\d.,\s']{3,14}\s?(?:[€$£]|EUR|USD|GBP|CHF)?)|"
+    r"current\s+price\s+is\s*:?\s*"
+    r"([€$£]?\s?[\d.,\s']{3,14}\s?(?:[€$£]|EUR|USD|GBP|CHF)?)",
+    re.I,
+)
+
+
+def _prezzo_scontato(t: str):
+    """Il prezzo che il cliente paga davvero, non quello barrato.
+
+    Non e' un dettaglio estetico: un 14.000 letto come 15.999 sposta di due
+    punti percentuali il confronto col valore stimato, e su un'offerta al
+    limite decide se ti arriva la notifica o no.
+    """
+    m = _PREZZO_ATTUALE.search(t)
+    if not m:
+        return None
+    pezzo = m.group(1) or m.group(2) or ""
+    valuta = "EUR"
+    for simbolo, codice in (("$", "USD"), ("£", "GBP")):
+        if simbolo in pezzo:
+            valuta = codice
+    # `_to_float` vuole solo cifre e separatori: il simbolo di valuta va tolto.
+    numero = _to_float(re.sub(r"[^\d.,' ]", "", pezzo).strip())
+    return (numero, valuta) if numero else None
+
+
 def parse_price(text: str) -> tuple[Optional[float], str]:
     """Ritorna (importo, valuta). Gestisce 23.700 € / €23,700 / EUR 23 700.
 
@@ -73,6 +105,10 @@ def parse_price(text: str) -> tuple[Optional[float], str]:
 
     if re.search(r"(prezzo su richiesta|price on request|poa|su richiesta|contattaci)", t):
         return None, "EUR"
+
+    scontato = _prezzo_scontato(t)
+    if scontato:
+        return scontato
 
     currency = "EUR"
     for pattern, code in CURRENCY_TOKENS:
@@ -578,8 +614,42 @@ def parse_serial(text: str) -> Optional[str]:
 # ORCHESTRAZIONE
 # =============================================================================
 
+# In fondo a ogni scheda prodotto i negozi mettono la vetrina: "Prodotti
+# correlati", "Ti potrebbero interessare". Sono altri orologi, con altri anni,
+# altre condizioni e altri prezzi.
+_INIZIO_VETRINA = re.compile(
+    r"prodotti?\s+(?:correlati|simili|consigliati)|articoli\s+correlati|"
+    r"(?:ti\s+)?potrebbe(?:ro)?\s+interessar|potrebbe\s+piacerti|"
+    r"related\s+products?|you\s+may\s+also\s+like|similar\s+(?:products?|items?)|"
+    r"altri\s+(?:prodotti|annunci|orologi)|visti?\s+di\s+recente|"
+    r"recently\s+viewed|clienti\s+hanno\s+(?:anche\s+)?acquistato",
+    re.I,
+)
+
+
+def taglia_vetrina(testo: str) -> str:
+    """Tiene solo la parte di pagina che parla di QUESTO orologio.
+
+    Il caso che l'ha resa necessaria: la scheda PlusWatch del Silver Snoopy
+    finisce con un Seamaster del 2006 fra i prodotti correlati. Il lettore
+    dell'anno trovava "03/05/2006", lo assegnava allo Snoopy, e la finestra
+    anni (dal 2020) lo buttava fuori. Un orologio da 14.000 euro invisibile
+    per colpa della vetrina di un altro.
+
+    Vale per tutto, non solo per l'anno: condizioni, corredo, garanzia e
+    provenienza soffrivano dello stesso problema in silenzio.
+    """
+    if not testo:
+        return testo
+    m = _INIZIO_VETRINA.search(testo)
+    # Se la vetrina comincia troppo presto non e' una vetrina: e' una frase
+    # nella descrizione. Meglio non tagliare che tagliare l'annuncio stesso.
+    return testo[:m.start()] if m and m.start() > 200 else testo
+
+
 def enrich(listing, source_cfg: dict | None = None):
     """Popola tutti i campi derivabili dal testo dell'annuncio."""
+    listing.raw_text = taglia_vetrina(listing.raw_text)
     text = f"{listing.title}\n{listing.raw_text}"
     source_cfg = source_cfg or {}
 

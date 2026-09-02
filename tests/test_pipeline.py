@@ -1195,3 +1195,19 @@ def test_i_log_dicono_perche_gli_annunci_sono_stati_scartati(caplog):
     testo = caplog.text
     assert "scartati" in testo and "es." in testo
     assert "rolex" in testo.lower() or "variante esclusa" in testo
+
+
+def test_lo_snoopy_di_pluswatch_entra_finalmente():
+    """Il giro completo sull'annuncio vero: 14.000 euro, L'Aquila, unworn."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    from radar import extract
+    from tests.test_extract import _SCHEDA_PLUSWATCH
+    w = next(x for x in _config_vera().watches if x.id == "speedmaster-snoopy")
+    l = Listing(
+        source="pluswatch", raw_text=_SCHEDA_PLUSWATCH,
+        title="Omega Speedmaster 'Silver Snoopy Award' 310.32.42.50.02.001 31032425002001",
+        url="https://www.pluswatch.it/p/omega-speedmaster-silver-snoopy-award-2023-9692/")
+    extract.enrich(l, {})
+    assert reject_reason(l, w) is None, reject_reason(l, w)
+    assert l.price_eur == 14000.0, l.price_eur
