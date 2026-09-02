@@ -131,7 +131,7 @@ def test_il_submariner_viene_scartato():
         "https://demo.it/orologio/sub": "<html><body>Rolex Submariner 126610LN</body></html>",
     })
     listings = [extract.enrich(l, SRC_CFG) for l in src.collect().listings]
-    relevant = filter_relevant(listings, W)
+    relevant, _ = filter_relevant(listings, W)
     assert len(relevant) == 2
     assert all(l.reference == "126710BLRO" for l in relevant)
 
@@ -200,7 +200,7 @@ def test_giro_completo(tmp_path):
         "https://demo.it/orologio/pepsi-2023": DETAIL_2023,
         "https://demo.it/orologio/sub": "<html>Submariner</html>",
     })
-    listings = filter_relevant(
+    listings, _ = filter_relevant(
         [extract.enrich(l, SRC_CFG) for l in src.collect().listings], CFG
     )
 
@@ -284,7 +284,7 @@ def test_duplicato_vince_la_versione_piu_ricca():
         extract.enrich(l, {})
 
     for ordine in ((povero, ricco), (ricco, povero)):
-        out = filter_relevant(list(ordine), W)
+        out, _ = filter_relevant(list(ordine), W)
         assert len(out) == 1
         assert out[0].price_eur == 20499.0, "ha vinto la versione senza prezzo"
         assert out[0].warranty_region == "IT"
@@ -1171,3 +1171,27 @@ def test_lo_snoopy_giusto_sopravvive_a_quello_sbagliato_accanto():
                       title="Omega Speedmaster Professional Moonwatch Snoopy Award "
                             "3578.51 357851 Limited Ed. 11/2004")
     assert reject_reason(vecchio, w) is not None
+
+
+def test_i_log_dicono_perche_gli_annunci_sono_stati_scartati(caplog):
+    """«63 annunci grezzi → 0 pertinenti» dice che qualcosa non va e niente
+    su cosa. Il motivo il programma lo sapeva gia': bastava scriverlo."""
+    import logging
+    from radar.main import filter_relevant, log_scarti
+    from radar.models import Listing
+    w = _speedmaster()
+    grezzi = [
+        Listing(source="x", url="https://a/1", title="Rolex GMT-Master II Pepsi"),
+        Listing(source="x", url="https://a/2", title="Rolex Submariner"),
+        Listing(source="x", url="https://a/3",
+                title="Omega Speedmaster 310.30.42.50.01.001"),
+    ]
+    tenuti, motivi = filter_relevant(grezzi, w)
+    assert tenuti == []
+    assert sum(len(v) for v in motivi.values()) == 3
+
+    with caplog.at_level(logging.INFO, logger="radar"):
+        log_scarti(motivi)
+    testo = caplog.text
+    assert "scartati" in testo and "es." in testo
+    assert "rolex" in testo.lower() or "variante esclusa" in testo

@@ -173,21 +173,36 @@ def reject_reason(l: Listing, cfg) -> Optional[str]:
     return None
 
 
-def filter_relevant(listings: list[Listing], cfg) -> list[Listing]:
-    """L'unico filtro duro: la referenza. Più i limiti di sanità sul prezzo."""
+def filter_relevant(listings: list[Listing], cfg) -> tuple[list[Listing], dict]:
+    """L'unico filtro duro: la referenza. Più i limiti di sanità sul prezzo.
+
+    Restituisce anche il conto degli scarti per motivo. Serviva: "63 annunci
+    grezzi → 0 pertinenti" e' una riga che dice che qualcosa non va e niente
+    su cosa. Ogni volta bisognava rilanciare `inspect` a mano e aspettare un
+    giro. Il motivo lo sapeva gia' il programma: bastava scriverlo.
+    """
     # Lo stesso annuncio può arrivare da due pagine della stessa fonte (una
     # categoria e una ricerca) con dettagli diversi. Non basta scartare il
     # secondo: va tenuto quello che ha piu informazioni.
     best: dict[str, Listing] = {}
+    motivi: dict[str, list[str]] = {}
     for l in listings:
         reason = reject_reason(l, cfg)
         if reason:
             log.debug("scartato (%s): %s", reason, l.url)
+            motivi.setdefault(reason, []).append(l.url or l.title or "?")
             continue
         prev = best.get(l.key)
         if prev is None or _richness(l) > _richness(prev):
             best[l.key] = l
-    return list(best.values())
+    return list(best.values()), motivi
+
+
+def log_scarti(motivi: dict, quanti: int = 4) -> None:
+    """Perche' gli annunci sono stati buttati via, dal piu' frequente."""
+    for motivo, urls in sorted(motivi.items(), key=lambda kv: -len(kv[1]))[:quanti]:
+        log.info("   scartati %3d — %s", len(urls), motivo)
+        log.info("        es. %s", urls[0][:110])
 
 
 def _richness(l: Listing) -> int:
@@ -212,8 +227,10 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
     log.info("── raccolta ──────────────────────────────────────────")
 
     raw, produttive = collect(cfg, ctx, watch)
-    listings = filter_relevant(raw, watch)
+    listings, scarti = filter_relevant(raw, watch)
     log.info("%d annunci grezzi → %d pertinenti", len(raw), len(listings))
+    if scarti:
+        log_scarti(scarti)
 
     # Il fair value di questo orologio guarda solo le SUE referenze: mescolare
     # un Daytona con un GMT produrrebbe una mediana priva di significato.
@@ -423,8 +440,9 @@ def cmd_probe(args) -> int:
                 print(f"  {name:<21} {'ERRORE':<13} {'—':>7}  {type(exc).__name__}: {exc}")
                 result = None
                 break
-            relevant += filter_relevant(
+            tenuti, _ = filter_relevant(
                 [extract.enrich(l, src_cfg) for l in result.listings], w)
+            relevant += tenuti
         if result is None:
             continue
         if result.ok and relevant:
