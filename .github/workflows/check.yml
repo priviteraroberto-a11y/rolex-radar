@@ -21,7 +21,7 @@ on:
         default: automatico
         options:
           - automatico
-          - 222-overseas-royaloak-elite
+          - 222-overseas-royaloak-elite-snoopy
           - speedmaster-monaco-blackbay-a384
           - tutti
           # oppure un orologio solo:
@@ -29,6 +29,7 @@ on:
           - vc-overseas
           - royal-oak-15450
           - zenith-ultrathin
+          - speedmaster-snoopy
           - speedmaster
           - monaco-gulf
           - bb-chrono-flamingo

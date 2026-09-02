@@ -203,16 +203,20 @@ _TEMPLATE = """<!doctype html>
 
     <div id="bloccoNome" style="display:none">
       <label for="obbligatorie">Parole che devono comparire tutte</label>
-      <input type="text" id="obbligatorie" placeholder="Elite, Ultra Thin" autocomplete="off">
-      <div class="hint">Separate da virgola. Servono <b>tutte</b>: &egrave; quello
-      che separa un &ldquo;Elite Ultra Thin&rdquo; da un &ldquo;Elite
-      Chronomaster&rdquo;.</div>
+      <input type="text" id="obbligatorie" placeholder="una o due parole, non di piu'" autocomplete="off">
+      <div class="hint">Separate da virgola, e servono <b>tutte</b>. Meno sono,
+      meglio &egrave;: gi&agrave; con tre parole quasi nessun annuncio le scrive
+      tutte, e non ne vedrai nessuno. Per il Silver Snoopy basta
+      &ldquo;Snoopy&rdquo;.</div>
+      <div class="hint" id="allarmeParole" style="color:#eab308"></div>
     </div>
 
-    <label for="escluse">Parole escluse <span class="opt">— facoltativo</span></label>
-    <input type="text" id="escluse" placeholder="Offshore, Chronograph, Lady" autocomplete="off">
-    <div class="hint">Modelli cugini che condividono il nome o le prime cifre.
-    Hanno la precedenza su tutto il resto.</div>
+    <label for="escluse">Parole escluse <span class="opt">— facoltativo, e nel dubbio lasciala vuota</span></label>
+    <input type="text" id="escluse" placeholder="lascia vuoto se non sei sicuro" autocomplete="off">
+    <div class="hint">Solo i <b>nomi di altri modelli</b> che condividono
+    qualcosa con il tuo. Hanno la precedenza su tutto: se metti una parola che
+    compare negli annunci giusti, non ne vedrai piu' nessuno. &ldquo;Chronograph&rdquo;
+    in uno Speedmaster escluderebbe l'intero mercato.</div>
   </section>
 
   <section>
@@ -388,6 +392,12 @@ _TEMPLATE = """<!doctype html>
       ? "Gli annunci verranno accettati fra " + Math.round(prezzo * 0.45).toLocaleString("it-IT")
         + " e " + Math.round(prezzo * 2.2).toLocaleString("it-IT")
         + " \\u20ac. Larga di proposito: una soglia stretta nasconde in silenzio proprio l'affare che cerchi."
+      : "";
+
+    var np = lista($("obbligatorie").value).length;
+    $("allarmeParole").textContent = (perNome && np >= 3)
+      ? "\u26a0 " + np + " parole obbligatorie sono tante: devono comparire tutte "
+        + "nello stesso annuncio, e quasi nessun venditore le scrive tutte."
       : "";
 
     var p = problemi();

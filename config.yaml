@@ -16,7 +16,7 @@
 # -----------------------------------------------------------------------------
 rotation:
   enabled: true
-  groups: [222-overseas-royaloak-elite, speedmaster-monaco-blackbay-a384]
+  groups: [222-overseas-royaloak-elite-snoopy, speedmaster-monaco-blackbay-a384]
 
   # Il nome del gruppo e' l'elenco degli orologi che contiene. E' lungo, ma e'
   # l'unica cosa che si legge nel menu a tendina di GitHub (i commenti YAML li'
@@ -27,9 +27,10 @@ rotation:
   #
   # I nomi vecchi restano validi, cosi' un lancio salvato non si rompe.
   aliases:
-    a: 222-overseas-royaloak-elite
+    a: 222-overseas-royaloak-elite-snoopy
+    222-overseas-royaloak-elite: 222-overseas-royaloak-elite-snoopy
     b: speedmaster-monaco-blackbay-a384
-    alta-gamma: 222-overseas-royaloak-elite
+    alta-gamma: 222-overseas-royaloak-elite-snoopy
     accessibili: speedmaster-monaco-blackbay-a384
 
 # -----------------------------------------------------------------------------
@@ -149,7 +150,7 @@ watches:
 
   - id: zenith-ultrathin
     # photo: "https://..."
-    group: 222-overseas-royaloak-elite
+    group: 222-overseas-royaloak-elite-snoopy
     brand: Zenith
     model: Elite Ultra Thin
     # Riconosciuto dal NOME, non dalla referenza.
@@ -199,7 +200,7 @@ watches:
 
   - id: vc-222
     # photo: "https://..."
-    group: 222-overseas-royaloak-elite
+    group: 222-overseas-royaloak-elite-snoopy
     brand: Vacheron Constantin
     model: Historiques 222
     references: ["4200H/222A-B934"]
@@ -233,7 +234,7 @@ watches:
 
   - id: vc-overseas
     # photo: "https://..."
-    group: 222-overseas-royaloak-elite
+    group: 222-overseas-royaloak-elite-snoopy
     brand: Vacheron Constantin
     model: Overseas
     references: ["4520V/210A-B128"]
@@ -257,7 +258,7 @@ watches:
 
   - id: royal-oak-15450
     # photo: "https://..."
-    group: 222-overseas-royaloak-elite
+    group: 222-overseas-royaloak-elite-snoopy
     brand: Audemars Piguet
     model: Royal Oak 37
     references: ["15450ST.OO.1256ST.03"]
@@ -316,6 +317,47 @@ watches:
 # Filosofia: il sistema non deve *escludere*, deve *pesare*. Un 2023 impeccabile
 # a 26.000 € deve arrivarti comunque, con un punteggio alto.
 # -----------------------------------------------------------------------------
+
+  - id: speedmaster-snoopy
+    group: 222-overseas-royaloak-elite-snoopy
+    brand: Omega
+    model: Speedmaster Moonwatch
+    nickname: Silver Snoopy Award 50th
+    # Riconosciuto per NOME, ma con una parola sola: "Snoopy".
+    #
+    # Nella richiesta ne erano indicate quattro — Moonwatch, Snoopy, Award,
+    # 50th Anniversary — e servono TUTTE. Nessun annuncio le scrive tutte e
+    # quattro: molti dicono solo "Silver Snoopy Award", e sarebbero rimasti
+    # fuori tutti. E' lo stesso errore che aveva reso invisibile lo Zenith.
+    #
+    # "Snoopy" da sola basta: non esiste nessun altro orologio che si chiami
+    # cosi'. Le tre versioni della famiglia si separano sotto.
+    identify_by: name
+    must_include: ["Snoopy"]
+    references: []
+    # Gli altri due Snoopy, che costano il doppio o il triplo:
+    #   3578.51.00              Apollo XIII, 2003
+    #   311.32.42.30.04.003     45esimo anniversario, 2015
+    exclude_references: ["311.32.42.30.04.003", "3578.51.00"]
+    exclude_keywords: ["45th", "45esimo", "3578", "Apollo XIII Silver"]
+    hard_filters:
+      min_year: 2020          # il 50esimo esce nel 2020: prima non esiste
+      max_year: 2027
+      absolute_min_price_eur: 5850
+      absolute_max_price_eur: 28600
+    preferences:
+      target_years: [2023, 2024, 2025, 2026]
+      acceptable_years: [2021, 2022]
+      tolerated_years: [2020]
+    fair_value:
+      # Verificato il 01/09/2026: usato fra 13.000 e 14.600 euro, nuovo mai
+      # indossato intorno ai 14.500. La stima nella richiesta era 11.900:
+      # plausibile come prezzo a cui comprarlo, troppo bassa come valore di
+      # mercato — e il valore di mercato e' quello che serve al punteggio.
+      seed_price_eur: 13000
+    notifications:
+      always_notify_if_underpriced_pct: 12.0
+
 hard_filters:
   # Range di anni ampio: fuori range NON viene scartato, viene solo penalizzato.
   # Serve solo a evitare di raccogliere referenze pre-ceramica per errore.
