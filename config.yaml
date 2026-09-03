@@ -610,6 +610,40 @@ sources:
       url: "a@href"
       image: "img@src"
 
+  # --- Universo Oro (Roma) ---------------------------------------------------
+  # Non e' una pagina HTML ma il catalogo in JSON che il sito usa per
+  # disegnarsi da solo. Letto come pagina mostrerebbe 4 orologi su 127: e'
+  # scritto in JavaScript e senza browser non si vede quasi niente.
+  #
+  # Vale piu' di tutte le altre fonti messe insieme, perche' i campi arrivano
+  # gia' separati: niente prezzo barrato da distinguere, niente prodotti
+  # correlati che inquinano l'anno, niente selettori da indovinare.
+  #
+  # Due richieste in tutto per 127 orologi, meno di una singola ricerca HTML.
+  - name: universooro
+    type: json
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    base_url: "https://www.universo-oro.it"
+    start_urls:
+      - "https://www.universo-oro.it/api/public/watches?page=1&limit=100"
+      - "https://www.universo-oro.it/api/public/watches?page=2&limit=100"
+    items_path: items
+    available_value: available
+    fields:
+      title: "{brand} {model} {referenceNumber}"
+      reference: referenceNumber
+      price: pricePublic
+      year: yearOfProduction
+      condition: condition
+      box: hasBox
+      papers: hasPapers
+      available: availability
+      image: primaryImage
+      url: "https://www.universo-oro.it/orologi/{id}"
+
   # --- della Rocca: dominio corretto, pagina modello -------------------------
   # La loro ricerca interna ignora la referenza e restituisce tutto il catalogo
   # Rolex, con "126710BLRO" appiccicato alle descrizioni per SEO. Inutilizzabile.

@@ -1,9 +1,11 @@
 from .html_source import HtmlSource
 from .email_source import EmailSource
+from .json_source import JsonSource
 
 REGISTRY = {
     "html": HtmlSource,
     "email": EmailSource,
+    "json": JsonSource,
 }
 
 
