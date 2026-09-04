@@ -481,9 +481,13 @@ _CONDITION_PATTERNS = [
     ("like_new", r"like new|quasi nuovo|near mint"),
     ("mint", r"\bmint\b|pari al nuovo|come nuovo|as new"),
     ("new", r"\bnew\b|\bnuov[oa]\b|\bneu\b|brand new"),
-    ("excellent", r"\bexcellent\b|\beccellent|ottime condizioni|ottimo stato"),
-    ("very_good", r"very good|molto buon|buone condizioni"),
-    ("good", r"\bgood\b|\bbuono\b|discrete condizioni|segni d'uso|worn"),
+    # I negozi italiani scrivono "Condizione: ottima" e basta, senza la parola
+    # "condizioni": senza l'aggettivo da solo, ogni loro annuncio finiva
+    # senza condizione dichiarata e perdeva punti per un dato che c'era.
+    ("excellent", r"\bexcellent\b|\beccellent|ottim[aeoi]\b|ottimo stato|"
+                  r"condizione\s*:?\s*ottim"),
+    ("very_good", r"very good|molto buon|buone condizioni|condizione\s*:?\s*buon"),
+    ("good", r"\bgood\b|\bbuon[oaei]\b|discrete condizioni|segni d'uso|worn"),
 ]
 
 
@@ -497,9 +501,11 @@ def parse_condition(text: str) -> Optional[str]:
 
 def parse_full_set(text: str) -> Optional[bool]:
     t = norm(text)
-    if re.search(r"full\s*set|complete\s*set|scatola e (garanzia|documenti)|"
-                 r"box\s*(and|&|\+)\s*papers|corredo completo|completo di tutto|"
-                 r"con scatola e garanzia|b\s*&\s*p\b", t):
+    if re.search(r"full\s*set|complete\s*set|scatola\s*\w*\s*e\s*(garanzia|documenti|papers)|"
+                 r"box\s*(and|&|\+|e)\s*paper|corredo completo|completo di tutto|"
+                 r"con scatola e garanzia|b\s*&\s*p\b|"
+                 # "Corredo: Completo" nella scheda tecnica dei negozi italiani
+                 r"corredo\s*:?\s*complet|scatola e documenti original", t):
         return True
     if re.search(r"solo orologio|watch only|senza scatola|no box|no papers|"
                  r"senza garanzia|head only|nudo", t):
@@ -685,9 +691,19 @@ def taglia_vetrina(testo: str) -> str:
     return testo[:m.start()] if m and m.start() > 200 else testo
 
 
+def _senza_tag(testo: str) -> str:
+    """Toglie i tag HTML lasciando uno spazio al loro posto.
+
+    Le fonti JSON consegnano la scheda cosi' com'e', tag compresi: senza
+    ripulirla, "Corredo</strong>: Completo" non assomiglia a "corredo
+    completo" e il corredo risulta non dichiarato.
+    """
+    return re.sub(r"<[^>]+>", " ", testo or "")
+
+
 def enrich(listing, source_cfg: dict | None = None):
     """Popola tutti i campi derivabili dal testo dell'annuncio."""
-    listing.raw_text = taglia_vetrina(listing.raw_text)
+    listing.raw_text = taglia_vetrina(_senza_tag(listing.raw_text))
     text = f"{listing.title}\n{listing.raw_text}"
     source_cfg = source_cfg or {}
 

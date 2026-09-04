@@ -69,13 +69,31 @@ def test_annuncio_peggiore_ha_fair_value_piu_basso():
 
 
 def test_rilevamento_sotto_mercato():
+    """L'indice rappresenta l'esemplare TIPICO del mercato, non quello
+    perfetto: e' la mediana degli annunci osservati. Quindi il confronto va
+    fatto con un esemplare tipico — 2024, ottime condizioni — altrimenti si
+    misura la differenza fra "perfetto" e "medio" e la si scambia per uno
+    sconto."""
     e = FairValueEngine(CFG, [])
-    l = e.evaluate(mk(price_eur=e.index * 0.85))
+    tipico = dict(year=2024, condition="excellent", never_polished=None)
+
+    l = e.evaluate(mk(price_eur=e.index * 0.85, **tipico))
     assert l.delta_pct > 10
     assert e.is_underpriced(l)
 
-    l2 = e.evaluate(mk(price_eur=e.index * 1.05))
+    l2 = e.evaluate(mk(price_eur=e.index * 1.05, **tipico))
     assert not e.is_underpriced(l2)
+
+
+def test_un_esemplare_perfetto_a_prezzo_medio_e_un_affare():
+    """Conseguenza voluta del centrare i moltiplicatori sul tipico: un 2026
+    mai indossato full set al prezzo della mediana vale piu' di quel prezzo,
+    e il sistema deve dirlo. Prima lo giudicava "in linea" e non ti arrivava
+    nessuna notifica."""
+    e = FairValueEngine(CFG, [])
+    perfetto = e.evaluate(mk(price_eur=e.index, year=2026, condition="unworn",
+                             full_set=True, never_polished=True))
+    assert perfetto.delta_pct > 8, perfetto.delta_pct
 
 
 # --- scoring ------------------------------------------------------------------

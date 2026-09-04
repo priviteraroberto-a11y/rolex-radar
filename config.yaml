@@ -512,7 +512,8 @@ budget:
 # -----------------------------------------------------------------------------
 fair_value:
   # Prezzo di partenza usato SOLO finché non ci sono abbastanza annunci nel DB.
-  # Riferimento: unworn 2025, jubilee, full set, garanzia EU.
+  # Riferimento: l'esemplare TIPICO del mercato, cioe' la mediana degli
+  # annunci europei osservati — non il pezzo perfetto.
   seed_price_eur: 31000
   # Numero minimo di annunci comparabili per passare alla stima data-driven.
   min_samples: 10
@@ -521,21 +522,29 @@ fair_value:
   # Moltiplicatori edonici: servono a normalizzare annunci diversi tra loro
   # prima di calcolare la mediana, e poi a ri-adattarla al singolo annuncio.
   multipliers:
+    # Stessa logica: il centro e' il 2024, l'anno mediano degli annunci in
+    # circolazione, non l'ultimo uscito.
     year:
-      2026: 1.06
-      2025: 1.00
-      2024: 0.95
-      2023: 0.91
-      2022: 0.88
-      _default: 0.85
+      2026: 1.12
+      2025: 1.05
+      2024: 1.00
+      2023: 0.96
+      2022: 0.93
+      _default: 0.89
+    # Centrati su "excellent", che e' lo stato piu' dichiarato sul mercato,
+    # non su "unworn". Il motivo: l'indice ora nasce dalla mediana degli
+    # annunci osservati, cioe' dall'esemplare TIPICO. Se i moltiplicatori
+    # partissero dal migliore, un usato in ottime condizioni a prezzo di
+    # mercato risulterebbe caro, e le occasioni vere sparirebbero sotto la
+    # soglia di notifica. E' successo con il Vacheron di Zorzoli.
     condition:
-      unworn: 1.00
-      new: 1.00
-      mint: 0.96
-      like_new: 0.94
-      excellent: 0.90
-      very_good: 0.85
-      good: 0.79
+      unworn: 1.11
+      new: 1.11
+      mint: 1.07
+      like_new: 1.04
+      excellent: 1.00
+      very_good: 0.94
+      good: 0.88
       _default: 0.90
     bracelet:
       jubilee: 1.00

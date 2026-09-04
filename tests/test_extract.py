@@ -662,3 +662,31 @@ def test_le_etichette_riconosciute():
                       "Mod - Modello: ", "Reference: "):
         assert extract.referenza_dichiarata(
             etichetta + "310.30.42.50.01.002", ["310.30.42.50.01.002"]), etichetta
+
+
+# --- come scrivono davvero i negozi italiani ----------------------------------
+
+def test_le_condizioni_scritte_all_italiana():
+    """"Condizione: ottima", senza la parola "condizioni". Ogni annuncio dei
+    negozi italiani perdeva punti per un dato che era scritto nella scheda."""
+    casi = {
+        "Condizione: ottima": "excellent",
+        "Condizione: ottime condizioni": "excellent",
+        "Condizione: buona": "very_good",
+        "Condizione: buone": "very_good",
+        "Condizione: nuovo": "new",
+        "Condizione: Come nuovo e mai indossato": "unworn",
+        "Condizione: discrete condizioni": "good",
+    }
+    for testo, atteso in casi.items():
+        assert extract.parse_condition(testo) == atteso, testo
+
+
+def test_il_corredo_scritto_all_italiana():
+    for testo in ("Corredo: Completo",
+                  "Corredo: Con scatola originale e documenti originali",
+                  "Corredo: scatola e garanzia negozio",
+                  "box e papers", "full set"):
+        assert extract.parse_full_set(testo) is True, testo
+    for testo in ("Corredo: solo orologio", "senza scatola", "watch only"):
+        assert extract.parse_full_set(testo) is False, testo
