@@ -398,6 +398,44 @@ watches:
     notifications:
       always_notify_if_underpriced_pct: 12.0
 
+  - id: panerai-luminor
+    group: 222-overseas-royaloak-elite-snoopy
+    brand: Panerai
+    model: Luminor
+    # Tutta la famiglia Luminor: Marina, Base Logo e Due. Riconosciuto per
+    # nome perche' le referenze PAM sono centinaia e cambiano a ogni serie.
+    #
+    # Una cosa da sapere: dentro questa famiglia i prezzi europei vanno da
+    # 3.100 a 8.950 euro, con la meta' degli annunci stretta fra 3.600 e
+    # 5.000. Un solo indice per tutti significa che un Base Logo a 3.600 —
+    # che e' a prezzo pieno — sembrera' un affare, e un Marina Quaranta a
+    # 5.200 sembrera' caro. E' lo stesso problema del Tudor: se diventa
+    # fastidioso, si separano come abbiamo fatto per Flamingo e Panda.
+    identify_by: name
+    must_include: ["Luminor"]
+    references: []
+    search_terms: ["Panerai Luminor", "Luminor Marina", "Luminor Base Logo", "Luminor Due"]
+    # Il Submersible e' un'altra famiglia e costa il doppio; Radiomir e'
+    # un'altra cassa; i cronografi e le complicazioni escono dalla banda.
+    exclude_keywords: ["Submersible", "Radiomir", "Chrono", "Regatta",
+                       "Tourbillon", "Ferrari", "Equation", "Perpetual"]
+    hard_filters:
+      min_year: 2005
+      max_year: 2027
+      absolute_min_price_eur: 1800
+      absolute_max_price_eur: 11000
+    preferences:
+      target_years: [2022, 2023, 2024, 2025, 2026]
+      acceptable_years: [2016, 2017, 2018, 2019, 2020, 2021]
+      tolerated_years: [2010, 2011, 2012, 2013, 2014, 2015]
+    fair_value:
+      # mediana UE 3.990 su 22 annunci (rilevazione 03/09/2026); in Italia 3.800
+      seed_price_eur: 3990
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+
+
 hard_filters:
   # Range di anni ampio: fuori range NON viene scartato, viene solo penalizzato.
   # Serve solo a evitare di raccogliere referenze pre-ceramica per errore.

@@ -631,3 +631,34 @@ def test_vince_il_prezzo_scontato_non_quello_barrato():
     ]
     for testo, atteso in casi:
         assert extract.parse_price(testo)[0] == atteso, testo
+
+
+# --- referenza dichiarata contro referenza spammata ---------------------------
+
+def test_una_referenza_sotto_etichetta_e_una_dichiarazione():
+    """Zorzoli intitola i prodotti con la sola marca — "Vacheron Constantin" —
+    e mette referenza, anno e corredo nella scheda tecnica. La regola contro
+    lo spam SEO, nata per della Rocca, buttava via mezzo catalogo."""
+    scheda = ("<p><strong>Condizione</strong>: ottima</p>"
+              "<p><strong>Anno</strong>: 2024</p>"
+              "<p><strong>Referenza</strong>: 4520V</p>")
+    assert extract.referenza_dichiarata(scheda, ["4520V"])
+    assert extract.is_target_watch("Zorzoli Orologi Vacheron Constantin", scheda,
+                                   ["4520V/210A-B128", "4520V"], ["Overseas"], [])
+
+
+def test_lo_spam_seo_resta_spam():
+    """Il motivo per cui la regola esisteva: della Rocca infilava referenze
+    famose nelle schede di orologi che non c'entravano niente."""
+    spam = ("Splendido Datejust del 1998, revisionato. Cerchi anche un GMT? "
+            "Abbiamo il 126710BLRO e il 126710BLNR, contattaci.")
+    assert not extract.referenza_dichiarata(spam, ["126710BLRO"])
+    assert not extract.is_target_watch("Rolex Datejust 16234 acciaio", spam,
+                                       ["126710BLRO"], ["GMT-Master"], [])
+
+
+def test_le_etichette_riconosciute():
+    for etichetta in ("Referenza: ", "Numero di referenza ", "Ref. ",
+                      "Mod - Modello: ", "Reference: "):
+        assert extract.referenza_dichiarata(
+            etichetta + "310.30.42.50.01.002", ["310.30.42.50.01.002"]), etichetta

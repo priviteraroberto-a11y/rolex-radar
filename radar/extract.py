@@ -304,6 +304,37 @@ def other_reference_in_title(title: str, wanted: list[str]) -> bool:
     return False
 
 
+# "Referenza: 4520V" in una scheda tecnica non e' spam: e' il venditore che
+# dichiara cosa sta vendendo. Diverso da una referenza famosa buttata in fondo
+# alla descrizione per farsi trovare da Google.
+_ETICHETTA_REF = (r"(?:numero\s+di\s+referenz\w*|referenz\w*|reference|ref\.?|"
+                  r"mod(?:ello)?\.?)\s*[:\-\u2013]?\s*")
+
+
+def referenza_dichiarata(text: str, wanted: list[str]) -> bool:
+    """La referenza compare subito dopo un'etichetta che la annuncia?
+
+    Serve a distinguere due cose che il solo "sta nel testo" confonde: un
+    negozio che scrive `Referenza: 4520V` nella scheda tecnica, e un altro che
+    infila `126710BLRO` in fondo alla descrizione di un Datejust per farsi
+    trovare da Google. La prima e' una dichiarazione e va creduta anche se il
+    titolo dice solo "Vacheron Constantin" — c'e' chi intitola i prodotti con
+    la sola marca e mette tutto il resto nella scheda.
+    """
+    if not text or not wanted:
+        return False
+    pulito = norm(re.sub(r"<[^>]+>", " ", text)).upper()
+    for w in wanted:
+        caratteri = [c for c in str(w).upper() if c.isalnum()]
+        if not caratteri:
+            continue
+        # la referenza puo' essere scritta con o senza punti, spazi, trattini
+        flessibile = r"[\s\-_/.]*".join(re.escape(c) for c in caratteri)
+        if re.search(_ETICHETTA_REF + flessibile, pulito, re.I):
+            return True
+    return False
+
+
 def is_target_watch(title: str, text: str, wanted: list[str],
                     model_keywords: list[str] | None = None,
                     exclude_keywords: list[str] | None = None) -> bool:
@@ -338,7 +369,14 @@ def is_target_watch(title: str, text: str, wanted: list[str],
     if other_reference_in_title(title, wanted):
         return False
 
-    return any(norm(k) in nt for k in model_keywords)
+    if any(norm(k) in nt for k in model_keywords):
+        return True
+
+    # Ultimo appiglio: la referenza e' scritta sotto un'etichetta, cioe'
+    # dichiarata. Zorzoli intitola i prodotti con la sola marca e mette
+    # tutto nella scheda tecnica: senza questo, meta' del loro catalogo
+    # sarebbe invisibile.
+    return referenza_dichiarata(text, wanted)
 
 
 def matches_by_name(title: str, text: str, brand: str | None,

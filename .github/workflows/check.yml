@@ -34,6 +34,8 @@ on:
           - monaco-gulf
           - bb-chrono-flamingo
           - el-primero-a384
+          - bb-chrono-panda
+          - panerai-luminor
 
 concurrency:
   group: radar

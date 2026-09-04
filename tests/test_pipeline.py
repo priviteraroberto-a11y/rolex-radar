@@ -1211,3 +1211,27 @@ def test_lo_snoopy_di_pluswatch_entra_finalmente():
     extract.enrich(l, {})
     assert reject_reason(l, w) is None, reject_reason(l, w)
     assert l.price_eur == 14000.0, l.price_eur
+
+
+def test_il_panerai_prende_la_famiglia_luminor_e_non_le_altre():
+    """Marina, Base Logo e Due sono la stessa famiglia; Submersible e Radiomir
+    sono altri orologi, e costano il doppio."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    from radar import extract
+    w = next(x for x in _config_vera().watches if x.id == "panerai-luminor")
+    dentro = ["Panerai Luminor Marina 1950 3 Days PAM01312",
+              "Panerai Luminor Base Logo 44mm Pam01086",
+              "Panerai Luminor Due 38mm PAM00926 full set"]
+    fuori = ["Panerai Submersible 42mm PAM00683",
+             "Panerai Radiomir California PAM00931",
+             "Panerai Luminor Chrono Daylight PAM00250",
+             "Rolex Submariner 124060"]
+    for t in dentro:
+        l = Listing(source="x", url="https://a/" + t[:9], title=t, price_eur=4200.0)
+        extract.enrich(l, {})
+        assert reject_reason(l, w) is None, (t, reject_reason(l, w))
+    for t in fuori:
+        l = Listing(source="x", url="https://a/" + t[:9], title=t, price_eur=6000.0)
+        extract.enrich(l, {})
+        assert reject_reason(l, w) is not None, t
