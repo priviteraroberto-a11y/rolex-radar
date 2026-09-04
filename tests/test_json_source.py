@@ -98,9 +98,15 @@ def test_gli_annunci_veri_passano_il_filtro_del_radar():
     trovati = JsonSource(src, _Ctx(RISPOSTA)).collect().listings
     tudor = next(l for l in trovati if "Tudor" in l.title)
     extract.enrich(tudor, src)
-    w = next(x for x in cfg.watches if x.id == "bb-chrono-flamingo")
-    assert reject_reason(tudor, w) is None, reject_reason(tudor, w)
     assert tudor.seller_country == "IT"
+
+    # Il titolo dice "Black Bay Chrono 79360N" e basta: e' il Panda, che costa
+    # la meta' del Flamingo. Confonderli faceva sembrare un affare del 50% un
+    # orologio a prezzo di mercato — l'errore che la rilevazione ha svelato.
+    panda = next(x for x in cfg.watches if x.id == "bb-chrono-panda")
+    flamingo = next(x for x in cfg.watches if x.id == "bb-chrono-flamingo")
+    assert reject_reason(tudor, panda) is None, reject_reason(tudor, panda)
+    assert reject_reason(tudor, flamingo) is not None
 
     # e l'Hesalite, che non vuoi, resta fuori
     hesalite = next(l for l in trovati if "310.30" in l.title)

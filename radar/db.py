@@ -169,17 +169,21 @@ class Database:
         cur = self.conn.execute("SELECT * FROM listings WHERE key = ?", (key,))
         return cur.fetchone()
 
-    def comparables(self, references: list[str], lookback_days: int) -> list[dict]:
-        """Annunci recenti usati per stimare il valore di mercato."""
+    def comparables(self, watch_id: str, lookback_days: int) -> list[dict]:
+        """Annunci recenti usati per stimare il valore di mercato.
+
+        Il raggruppamento e' per **orologio**, non per referenza. Sembra una
+        sfumatura e non lo e': un orologio riconosciuto per nome — lo Zenith
+        Elite, lo Snoopy — non ha referenze, quindi con il vecchio criterio
+        non poteva avere nemmeno un comparabile, e il suo indice restava per
+        sempre la stima scritta a mano. Il legame annuncio-orologio lo ha
+        gia' deciso il filtro a monte: e' li' che va letto.
+        """
         since = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
-        placeholders = ",".join("?" for _ in references) or "''"
         rows = self.conn.execute(
-            f"""SELECT * FROM listings
-                WHERE reference IN ({placeholders})
-                  AND price_eur IS NOT NULL
-                  AND last_seen >= ?
-            """,
-            (*references, since),
+            """SELECT * FROM listings
+               WHERE watch_id = ? AND price_eur IS NOT NULL AND last_seen >= ?""",
+            (watch_id, since),
         ).fetchall()
         return [dict(r) for r in rows]
 

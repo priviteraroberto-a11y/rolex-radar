@@ -115,38 +115,68 @@ watches:
       acceptable_years: [2023, 2024]
       tolerated_years: [2021, 2022]
     fair_value:
-      seed_price_eur: 7300    # osservati 7.000 e 7.600 in Italia
+      # mediana UE 6.800 su 30 annunci Chrono24 (rilevazione 03/09/2026)
+      seed_price_eur: 6800
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
   - id: bb-chrono-flamingo
-    # photo: "https://..."
     group: speedmaster-monaco-blackbay-a384
     brand: Tudor
     model: Black Bay Chrono
     nickname: Flamingo Blue
-    # ATTENZIONE: la referenza che mi avevi dato (M7941A1A0NU) è del Black Bay
-    # 41 normale. Il Chrono Flamingo Blue è M79360N-0024.
+    # Riconosciuto per NOME, e la ragione e' un errore che stavo per farti fare.
+    #
+    # La referenza 79360N copre tre orologi diversi con prezzi che non si
+    # somigliano affatto: il Flamingo Blue (-0024) sta sui 7.800, il Panda
+    # (-0002) sui 4.300, il Pink "Inter Miami" (-0019) sui 7.500. Con la
+    # radice "79360N" finivano tutti nello stesso indice, e un Panda a prezzo
+    # di listino sembrava un Flamingo regalato: e' esattamente quello che mi
+    # ha fatto scambiare per un affare il Tudor da 4.500 di Universo Oro.
+    identify_by: name
+    must_include: ["Flamingo"]
     references: ["M79360N-0024"]
-    reference_stems: ["79360N"]
-    search_terms: ["M79360N", "Black Bay Chrono"]
-    model_keywords: ["Black Bay", "Blackbay"]
-    exclude_keywords: ["Pelagos", "Ranger", "Royal", "GMT", "Fifty-Eight", "58"]
+    search_terms: ["79360N-0024", "Black Bay Chrono Flamingo"]
+    exclude_keywords: ["Pink", "Inter Miami", "Miami", "Panda", "Reverse"]
     hard_filters:
-      min_year: 2024
+      min_year: 2023
       max_year: 2027
-      absolute_min_price_eur: 2500
+      absolute_min_price_eur: 3500
       absolute_max_price_eur: 16000
     preferences:
-      target_years: [2025, 2026]
-      acceptable_years: [2024]
-      tolerated_years: []
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2023]
     fair_value:
-      # 8.800 chiesti da Davide Pedretti in Italia; all'estero l'usato sta
-      # fra 9.000 e 10.500 euro. Meglio ancorarsi al mercato italiano.
-      seed_price_eur: 8800
+      # mediana UE 7.845 su 7 annunci (rilevazione 03/09/2026)
+      seed_price_eur: 7900
     notifications:
-      always_notify_if_underpriced_pct: 15.0
+      always_notify_if_underpriced_pct: 12.0
+
+  # Il fratello economico, separato di proposito: costa la meta' e mescolarlo
+  # al Flamingo rendeva senza senso l'indice di tutti e due.
+  - id: bb-chrono-panda
+    group: speedmaster-monaco-blackbay-a384
+    brand: Tudor
+    model: Black Bay Chrono
+    nickname: Panda
+    references: ["M79360N-0002"]
+    reference_stems: ["79360N"]
+    search_terms: ["79360N", "Black Bay Chrono"]
+    exclude_keywords: ["Flamingo", "Pink", "Inter Miami", "Miami"]
+    hard_filters:
+      min_year: 2021
+      max_year: 2027
+      absolute_min_price_eur: 1900
+      absolute_max_price_eur: 9000
+    preferences:
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2022, 2023]
+      tolerated_years: [2021]
+    fair_value:
+      # mediana UE 4.330 su 31 annunci (rilevazione 03/09/2026)
+      seed_price_eur: 4330
+    notifications:
+      always_notify_if_underpriced_pct: 12.0
 
   - id: zenith-ultrathin
     # photo: "https://..."
@@ -192,7 +222,8 @@ watches:
       # quella, ogni annuncio sarebbe sembrato un affare del 70%.
       # Sono tre modelli diversi fra loro, quindi e' una mediana grossolana:
       # servira' finche' il database non raccoglie annunci veri.
-      seed_price_eur: 3600
+      # mediana UE 3.490 su 60 annunci (rilevazione 03/09/2026)
+      seed_price_eur: 3500
     notifications:
       # 12% invece di 20: ora la stima poggia su prezzi osservati, non su
       # un'ipotesi, e puo' permettersi una soglia piu' stretta.
@@ -228,7 +259,8 @@ watches:
       # dello Zenith — una stima dedotta invece che osservata — e produceva
       # l'effetto peggiore: ogni annuncio normale sembrava un affare del 50%.
       # L'unico annuncio visto finora, giapponese, chiedeva 45.353 euro.
-      seed_price_eur: 52000
+      # mediana UE 48.825 su 34 annunci in acciaio (rilev. 03/09/2026)
+      seed_price_eur: 49000
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -252,7 +284,8 @@ watches:
       acceptable_years: [2021, 2022, 2023]
       tolerated_years: [2018, 2019, 2020]
     fair_value:
-      seed_price_eur: 35000    # nessun dato: alzato del 17%
+      # mediana UE 34.300 su 34 annunci (rilevazione 03/09/2026)
+      seed_price_eur: 34300
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -279,7 +312,8 @@ watches:
     fair_value:
       # Rivista: un 37mm quadrante bianco del 2016 e' passato a ~30.500
       # dollari, il modello e' fuori produzione e in salita del 18% sull'anno.
-      seed_price_eur: 32000    # nessun dato: alzato del 16%
+      # mediana UE 38.750 su 37 annunci: la mia stima era bassa del 17%
+      seed_price_eur: 38000
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -307,7 +341,8 @@ watches:
       acceptable_years: [2022, 2023]
       tolerated_years: [2019, 2020, 2021]
     fair_value:
-      seed_price_eur: 8000    # nessun dato: alzato per coerenza con gli altri
+      # mediana UE 7.200 su 27 annunci (rilevazione 03/09/2026)
+      seed_price_eur: 7200
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -358,7 +393,8 @@ watches:
       # indossato intorno ai 14.500. La stima nella richiesta era 11.900:
       # plausibile come prezzo a cui comprarlo, troppo bassa come valore di
       # mercato — e il valore di mercato e' quello che serve al punteggio.
-      seed_price_eur: 13000
+      # mediana UE 13.950 su 35 annunci (rilevazione 03/09/2026)
+      seed_price_eur: 13900
     notifications:
       always_notify_if_underpriced_pct: 12.0
 

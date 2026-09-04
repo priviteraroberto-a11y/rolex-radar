@@ -21,6 +21,7 @@ from urllib.parse import quote
 from . import dashboard as dash
 from . import metodo
 from . import nuovo_modello
+from . import rilevazione
 from . import extract, sources
 from .config import Config, WatchView
 from .db import Database
@@ -235,7 +236,7 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
     # Il fair value di questo orologio guarda solo le SUE referenze: mescolare
     # un Daytona con un GMT produrrebbe una mediana priva di significato.
     lookback = int(watch.get("fair_value.lookback_days", 60))
-    comparables = db.comparables(watch.references, lookback)
+    comparables = db.comparables(watch.id, lookback)
     comparables += [
         {"price_eur": l.price_eur, "year": l.year, "condition": l.condition,
          "bracelet": l.bracelet, "full_set": _i(l.full_set),
@@ -342,6 +343,7 @@ def cmd_check(args) -> int:
     if not cfg.watches:
         log.error("Nessun orologio configurato: manca la sezione `watches:`")
         return 1
+    rilevazione.importa(db, cfg)
     chiusi = db.close_unmonitored({w.id for w in cfg.watches})
     if chiusi:
         log.info("%d annunci di orologi non piu' monitorati messi a riposo", chiusi)
@@ -373,7 +375,7 @@ def cmd_check(args) -> int:
     for watch in cfg.watches:
         if watch.id in controllati:
             continue
-        comps = db.comparables(watch.references,
+        comps = db.comparables(watch.id,
                                int(watch.get("fair_value.lookback_days", 60)))
         m = FairValueEngine(watch, comps).summary()
         m["label"], m["watch_id"] = watch.label, watch.id
@@ -528,7 +530,7 @@ def cmd_dashboard(args) -> int:
     db = Database(args.db)
     markets = []
     for w in cfg.watches:
-        comps = db.comparables(w.references, int(w.get("fair_value.lookback_days", 60)))
+        comps = db.comparables(w.id, int(w.get("fair_value.lookback_days", 60)))
         m = FairValueEngine(w, comps).summary()
         m["label"], m["watch_id"] = w.label, w.id
         m["group"] = w.watch.get("group")

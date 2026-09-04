@@ -115,10 +115,16 @@ class FairValueEngine:
         }
 
 
-def _tri(v) -> str:
-    """None → '_default', True → 'true', False → 'false' (chiavi YAML)."""
+def _tri(v):
+    """None → None (ignoto), True → 'true', False → 'false' (chiavi YAML).
+
+    Prima l'ignoto diventava la stringa "_default", che nella tabella del
+    corredo non esiste: il moltiplicatore usciva 1.0, cioe' come se avesse
+    scatola e documenti. Ora l'ignoto arriva a `multiplier` come tale e prende
+    la media fra "si'" e "no", che e' quello che si sa davvero.
+    """
     if v is None:
-        return "_default"
+        return None
     return "true" if v else "false"
 
 

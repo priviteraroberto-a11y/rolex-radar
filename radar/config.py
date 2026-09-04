@@ -241,11 +241,25 @@ def _dig(data: Any, dotted: str) -> Any:
 
 
 def multiplier(table: dict, key: Any, default_key: str = "_default") -> float:
-    """Lookup tollerante nelle tabelle di moltiplicatori (chiavi YAML miste)."""
+    """Lookup tollerante nelle tabelle di moltiplicatori (chiavi YAML miste).
+
+    Il punto delicato e' cosa fare quando il dato **non e' dichiarato**, che e'
+    diverso da "dichiarato e brutto". Nella tabella degli anni `_default: 0.85`
+    significa "piu' vecchio del 2022": applicarlo a un annuncio che l'anno non
+    lo dice equivale a dargli per scontato il peggio, e a farlo sembrare caro.
+    Su un mercato dove meta' degli annunci l'anno non lo scrive, questo bastava
+    a nascondere occasioni vere.
+
+    Un dato ignoto vale **1.0**, cioe' non sposta niente: l'annuncio viene
+    confrontato con il mercato solo sulle caratteristiche che dichiara. E' la
+    scelta prudente — sbaglia verso il "in linea" invece che verso il "grande
+    affare", e i falsi affari sono l'errore che costa. Si puo' scavalcare la
+    regola scrivendo `_unknown` nella tabella.
+    """
     if table is None:
         return 1.0
     if key is None:
-        return float(table.get(default_key, 1.0))
+        return float(table.get("_unknown", 1.0))
     for candidate in (key, str(key), str(key).lower()):
         if candidate in table:
             return float(table[candidate])
