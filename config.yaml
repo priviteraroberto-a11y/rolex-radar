@@ -680,6 +680,33 @@ sources:
       image: primaryImage
       url: "https://www.universo-oro.it/orologi/{id}"
 
+  # --- Zorzoli Orologi (Pavia) ----------------------------------------------
+  # Negozio su Shopify con quasi settecento orologi. La ricerca normale del
+  # sito e' larghissima — "Speedmaster" restituisce 145 risultati, Rolex
+  # compresi — ma Shopify espone gli stessi risultati in JSON, e li' i campi
+  # arrivano separati: prezzo, disponibilita', e dentro la scheda anche
+  # referenza, anno, condizione e corredo.
+  #
+  # `available_value: "true"` e non "available": qui la disponibilita' e' un
+  # valore booleano, non una parola. Meta' del loro catalogo e' gia' venduto.
+  - name: zorzoli
+    type: json
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    base_url: "https://zorzoliorologi.com"
+    start_urls:
+      - "https://zorzoliorologi.com/search/suggest.json?q={q}&resources[type]=product&resources[limit]=10"
+    items_path: resources.results.products
+    available_value: "true"
+    fields:
+      title: "{vendor} {title}"
+      price: price
+      available: available
+      image: image
+      url: "https://zorzoliorologi.com/products/{handle}"
+
   # --- della Rocca: dominio corretto, pagina modello -------------------------
   # La loro ricerca interna ignora la referenza e restituisce tutto il catalogo
   # Rolex, con "126710BLRO" appiccicato alle descrizioni per SEO. Inutilizzabile.

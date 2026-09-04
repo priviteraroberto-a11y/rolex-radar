@@ -113,3 +113,62 @@ def test_gli_annunci_veri_passano_il_filtro_del_radar():
     extract.enrich(hesalite, src)
     ws = next(x for x in cfg.watches if x.id == "speedmaster")
     assert reject_reason(hesalite, ws) is not None
+
+
+# --- Zorzoli: Shopify, con i dati dentro la scheda ----------------------------
+
+SHOPIFY = json.dumps({"resources": {"results": {"products": [
+    {"available": False, "handle": "omega-speedmaster-doppio-zaffiro",
+     "title": "Omega Speedmaster", "vendor": "Zorzoli Orologi", "price": "5200.00",
+     "image": "https://cdn.shopify.com/x.jpg",
+     "body": "<p><strong>Cassa</strong> da 42 mm, <strong>Vetro</strong> Hesalite."
+             "</p><p><strong>Condizione</strong>: ottime condizioni</p>"
+             "<p><strong>Anno</strong>: 2024</p>"
+             "<p><strong>Referenza</strong>: 310.30.42.50.01.001</p>"
+             "<p><strong>Corredo</strong>: Completo</p>"},
+    {"available": True, "handle": "omega-speedmaster-9",
+     "title": "Omega Speedmaster", "vendor": "Omega", "price": "6500.00",
+     "image": "https://cdn.shopify.com/y.jpg",
+     "body": "<p><strong>Condizione</strong>: ottima</p><p><strong>Anno</strong>: 2025</p>"
+             "<p><strong>Referenza</strong>: 310.30.42.50.01.002</p>"
+             "<p><strong>Corredo</strong>: Completo</p>"},
+]}}})
+
+ZORZOLI = {
+    "name": "zorzoli", "type": "json", "country": "IT", "dealer": True,
+    "seller_trust": 4, "base_url": "https://zorzoliorologi.com",
+    "start_urls": ["https://zorzoliorologi.com/search/suggest.json?q=Speedmaster"],
+    "items_path": "resources.results.products", "available_value": "true",
+    "fields": {"title": "{vendor} {title}", "price": "price", "available": "available",
+               "image": "image", "url": "https://zorzoliorologi.com/products/{handle}"},
+}
+
+
+def test_shopify_percorso_annidato_e_disponibilita_booleana():
+    """`items_path` scende in tre livelli, e qui la disponibilita' e' true/false
+    invece di una parola: meta' del catalogo Zorzoli e' gia' venduto."""
+    trovati = JsonSource(ZORZOLI, _Ctx(SHOPIFY)).collect().listings
+    assert len(trovati) == 2
+    venduto = next(l for l in trovati if l.price_eur == 5200)
+    disponibile = next(l for l in trovati if l.price_eur == 6500)
+    assert venduto.sold is True and disponibile.sold is False
+    assert disponibile.url.endswith("/products/omega-speedmaster-9")
+
+
+def test_la_referenza_sta_nella_scheda_non_nel_titolo():
+    """Zorzoli intitola tutto "Omega Speedmaster": referenza, anno e corredo
+    stanno nel testo della scheda, ed e' li' che vanno letti."""
+    from radar.config import Config
+    cfg = Config.load("config.yaml")
+    trovati = JsonSource(ZORZOLI, _Ctx(SHOPIFY)).collect().listings
+    w = next(x for x in cfg.watches if x.id == "speedmaster")
+
+    giusto = next(l for l in trovati if l.price_eur == 6500)
+    extract.enrich(giusto, ZORZOLI)
+    assert reject_reason(giusto, w) is None, reject_reason(giusto, w)
+    assert giusto.year == 2025 and giusto.seller_country == "IT"
+
+    # l'Hesalite (...01.001) resta fuori anche se la referenza e' solo nel corpo
+    hesalite = next(l for l in trovati if l.price_eur == 5200)
+    extract.enrich(hesalite, ZORZOLI)
+    assert reject_reason(hesalite, w) is not None
