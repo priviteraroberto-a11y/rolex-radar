@@ -271,3 +271,44 @@ def test_san_marino_riconosciuto_nel_testo():
     assert extract.parse_location("Luogo: San Marino") == "SM"
     assert extract.normalize_region_group("SM") == "SM", \
         "San Marino non deve finire nel gruppo EU: non è nell'Unione"
+
+
+# --- confronto col listino ----------------------------------------------------
+
+def _con_listino(prezzo_listino):
+    from radar.config import Config as C
+    return C({**_REALE.raw, "watches": [{
+        "id": "x", "brand": "Rolex", "references": ["126710BLRO"],
+        "fair_value": {"seed_price_eur": 20000, "list_price_eur": prezzo_listino},
+    }]}).watches[0]
+
+
+def test_lo_scarto_dal_listino_si_calcola():
+    w = _con_listino(25000)
+    e = FairValueEngine(w, [])
+    l = e.evaluate(Listing(source="t", url="https://a/1", price_eur=20000.0))
+    assert l.listino_eur == 25000
+    assert l.delta_listino_pct == 20.0          # 20.000 e' il 20% sotto 25.000
+    sopra = e.evaluate(Listing(source="t", url="https://a/2", price_eur=30000.0))
+    assert sopra.delta_listino_pct == -20.0
+
+
+def test_senza_listino_il_campo_resta_vuoto():
+    """Meglio non dire niente che dire un numero inventato: molti di questi
+    orologi sono fuori produzione e un listino attuale non esiste."""
+    w = _con_listino(None)
+    l = FairValueEngine(w, []).evaluate(
+        Listing(source="t", url="https://a/3", price_eur=20000.0))
+    assert l.listino_eur is None and l.delta_listino_pct is None
+
+
+def test_il_listino_non_tocca_il_punteggio():
+    """E' un'informazione, non un giudizio: due annunci identici devono avere
+    lo stesso punteggio, che il listino sia noto o no."""
+    dati = dict(source="t", url="https://a/4", price_eur=20000.0, year=2025,
+                condition="excellent", full_set=True, seller_trust=4)
+    con = Scorer(_con_listino(25000)).score(
+        FairValueEngine(_con_listino(25000), []).evaluate(Listing(**dati)))
+    senza = Scorer(_con_listino(None)).score(
+        FairValueEngine(_con_listino(None), []).evaluate(Listing(**dati)))
+    assert con.score == senza.score

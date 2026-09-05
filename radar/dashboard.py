@@ -183,6 +183,13 @@ def _row(l: dict) -> str:
     else:
         badge = f'<span class="b r">sopra {abs(delta):.1f}%</span>'
 
+    dl = l.get("delta_listino_pct")
+    listino = ""
+    if dl is not None:
+        classe = "g" if dl >= 5 else ("y" if dl >= -5 else "r")
+        verso = "sotto" if dl >= 0 else "sopra"
+        listino = (f' · <span class="b {classe}">{verso} listino {abs(dl):.0f}%</span>')
+
     chips = "".join(
         f'<span class="chip{" here" if c == _QUI else ""}">{e(str(c))}</span>'
         for c in [
@@ -199,7 +206,7 @@ def _row(l: dict) -> str:
         <span>{l.get('score', 0)}</span></div></td>
       <td>
         <div class="pr">{_eur(l.get('price_eur'))}</div>
-        <div class="fv">stima {_eur(l.get('fair_value_eur'))} · {badge}</div>
+        <div class="fv">stima {_eur(l.get('fair_value_eur'))} · {badge}{listino}</div>
         <div class="chips">{chips}</div>
         <div class="src">{e(l.get('source', ''))}</div>
       </td>

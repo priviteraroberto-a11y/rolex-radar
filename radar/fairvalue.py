@@ -96,6 +96,22 @@ class FairValueEngine:
         if l.price_eur:
             l.delta_eur = round(fv - l.price_eur, 0)
             l.delta_pct = round((fv - l.price_eur) / fv * 100, 2) if fv else None
+        return self.confronta_col_listino(l)
+
+    def confronta_col_listino(self, l: Listing) -> Listing:
+        """Quanto costa rispetto al prezzo di listino della casa.
+
+        E' un'informazione diversa da "sotto mercato", e le due si smentiscono
+        spesso: un Royal Oak fuori produzione sta al doppio del suo ultimo
+        listino ed e' comunque un affare rispetto al mercato di oggi; un
+        Panerai nuovo al 30% sotto listino puo' essere semplicemente il
+        prezzo normale dell'usato.
+        """
+        listino = self.cfg.get("fair_value.list_price_eur")
+        if not listino or not l.price_eur:
+            return l
+        l.listino_eur = float(listino)
+        l.delta_listino_pct = round((l.listino_eur - l.price_eur) / l.listino_eur * 100, 1)
         return l
 
     def is_underpriced(self, l: Listing, threshold_pct: Optional[float] = None) -> bool:

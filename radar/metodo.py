@@ -134,6 +134,17 @@ gonfiato: a spostare il centro e' solo chi sta in mezzo. In piu' viene tagliato
 il <b>10% piu' alto e il 10% piu' basso</b>, che sono quasi sempre errori di
 lettura.</p>
 
+<h3>E il listino?</h3>
+<p>Accanto allo scarto dal mercato puoi vedere anche lo scarto dal
+<b>prezzo di listino</b> della casa, quando lo conosciamo. Sono due cose
+diverse e spesso si smentiscono: un Royal Oak fuori produzione sta al doppio
+del suo ultimo listino ed e' comunque un affare rispetto al mercato di oggi;
+un Panerai nuovo al 30% sotto listino puo' essere semplicemente il prezzo
+normale dell'usato.</p>
+<p>Il listino <b>non entra nel punteggio</b>, di proposito: e' un dato statico
+e per meta' di questi orologi non esiste piu'. Se non e' impostato, il radar
+non scrive niente invece di inventarselo.</p>
+
 <h3>Terzo: tornare indietro</h3>
 <p>Il valore equo di un singolo annuncio e'
 <b>indice &times; i <em>suoi</em> moltiplicatori</b>. E' questo passaggio che

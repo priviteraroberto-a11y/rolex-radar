@@ -95,6 +95,10 @@ class TelegramNotifier:
         if l.delta_eur is not None:
             sign = "sotto" if l.delta_eur > 0 else "sopra"
             row("Scarto    ", f"{abs(l.delta_eur):,.0f} € {sign} ({l.delta_pct:+.1f}%)".replace(",", "."))
+        if l.delta_listino_pct is not None:
+            verso = "sotto" if l.delta_listino_pct >= 0 else "sopra"
+            listino = f"{l.listino_eur:,.0f} €".replace(",", ".")
+            row("Listino   ", f"{listino} — {abs(l.delta_listino_pct):.0f}% {verso}")
         lines.append("")
         row("Anno      ", l.year)
         row("Condizioni", _pretty(l.condition))

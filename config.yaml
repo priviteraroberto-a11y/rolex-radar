@@ -117,6 +117,8 @@ watches:
     fair_value:
       # mediana UE 6.800 su 30 annunci Chrono24 (rilevazione 03/09/2026)
       seed_price_eur: 6800
+      # Listino Omega 2026 per la versione zaffiro su bracciale. Verificato.
+      list_price_eur: 8700
     notifications:
       always_notify_if_underpriced_pct: 15.0
 

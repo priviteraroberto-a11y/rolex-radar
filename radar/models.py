@@ -44,6 +44,10 @@ class Listing:
     fair_value_eur: Optional[float] = None
     delta_eur: Optional[float] = None
     delta_pct: Optional[float] = None
+    # Scarto rispetto al prezzo di LISTINO, non al mercato: dato statico,
+    # informativo, che non entra nel punteggio.
+    listino_eur: Optional[float] = None
+    delta_listino_pct: Optional[float] = None
     score: int = 0
     score_breakdown: dict = field(default_factory=dict)
     reasons: list = field(default_factory=list)
