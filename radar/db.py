@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS listings (
     price_eur       REAL,
     fair_value_eur  REAL,
     delta_pct       REAL,
+    delta_listino_pct REAL,
     score           INTEGER DEFAULT 0,
     first_seen      TEXT NOT NULL,
     last_seen       TEXT NOT NULL,
@@ -113,6 +114,11 @@ class Database:
                 (DEFAULT_WATCH_ID,))
         if "seller_country" not in cols:
             self.conn.execute("ALTER TABLE listings ADD COLUMN seller_country TEXT")
+        if "delta_listino_pct" not in cols:
+            # Il confronto col listino: calcolato a ogni giro ma, finche' non
+            # esisteva questa colonna, buttato via subito dopo. La dashboard
+            # legge dal database, non dalla memoria del giro.
+            self.conn.execute("ALTER TABLE listings ADD COLUMN delta_listino_pct REAL")
         self._butta_i_non_annunci()
         cur = self.conn.execute("PRAGMA table_info(market_snapshots)")
         cols = {r[1] for r in cur.fetchall()}
@@ -241,7 +247,7 @@ class Database:
             _b(listing.full_set), _b(listing.never_polished), listing.warranty_region,
             listing.seller, listing.seller_country, listing.seller_trust, listing.image,
             listing.price_eur, listing.fair_value_eur, listing.delta_pct,
-            listing.score, now, now, payload,
+            listing.delta_listino_pct, listing.score, now, now, payload,
         )
 
         if prev is None:
@@ -250,8 +256,9 @@ class Database:
                    (key, watch_id, source, url, title, reference, year, bracelet,
                     condition, full_set, never_polished, warranty_region, seller,
                     seller_country, seller_trust, image, price_eur, fair_value_eur,
-                    delta_pct, score, first_seen, last_seen, payload, active)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
+                    delta_pct, delta_listino_pct, score, first_seen, last_seen,
+                    payload, active)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
                 values,
             )
         else:
@@ -260,10 +267,10 @@ class Database:
                      watch_id=?, source=?, url=?, title=?, reference=?, year=?, bracelet=?,
                      condition=?, full_set=?, never_polished=?, warranty_region=?,
                      seller=?, seller_country=?, seller_trust=?, image=?, price_eur=?,
-                     fair_value_eur=?, delta_pct=?, score=?, last_seen=?, payload=?,
-                     active=1
+                     fair_value_eur=?, delta_pct=?, delta_listino_pct=?, score=?,
+                     last_seen=?, payload=?, active=1
                    WHERE key=?""",
-                (*values[1:20], now, payload, listing.key),
+                (*values[1:21], now, payload, listing.key),
             )
 
         # storico prezzi: una riga al giorno per annuncio

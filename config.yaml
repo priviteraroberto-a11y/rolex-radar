@@ -81,6 +81,9 @@ watches:
       target_years: [2024, 2025, 2026]
       acceptable_years: [2022, 2023]
       tolerated_years: [2020, 2021]
+    # FUORI PRODUZIONE: TAG Heuer oggi fa solo la versione in titanio con la
+    # corona a sinistra. Un listino attuale per questo non esiste, quindi il
+    # radar non scrive niente invece di confrontarti con un prezzo che non c'e'.
     fair_value:
       seed_price_eur: 7000    # osservato 7.300 su PlusWatch
     notifications:
@@ -117,8 +120,8 @@ watches:
     fair_value:
       # mediana UE 6.800 su 30 annunci Chrono24 (rilevazione 03/09/2026)
       seed_price_eur: 6800
-      # Listino Omega 2026 per la versione zaffiro su bracciale. Verificato.
-      list_price_eur: 8700
+      # Listino Omega 2026, versione vetro zaffiro. Dato fornito da Roberto.
+      list_price_eur: 8900
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -151,6 +154,8 @@ watches:
     fair_value:
       # mediana UE 7.845 su 7 annunci (rilevazione 03/09/2026)
       seed_price_eur: 7900
+      # listino Tudor per il Flamingo Blue (turchese)
+      list_price_eur: 6480
     notifications:
       always_notify_if_underpriced_pct: 12.0
 
@@ -177,6 +182,8 @@ watches:
     fair_value:
       # mediana UE 4.330 su 31 annunci (rilevazione 03/09/2026)
       seed_price_eur: 4330
+      # listino Tudor per il Panda
+      list_price_eur: 6360
     notifications:
       always_notify_if_underpriced_pct: 12.0
 
@@ -263,6 +270,8 @@ watches:
       # L'unico annuncio visto finora, giapponese, chiedeva 45.353 euro.
       # mediana UE 48.825 su 34 annunci in acciaio (rilev. 03/09/2026)
       seed_price_eur: 49000
+      # listino Vacheron: CHF 32.200 al cambio 1,0635 del 05/09/2026
+      list_price_eur: 34250
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -288,36 +297,69 @@ watches:
     fair_value:
       # mediana UE 34.300 su 34 annunci (rilevazione 03/09/2026)
       seed_price_eur: 34300
+      # listino Vacheron: CHF 25.400 al cambio 1,0635 del 05/09/2026
+      list_price_eur: 27000
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
-  - id: royal-oak-15450
-    # photo: "https://..."
+  # I due Royal Oak in produzione, tenuti separati: il Jumbo vale il doppio
+  # abbondante del 41mm, e un solo indice per entrambi non direbbe niente su
+  # nessuno dei due. E' la lezione del Tudor Flamingo/Panda.
+  #
+  # Il 15450 da 37mm, che seguivamo prima, e' stato tolto: e' fuori produzione
+  # e non era fra i due che hai indicato. Rimetterlo costa tre righe.
+  - id: royal-oak-jumbo-16202
     group: 222-overseas-royaloak-elite-snoopy
     brand: Audemars Piguet
-    model: Royal Oak 37
-    references: ["15450ST.OO.1256ST.03"]
-    reference_stems: ["15450ST"]
-    search_terms: ["15450ST", "Royal Oak 15450"]
-    model_keywords: ["Royal Oak"]
-    exclude_keywords: ["Offshore", "Concept", "Code 11.59", "Millenary"]
-    # Prodotto fino al 2021 circa: la finestra anni parte da molto prima.
+    model: Royal Oak Jumbo Extra-Thin
+    nickname: Jumbo
+    references: ["16202ST.OO.1240ST.02"]
+    reference_stems: ["16202ST", "16202"]
+    search_terms: ["16202ST", "Royal Oak Jumbo"]
+    exclude_keywords: ["Offshore", "Concept", "Code 11.59", "Millenary",
+                       "Perpetual", "Chronograph", "15202"]
     hard_filters:
-      min_year: 2012
+      min_year: 2022
       max_year: 2027
-      absolute_min_price_eur: 15000
-      absolute_max_price_eur: 80000
+      absolute_min_price_eur: 30000
+      absolute_max_price_eur: 180000
     preferences:
-      target_years: [2019, 2020, 2021]
-      acceptable_years: [2016, 2017, 2018]
-      tolerated_years: [2013, 2014, 2015]
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2022, 2023]
     fair_value:
-      # Rivista: un 37mm quadrante bianco del 2016 e' passato a ~30.500
-      # dollari, il modello e' fuori produzione e in salita del 18% sull'anno.
-      # mediana UE 38.750 su 37 annunci: la mia stima era bassa del 17%
-      seed_price_eur: 38000
+      # mediana UE 79.950 su 10 annunci (rilevazione 05/09/2026)
+      seed_price_eur: 79950
+      # listino AP: CHF 31.700 al cambio 1,0635 del 05/09/2026.
+      # Il mercato sta il 137% sopra: e' il caso limite che mostra perche'
+      # listino e mercato vanno letti separati.
+      list_price_eur: 33700
     notifications:
-      always_notify_if_underpriced_pct: 15.0
+      always_notify_if_underpriced_pct: 10.0
+
+  - id: royal-oak-15510
+    group: speedmaster-monaco-blackbay-a384
+    brand: Audemars Piguet
+    model: Royal Oak Selfwinding 41
+    references: ["15510ST.OO.1320ST.06"]
+    reference_stems: ["15510ST", "15510"]
+    search_terms: ["15510ST", "Royal Oak 15510"]
+    exclude_keywords: ["Offshore", "Concept", "Code 11.59", "Millenary",
+                       "Perpetual", "Chronograph", "16202"]
+    hard_filters:
+      min_year: 2021
+      max_year: 2027
+      absolute_min_price_eur: 21000
+      absolute_max_price_eur: 105000
+    preferences:
+      target_years: [2024, 2025, 2026]
+      acceptable_years: [2021, 2022, 2023]
+    fair_value:
+      # mediana UE 47.309 su 9 annunci (rilevazione 05/09/2026)
+      seed_price_eur: 47300
+      # listino AP: CHF 25.200 al cambio 1,0635 del 05/09/2026
+      list_price_eur: 26800
+    notifications:
+      always_notify_if_underpriced_pct: 10.0
 
   - id: el-primero-a384
     # photo: "https://..."
@@ -345,6 +387,8 @@ watches:
     fair_value:
       # mediana UE 7.200 su 27 annunci (rilevazione 03/09/2026)
       seed_price_eur: 7200
+      # listino Zenith per il Chronomaster Revival A384
+      list_price_eur: 10000
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -397,6 +441,8 @@ watches:
       # mercato — e il valore di mercato e' quello che serve al punteggio.
       # mediana UE 13.950 su 35 annunci (rilevazione 03/09/2026)
       seed_price_eur: 13900
+      # listino Omega per il 50esimo anniversario
+      list_price_eur: 11900
     notifications:
       always_notify_if_underpriced_pct: 12.0
 
@@ -433,6 +479,8 @@ watches:
     fair_value:
       # mediana UE 3.990 su 22 annunci (rilevazione 03/09/2026); in Italia 3.800
       seed_price_eur: 3990
+      # listino Panerai per il Luminor Base
+      list_price_eur: 5700
     notifications:
       always_notify_if_underpriced_pct: 15.0
 

@@ -825,7 +825,7 @@ def test_le_radici_non_aprono_ad_altri_modelli():
         "monaco-gulf": "TAG Heuer Carrera CBN2A1B.BA0643",
         "bb-chrono-flamingo": "Tudor Black Bay 58 79030N",
         "vc-overseas": "Vacheron Constantin Historiques 222 4200H",
-        "royal-oak-15450": "Audemars Piguet Royal Oak 41mm 15500ST.OO.1220ST.01",
+        "royal-oak-15510": "Audemars Piguet Royal Oak 41mm 15500ST.OO.1220ST.01",
     }
     for w in _config_vera().watches:
         if w.id in fuori:
@@ -1031,9 +1031,9 @@ def test_una_pagina_di_vetrina_non_diventa_un_annuncio():
     lettori che l'hanno prodotto."""
     from radar.main import reject_reason
     from radar.models import Listing
-    w = next(x for x in _config_vera().watches if x.id == "royal-oak-15450")
-    l = Listing(source="davidepedretti", price_eur=20400.0, title="Shop",
-                raw_text="Risultati di ricerca per 15450ST ... 24 risultati",
+    w = next(x for x in _config_vera().watches if x.id == "royal-oak-15510")
+    l = Listing(source="davidepedretti", price_eur=30400.0, title="Shop",
+                raw_text="Risultati di ricerca per 15510ST ... 24 risultati",
                 url="https://shop.davidepedretti.com/vendita-orologi-di-lusso-bologna/")
     assert reject_reason(l, w) is not None
 
@@ -1235,3 +1235,73 @@ def test_il_panerai_prende_la_famiglia_luminor_e_non_le_altre():
         l = Listing(source="x", url="https://a/" + t[:9], title=t, price_eur=6000.0)
         extract.enrich(l, {})
         assert reject_reason(l, w) is not None, t
+
+
+def test_lo_scarto_dal_listino_arriva_fino_alla_dashboard(tmp_path):
+    """Il calcolo c'era gia', ma la dashboard legge dal database e la colonna
+    non esisteva: il valore veniva calcolato a ogni giro e buttato via."""
+    from radar.db import Database
+    from radar.models import Listing
+    from radar import dashboard
+    db = Database(tmp_path / "l.db")
+    db.upsert(Listing(source="pluswatch", url="https://a/1", price_eur=6500.0,
+                      fair_value_eur=7085.0, delta_pct=8.3, listino_eur=8700.0,
+                      delta_listino_pct=25.3, score=73, seller_country="IT"),
+              "speedmaster")
+    db.conn.commit()
+    riga = db.active_listings("speedmaster")[0]
+    assert riga["delta_listino_pct"] == 25.3
+
+    p = dashboard.build(db, [{"watch_id": "speedmaster", "label": "Omega"}],
+                        tmp_path / "index.html")
+    testo = p.read_text(encoding="utf-8")
+    assert "sotto listino 25%" in testo, "manca l'indicazione sul listino"
+
+
+def test_senza_listino_la_dashboard_non_scrive_niente(tmp_path):
+    from radar.db import Database
+    from radar.models import Listing
+    from radar import dashboard
+    db = Database(tmp_path / "m.db")
+    db.upsert(Listing(source="x", url="https://a/2", price_eur=4000.0,
+                      fair_value_eur=4100.0, delta_pct=2.4, score=60), "panerai-luminor")
+    db.conn.commit()
+    p = dashboard.build(db, [{"watch_id": "panerai-luminor", "label": "Panerai"}],
+                        tmp_path / "i.html")
+    assert "listino" not in p.read_text(encoding="utf-8")
+
+
+def test_i_due_royal_oak_non_si_confondono():
+    """Il Jumbo vale il doppio abbondante del 41mm: un indice solo per
+    entrambi non direbbe niente su nessuno dei due."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    cfg = _config_vera()
+    jumbo = next(x for x in cfg.watches if x.id == "royal-oak-jumbo-16202")
+    quaranta = next(x for x in cfg.watches if x.id == "royal-oak-15510")
+    t_jumbo = "Audemars Piguet Royal Oak Jumbo Extra-Thin 16202ST.OO.1240ST.02"
+    t_41 = "Audemars Piguet Royal Oak Selfwinding 41mm 15510ST.OO.1320ST.06"
+    assert reject_reason(Listing(source="x", url="https://a/1", title=t_jumbo,
+                                 price_eur=80000.0), jumbo) is None
+    assert reject_reason(Listing(source="x", url="https://a/2", title=t_41,
+                                 price_eur=47000.0), quaranta) is None
+    # incrociati: ognuno esclude l'altro
+    assert reject_reason(Listing(source="x", url="https://a/3", title=t_41,
+                                 price_eur=47000.0), jumbo) is not None
+    assert reject_reason(Listing(source="x", url="https://a/4", title=t_jumbo,
+                                 price_eur=80000.0), quaranta) is not None
+
+
+def test_ogni_listino_e_coerente_con_la_stima():
+    """Un listino piu' alto della stima e' normale (l'usato scende), come uno
+    piu' basso (il mercato grigio sale). Ma un rapporto assurdo tradisce un
+    errore di conversione o uno zero di troppo."""
+    for w in _config_vera().watches:
+        listino = w.get("fair_value.list_price_eur")
+        if not listino:
+            continue
+        seed = float(w.get("fair_value.seed_price_eur"))
+        rapporto = seed / float(listino)
+        assert 0.3 <= rapporto <= 3.5, (
+            f"{w.id}: stima {seed:,.0f} contro listino {listino:,.0f} "
+            f"(rapporto {rapporto:.2f}) — probabile errore")
