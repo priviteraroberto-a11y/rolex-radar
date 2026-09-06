@@ -1305,3 +1305,48 @@ def test_ogni_listino_e_coerente_con_la_stima():
         assert 0.3 <= rapporto <= 3.5, (
             f"{w.id}: stima {seed:,.0f} contro listino {listino:,.0f} "
             f"(rapporto {rapporto:.2f}) — probabile errore")
+
+
+def test_il_royal_oak_in_oro_resta_fuori():
+    """In Audemars Piguet le due lettere dopo il numero sono il materiale:
+    16202ST e' acciaio, 16202BA oro giallo. La radice senza suffisso ne ha
+    fatto entrare uno da 125.000 euro."""
+    from radar.main import reject_reason
+    from radar.models import Listing
+    from radar import extract
+    cfg = _config_vera()
+    for wid, acciaio, oro in (
+        ("royal-oak-jumbo-16202",
+         "Audemars Piguet Royal Oak Jumbo Extra-Thin 16202ST.OO.1240ST.02",
+         "Audemars Piguet Royal Oak Ref. 16202BA"),
+        ("royal-oak-15510",
+         "Audemars Piguet Royal Oak Selfwinding 41mm 15510ST.OO.1320ST.06",
+         "Audemars Piguet Royal Oak 15510OR Rose Gold"),
+    ):
+        w = next(x for x in cfg.watches if x.id == wid)
+        buono = Listing(source="x", url="https://a/1", title=acciaio, price_eur=60000.0)
+        extract.enrich(buono, {})
+        assert reject_reason(buono, w) is None, (wid, reject_reason(buono, w))
+        brutto = Listing(source="x", url="https://a/2", title=oro, price_eur=125000.0)
+        extract.enrich(brutto, {})
+        assert reject_reason(brutto, w) is not None, wid
+
+
+def test_gli_annunci_dai_marketplace_sono_marcati(tmp_path):
+    """Chrono24 non si puo' leggere: quello che sappiamo arriva dagli alert
+    email. Fra l'invio e il momento in cui guardi, l'annuncio puo' essere gia'
+    venduto — e Chrono24 in quel caso non da' errore, rimanda alla pagina
+    della marca. Va detto, non fatto sembrare verificato."""
+    from radar.db import Database
+    from radar.models import Listing
+    from radar import dashboard
+    db = Database(tmp_path / "e.db")
+    db.upsert(Listing(source="chrono24", url="https://www.chrono24.it/vc/x--id1.htm",
+                      price_eur=45000.0, score=50, seller_country="US"), "vc-222")
+    db.upsert(Listing(source="pluswatch", url="https://www.pluswatch.it/p/y/",
+                      price_eur=35000.0, score=76, seller_country="IT"), "vc-222")
+    db.conn.commit()
+    testo = dashboard.build(db, [{"watch_id": "vc-222", "label": "VC"}],
+                            tmp_path / "i.html").read_text(encoding="utf-8")
+    assert "segnalato il" in testo
+    assert testo.count("segnalato il") == 1, "solo gli annunci via email"

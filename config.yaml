@@ -314,15 +314,26 @@ watches:
     model: Royal Oak Jumbo Extra-Thin
     nickname: Jumbo
     references: ["16202ST.OO.1240ST.02"]
-    reference_stems: ["16202ST", "16202"]
+    # Solo "16202ST", mai "16202" nudo: in Audemars Piguet le due lettere dopo
+    # il numero sono il materiale, e sono l'unica cosa che distingue un
+    # acciaio da 80.000 da un oro giallo da 125.000. La radice senza suffisso
+    # ne ha fatto entrare uno.
+    reference_stems: ["16202ST"]
+    exclude_references: ["16202BA", "16202OR", "16202PT", "16202OA", "16202CE"]
     search_terms: ["16202ST", "Royal Oak Jumbo"]
     exclude_keywords: ["Offshore", "Concept", "Code 11.59", "Millenary",
-                       "Perpetual", "Chronograph", "15202"]
+                       "Perpetual", "Chronograph", "15202",
+                       # materiali che non ti interessano
+                       "Oro", "Gold", "Platino", "Platinum", "18K", "18 K",
+                       "Rose", "Yellow", "Ceramic", "Ceramica", "Titanio"]
     hard_filters:
       min_year: 2022
       max_year: 2027
       absolute_min_price_eur: 30000
-      absolute_max_price_eur: 180000
+      # Il tetto resta largo: a tenere fuori l'oro ci pensa la referenza, che
+      # e' un filtro esatto. Stringere anche la banda vorrebbe dire tagliare
+      # via un acciaio se il mercato sale, e sarebbe il rimedio sbagliato.
+      absolute_max_price_eur: 145000
     preferences:
       target_years: [2024, 2025, 2026]
       acceptable_years: [2022, 2023]
@@ -341,10 +352,13 @@ watches:
     brand: Audemars Piguet
     model: Royal Oak Selfwinding 41
     references: ["15510ST.OO.1320ST.06"]
-    reference_stems: ["15510ST", "15510"]
+    reference_stems: ["15510ST"]
+    exclude_references: ["15510OR", "15510BA", "15510PT", "15510CE"]
     search_terms: ["15510ST", "Royal Oak 15510"]
     exclude_keywords: ["Offshore", "Concept", "Code 11.59", "Millenary",
-                       "Perpetual", "Chronograph", "16202"]
+                       "Perpetual", "Chronograph", "16202",
+                       "Oro", "Gold", "Platino", "Platinum", "18K", "18 K",
+                       "Rose", "Yellow", "Ceramic", "Ceramica", "Titanio"]
     hard_filters:
       min_year: 2021
       max_year: 2027

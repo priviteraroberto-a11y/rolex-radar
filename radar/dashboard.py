@@ -50,6 +50,15 @@ def _segnaposto(market: dict) -> str:
 
 _PIANI = {"home": 0, "nearby": 1, "reference": 2}
 
+# I marketplace non si possono leggere direttamente: quello che sappiamo di
+# loro arriva dagli alert email, cioe' e' una notizia di seconda mano. Fra
+# l'invio dell'email e il momento in cui la leggi l'annuncio puo' essere gia'
+# stato venduto, e Chrono24 in quel caso non da' errore: rimanda alla pagina
+# della marca. Vale la pena dirlo invece di far sembrare tutto verificato.
+def _da_email(fonte: str) -> bool:
+    from .sources.email_source import SENDER_MAP
+    return str(fonte or "").lower() in set(SENDER_MAP.values())
+
 
 def _piano(l: dict, market: dict) -> str:
     home = market.get("home") or ["IT", "SM"]
@@ -194,6 +203,8 @@ def _row(l: dict) -> str:
         f'<span class="chip{" here" if c == _QUI else ""}">{e(str(c))}</span>'
         for c in [
             (f'📍 {l["seller_country"]}' if l.get("seller_country") else None),
+            (f'✉ segnalato il {l["first_seen"][8:10]}/{l["first_seen"][5:7]}'
+             if _da_email(l.get("source")) and l.get("first_seen") else None),
             l.get("year"), (l.get("condition") or "").replace("_", " ") or None,
             l.get("bracelet"),
             f'gar. {l["warranty_region"]}' if l.get("warranty_region") else None,
