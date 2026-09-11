@@ -11,9 +11,10 @@ commenti sono meta' del valore: spiegano perche' una soglia e' quella e non
 un'altra, e quali errori sono gia' costati caro. Quindi il blocco nuovo viene
 infilato in fondo alla lista `watches:`, lasciando intatto tutto il resto.
 
-**Il gruppo viene ricalcolato qui.** La pagina te ne mostra uno, ma fra il
-momento in cui compili e quello in cui il workflow scrive puo' essere cambiato
-qualcosa. L'ultima parola ce l'ha chi scrive.
+**La riga `group:` viene tolta, se la pagina la manda.** La rotazione non
+esiste piu': ogni giro controlla tutti gli orologi. Una pagina aperta prima
+del cambio, o tenuta nei preferiti, puo' ancora mandarla — e l'ultima parola
+ce l'ha chi scrive, non chi compila.
 """
 from __future__ import annotations
 
@@ -96,24 +97,15 @@ def valida(blocco: str, config: dict) -> dict:
     return w
 
 
-def gruppo_meno_affollato(config: dict) -> str:
-    gruppi = [str(g) for g in ((config.get("rotation") or {}).get("groups") or [])]
-    if not gruppi:
-        return ""
-    c = Counter(str(w.get("group") or "") for w in (config.get("watches") or []))
-    return min(gruppi, key=lambda g: (c.get(g, 0), gruppi.index(g)))
+def senza_gruppo(blocco: str) -> str:
+    """Toglie un'eventuale riga `group:`.
 
-
-def con_gruppo(blocco: str, gruppo: str) -> str:
-    """Impone il gruppo deciso qui, sostituendo quello proposto dalla pagina."""
-    if not gruppo:
-        return blocco
-    if re.search(r"^\s{4}group:\s*\S+", blocco, re.M):
-        return re.sub(r"^\s{4}group:.*$", f"    group: {gruppo}", blocco,
-                      count=1, flags=re.M)
-    righe = blocco.splitlines()
-    righe.insert(1, f"    group: {gruppo}")
-    return "\n".join(righe) + "\n"
+    La rotazione non c'e' piu' — ogni giro controlla tutti gli orologi — ma
+    una pagina aperta da prima, o tenuta nei preferiti, puo' ancora mandarne
+    una. Lasciarla passare riempirebbe il config di campi che non legge
+    nessuno.
+    """
+    return re.sub(r"^\s{4}group:.*\n", "", blocco, flags=re.M)
 
 
 def inserisci(testo_config: str, blocco: str) -> str:
@@ -152,8 +144,7 @@ def main() -> int:
     try:
         blocco = estrai_blocco(Path(args.body).read_text(encoding="utf-8"))
         w = valida(blocco, config)
-        gruppo = gruppo_meno_affollato(config)
-        blocco = con_gruppo(blocco, gruppo)
+        blocco = senza_gruppo(blocco)
         nuovo = inserisci(testo, blocco)
         # riprova a leggerlo: meglio accorgersene qui che al prossimo giro
         riletto = yaml.safe_load(nuovo)
@@ -168,8 +159,7 @@ def main() -> int:
         return 1
 
     percorso.write_text(nuovo, encoding="utf-8")
-    esito = (f"Aggiunto **{w['brand']} {w['model']}** come `{w['id']}`, "
-             f"nel turno `{gruppo}`.\n\n"
+    esito = (f"Aggiunto **{w['brand']} {w['model']}** come `{w['id']}`.\n\n"
              f"Comparira' in dashboard al prossimo giro. Se il prezzo "
              f"indicativo si rivela sbagliato, correggilo in `config.yaml`: "
              f"e' il singolo intervento che migliora di piu' i punteggi.")

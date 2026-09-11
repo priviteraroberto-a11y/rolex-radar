@@ -103,10 +103,17 @@ def build(db, markets, out_path: str | Path = "docs/index.html") -> Path:
 
 
 def _gruppo(market: dict) -> str:
-    """Etichetta del turno di rotazione, per sapere a colpo d'occhio quando
-    un orologio viene controllato senza dover aprire il config."""
-    g = market.get("group")
-    return f'<span class="tag">{html.escape(str(g))}</span>' if g else ""
+    """Restava l'etichetta del turno di rotazione.
+
+    Diceva quando un orologio sarebbe stato controllato. Da quando ogni giro
+    li controlla tutti, la risposta e' "sempre" e l'etichetta non informa piu'
+    di niente: occupava spazio in cima a ogni riga per ripetere una cosa
+    uguale per tutti.
+
+    La funzione resta, vuota, perche' i dati vecchi nel database possono
+    ancora portarsi dietro un `group` e non deve ricomparire.
+    """
+    return ""
 
 
 def _riga_sommario(market: dict, listings: list[dict]) -> str:

@@ -10,8 +10,9 @@ lo consegna a GitHub sotto forma di *richiesta* precompilata. Da li' in poi e'
 automatico — un workflow legge la richiesta, la valida, la scrive nel config e
 la chiude. Tu compili e clicchi; il resto avviene da solo.
 
-Il gruppo di rotazione non lo scegli: viene assegnato al turno meno affollato,
-sia qui (per mostrartelo) sia nel workflow (che e' quello che decide davvero).
+Fino al 12/09/2026 questa pagina assegnava anche un turno di rotazione. La
+rotazione non c'e' piu': ogni giro controlla tutti gli orologi, quindi non c'e'
+niente da assegnare.
 """
 from __future__ import annotations
 
@@ -27,24 +28,17 @@ ROME = ZoneInfo("Europe/Rome")
 
 
 def gruppo_meno_affollato(cfg) -> str:
-    """Il turno con meno orologi. A pari merito, il primo dichiarato.
+    """Non assegna piu' niente: la rotazione e' stata tolta.
 
-    Vive qui perche' la usano in due: questa pagina per mostrarti dove finira'
-    l'orologio, e lo script che scrive davvero nel config. Che diano la stessa
-    risposta non e' un dettaglio estetico — se divergessero, la pagina ti
-    direbbe una cosa e il sistema ne farebbe un'altra.
+    Resta come funzione vuota perche' la chiamano ancora la pagina e lo script
+    di scrittura del config, e perche' un giorno potrebbe tornare utile
+    qualcosa di simile.
     """
-    gruppi = [str(g) for g in (cfg.get("rotation.groups") or [])]
-    if not gruppi:
-        return ""
-    conteggio = Counter(str(w.watch.get("group") or "") for w in cfg.watches)
-    return min(gruppi, key=lambda g: (conteggio.get(g, 0), gruppi.index(g)))
+    return ""
 
 
 def conteggi(cfg) -> dict:
-    gruppi = [str(g) for g in (cfg.get("rotation.groups") or [])]
-    c = Counter(str(w.watch.get("group") or "") for w in cfg.watches)
-    return {g: c.get(g, 0) for g in gruppi}
+    return {}
 
 
 def repo_da_config(cfg) -> str:
@@ -244,13 +238,12 @@ _TEMPLATE = """<!doctype html>
   </section>
 
   <section>
-    <h2>Turno di rotazione</h2>
-    <p class="sub">assegnato al gruppo meno affollato, per tenerli in pari</p>
-    <table>{riepilogo}</table>
-    <div class="gruppo">Questo orologio finir&agrave; in
-      <b id="gruppoScelto">{prossimo}</b>.</div>
-    <div class="hint">La scelta viene rifatta anche al momento della scrittura,
-    perch&eacute; nel frattempo i turni possono essere cambiati.</div>
+    <h2>Quando verr&agrave; controllato</h2>
+    <div class="gruppo">A ogni giro, come tutti gli altri.</div>
+    <div class="hint">Qui c'era un turno di rotazione: gli orologi divisi in
+    due gruppi, uno per giro. Serviva quando ogni orologio costava una ricerca
+    su ogni sito. Ora le fonti leggono il catalogo intero una volta sola e vale
+    per tutti, quindi non c'&egrave; piu&grave; niente da alternare.</div>
   </section>
 
   <section>
@@ -326,7 +319,6 @@ _TEMPLATE = """<!doctype html>
     var r = [];
     r.push("  - id: " + ident());
     if ($("foto").value.trim()) r.push("    photo: " + q($("foto").value.trim()));
-    r.push("    group: " + $("gruppoScelto").textContent);
     r.push("    brand: " + $("marca").value.trim());
     r.push("    model: " + $("modello").value.trim());
     if ($("nick").value.trim()) r.push("    nickname: " + $("nick").value.trim());

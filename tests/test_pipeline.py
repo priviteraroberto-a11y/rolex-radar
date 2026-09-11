@@ -483,8 +483,9 @@ ROT = {
 
 
 class _Args:
-    group = None
-    all_watches = False
+    solo = None
+    group = None            # accettato ma inerte: era della rotazione
+    all_watches = False     # idem
 
 
 def _rot():
@@ -492,57 +493,50 @@ def _rot():
     return Config(ROT)
 
 
-def test_la_rotazione_alterna_i_gruppi():
+def test_un_giro_controlla_tutti_gli_orologi():
+    """La rotazione non c'e' piu': non esistono turni da alternare.
+
+    Serviva quando ogni orologio costava una ricerca su ogni sito. Da quando
+    le fonti leggono il catalogo intero — scaricato una volta per giro e buono
+    per tutti — dimezzare gli orologi non dimezzava piu' niente, e in cambio
+    dimezzava la copertura.
+    """
     from radar.main import select_watches
-    a = _Args(); a.group = "uno-e-tre"
-    b = _Args(); b.group = "b"
-    ids_a = [w.id for w in select_watches(_rot(), a)[0]]
-    ids_b = [w.id for w in select_watches(_rot(), b)[0]]
-    assert ids_a == ["sempre", "uno", "senza-gruppo"]
-    assert ids_b == ["sempre", "due", "senza-gruppo"]
+    picked, nome = select_watches(_rot(), _Args())
+    assert nome == "tutti"
+    assert len(picked) == 4
 
 
-def test_always_e_senza_gruppo_ci_sono_sempre():
+def test_i_lanci_vecchi_non_si_rompono():
+    """`--group` e `--all-watches` restano accettati e controllano tutto.
+
+    Un lancio salvato o un segnalibro con il nome di un gruppo che non esiste
+    piu' deve fare un giro completo, non fallire e non guardare zero orologi.
+    """
     from radar.main import select_watches
-    for g in ("a", "b"):
-        args = _Args(); args.group = g
-        ids = [w.id for w in select_watches(_rot(), args)[0]]
-        assert "sempre" in ids, "un orologio 'always' deve essere in ogni giro"
-        assert "senza-gruppo" in ids, "senza gruppo = in ogni giro"
+    for attr, valore in (("group", "uno-e-tre"), ("group", "a"),
+                         ("all_watches", True)):
+        args = _Args(); setattr(args, attr, valore)
+        picked, nome = select_watches(_rot(), args)
+        assert nome == "tutti", f"{attr}={valore}"
+        assert len(picked) == 4
 
 
-def test_all_watches_ignora_la_rotazione():
+def test_si_puo_ancora_controllare_un_orologio_solo():
+    """Serve davvero: quando ne aggiungi uno vuoi provarlo subito."""
     from radar.main import select_watches
-    args = _Args(); args.all_watches = True
+    args = _Args(); args.solo = "due"
     picked, nome = select_watches(_rot(), args)
-    assert len(picked) == 4 and nome == "tutti"
+    assert nome == "due"
+    assert [w.id for w in picked] == ["due"]
 
 
-def test_rotazione_spenta_controlla_tutto():
-    from radar.config import Config
+def test_un_id_sbagliato_controlla_tutto_invece_di_niente():
+    """Il fallimento silenzioso peggiore sarebbe un giro che non guarda nulla."""
     from radar.main import select_watches
-    spenta = {**ROT, "rotation": {"enabled": False, "groups": ["a", "b"]}}
-    picked, nome = select_watches(Config(spenta), _Args())
-    assert len(picked) == 4 and nome == "tutti"
-
-
-def test_il_gruppo_dipende_dalla_fascia_oraria(monkeypatch):
-    """I giri delle 8/12/16/20 devono alternarsi da soli."""
-    import radar.main as m
-    from datetime import datetime, timezone
-
-    visti = []
-    for ora in (6, 10, 14, 18):
-        finto = datetime(2026, 8, 15, ora, 0, tzinfo=timezone.utc)
-
-        class FakeDT(datetime):
-            @classmethod
-            def now(cls, tz=None):
-                return finto
-
-        monkeypatch.setattr(m, "datetime", FakeDT)
-        visti.append(select_watches_group(m, _rot()))
-    assert visti == ["due-e-quattro", "uno-e-tre", "due-e-quattro", "uno-e-tre"], visti
+    args = _Args(); args.solo = "zzz"
+    picked, nome = select_watches(_rot(), args)
+    assert nome == "tutti" and len(picked) == 4
 
 
 def select_watches_group(m, cfg):
@@ -714,24 +708,6 @@ def test_una_fonte_vuota_non_cancella_i_ritrovamenti(tmp_path):
     db.close()
 
 
-def test_gli_alias_dei_gruppi_continuano_a_funzionare():
-    """Rinominare un gruppo non deve far girare a vuoto un lancio vecchio."""
-    from radar.main import select_watches
-    args = _Args(); args.group = "a"
-    picked, nome = select_watches(_rot(), args)
-    assert nome == "uno-e-tre"
-    assert [w.id for w in picked] == ["sempre", "uno", "senza-gruppo"]
-
-
-def test_un_gruppo_inesistente_controlla_tutto_invece_di_niente():
-    """Il fallimento silenzioso peggiore sarebbe un giro che non guarda nulla."""
-    from radar.main import select_watches
-    args = _Args(); args.group = "zzz"
-    picked, nome = select_watches(_rot(), args)
-    assert nome == "tutti"
-    assert len(picked) == 4
-
-
 def test_si_puo_chiedere_un_orologio_solo_per_nome():
     """Quando ne aggiungi uno vuoi provarlo subito, non al suo turno."""
     from radar.main import select_watches
@@ -776,13 +752,19 @@ def test_la_pulizia_non_tocca_gli_annunci_veri(tmp_path):
 # --- riconoscere gli orologi come li scrivono i venditori ---------------------
 
 _TITOLI_VERI = {
-    "monaco-gulf":        ("TAG Heuer Monaco Gulf Special Edition CAW211P", True),
+    # NON e' il Gulf, malgrado l'id: CAW211P.FC6356 e' il Monaco Calibre 11
+    # blu "Steve McQueen". Il titolo di prima diceva "Monaco Gulf ... CAW211P",
+    # due cose che insieme non esistono — e infatti quella ricerca su Chrono24
+    # restituiva zero annunci.
+    "monaco-gulf":        ("TAG Heuer Monaco Calibre 11 Steve McQueen CAW211P.FC6356", True),
     "speedmaster":        ("Omega Speedmaster Moonwatch Professional 310.30.42.50.01.002", True),
     "bb-chrono-flamingo": ("Tudor Black Bay Chrono 79360N Flamingo Blue", True),
     "zenith-ultrathin":   ("Zenith Elite Classic Automatic Ultra Thin", True),
     "vc-222":             ("Vacheron Constantin Historiques 222 acciaio 4200H", True),
-    "vc-overseas":        ("Vacheron Constantin Overseas Automatic 41mm 4520V", True),
-    "royal-oak-15450":    ("Audemars Piguet Royal Oak 37mm 15450ST blu", True),
+    "vc-overseas-4520":   ("Vacheron Constantin Overseas Automatic 41mm 4520V", True),
+    "vc-overseas-4500":   ("Vacheron Constantin Overseas 41mm acciaio 4500V", True),
+    "land-dweller-40":    ("Rolex Land-Dweller 40 127334 acciaio e oro bianco", True),
+    "land-dweller-36":    ("Rolex Land-Dweller 36 127234 White Rolesor", True),
     "el-primero-a384":    ("Zenith El Primero A384 Revival 37mm 2023", True),
 }
 
@@ -1213,28 +1195,49 @@ def test_lo_snoopy_di_pluswatch_entra_finalmente():
     assert l.price_eur == 14000.0, l.price_eur
 
 
-def test_il_panerai_prende_la_famiglia_luminor_e_non_le_altre():
-    """Marina, Base Logo e Due sono la stessa famiglia; Submersible e Radiomir
-    sono altri orologi, e costano il doppio."""
+def test_il_panerai_e_diviso_per_quadrante_non_per_famiglia():
+    """Prima era un orologio solo, `panerai-luminor`, e non funzionava.
+
+    In produzione teneva 260 annunci attivi con 100 referenze PAM diverse,
+    64 delle quali viste una volta sola, e prezzi da 2.679 a 10.645 euro. La
+    mediana di quella roba non era il valore di niente.
+
+    Ora sono due bersagli precisi: Base Logo (nessun secondo, nessuna data) e
+    Marina Logo (piccoli secondi, nessuna data). Si riconoscono dalla PAM e
+    non dal nome, perche' i nomi qui si sovrappongono — esistono annunci
+    intitolati "Luminor Marina Base Logo".
+    """
     from radar.main import reject_reason
     from radar.models import Listing
     from radar import extract
-    w = next(x for x in _config_vera().watches if x.id == "panerai-luminor")
-    dentro = ["Panerai Luminor Marina 1950 3 Days PAM01312",
-              "Panerai Luminor Base Logo 44mm Pam01086",
-              "Panerai Luminor Due 38mm PAM00926 full set"]
-    fuori = ["Panerai Submersible 42mm PAM00683",
+    base = next(x for x in _config_vera().watches if x.id == "panerai-base-logo")
+    marina = next(x for x in _config_vera().watches if x.id == "panerai-marina-logo")
+
+    casi = [
+        ("Panerai Luminor Base Logo 44mm PAM01086 Full set", base, marina),
+        ("Panerai Luminor Base PAM 00773", base, marina),
+        ("Panerai Luminor Marina Logo Pam00632 Full set", marina, base),
+        ("Panerai Luminor Marina Logo PAM01005 Stainless Steel", marina, base),
+    ]
+    for titolo, suo, altrui in casi:
+        l = Listing(source="x", url="https://a/" + titolo[:12].replace(" ", ""),
+                    title=titolo, price_eur=4200.0)
+        extract.enrich(l, {})
+        assert reject_reason(l, suo) is None, (titolo, reject_reason(l, suo))
+        assert reject_reason(l, altrui) is not None, (titolo, "preso da chi non deve")
+
+    # Quello che prima entrava e ora non ci interessa piu'
+    fuori = ["Panerai Luminor Marina 1950 3 Days PAM01312",
+             "Panerai Luminor Due 38mm PAM00926 full set",
+             "Panerai Submersible 42mm PAM00683",
              "Panerai Radiomir California PAM00931",
-             "Panerai Luminor Chrono Daylight PAM00250",
              "Rolex Submariner 124060"]
-    for t in dentro:
-        l = Listing(source="x", url="https://a/" + t[:9], title=t, price_eur=4200.0)
+    for titolo in fuori:
+        l = Listing(source="x", url="https://a/" + titolo[:12].replace(" ", ""),
+                    title=titolo, price_eur=6000.0)
         extract.enrich(l, {})
-        assert reject_reason(l, w) is None, (t, reject_reason(l, w))
-    for t in fuori:
-        l = Listing(source="x", url="https://a/" + t[:9], title=t, price_eur=6000.0)
-        extract.enrich(l, {})
-        assert reject_reason(l, w) is not None, t
+        for w in (base, marina):
+            assert reject_reason(l, w) is not None, (titolo, w.id)
 
 
 def test_lo_scarto_dal_listino_arriva_fino_alla_dashboard(tmp_path):

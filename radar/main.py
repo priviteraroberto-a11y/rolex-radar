@@ -328,50 +328,37 @@ def check_one_watch(watch, cfg: Config, ctx: Context, db: Database,
 
 
 def select_watches(cfg: Config, args) -> tuple[list, str]:
-    """Sceglie quali orologi controllare in questo giro.
+    """Sceglie quali orologi controllare in questo giro: di norma, tutti.
 
-    Con nove orologi e dieci fonti un giro solo diventa lungo. La rotazione
-    divide gli orologi in gruppi e ne controlla uno per volta, alternandoli:
-    ogni orologio viene guardato ogni due giri, cioè comunque due volte al
-    giorno. Gli orologi senza gruppo (o con `group: always`) restano in ogni
-    giro — è dove metti quelli che non vuoi perdere di vista.
+    Qui c'era una rotazione a gruppi. Serviva quando ogni orologio costava una
+    ricerca su ogni sito: dodici orologi per dieci fonti facevano centoventi
+    interrogazioni, e un giro solo diventava lungo. Dividerli in due turni
+    dimezzava il lavoro.
+
+    Da quando le fonti leggono il **catalogo intero** invece di cercare, quel
+    conto non vale piu': il catalogo di un negozio si scarica una volta per
+    giro e vale per tutti gli orologi insieme. Quindici orologi costano quasi
+    quanto sette. La rotazione era rimasta a dimezzare la copertura senza far
+    risparmiare quasi niente — e a costo di un difetto suo: un annuncio
+    apparso e sparito nel turno sbagliato non lo vedeva nessuno.
+
+    Resta la scelta di un orologio singolo, che serve davvero: quando ne
+    aggiungi uno, vuoi vedere subito se le fonti lo trovano senza aspettare un
+    giro intero.
     """
     watches = cfg.watches
-    if getattr(args, "all_watches", False) or not cfg.get("rotation.enabled", False):
+    scelto = getattr(args, "solo", None) or getattr(args, "group", None)
+    if not scelto or str(scelto) in ("tutti", "automatico"):
         return watches, "tutti"
 
-    groups = [str(g) for g in (cfg.get("rotation.groups") or [])]
-    if not groups:
-        ordered = [w.watch.get("group") for w in watches if w.watch.get("group")]
-        groups = sorted(set(ordered) - {"always"})
-    if not groups:
-        return watches, "tutti"
+    uno = [w for w in watches if w.id == str(scelto)]
+    if uno:
+        return uno, str(scelto)
 
-    if getattr(args, "group", None):
-        # Gli alias servono a non rompere niente quando i gruppi vengono
-        # rinominati: un lancio schedulato o un segnalibro con il nome vecchio
-        # continua a funzionare invece di selezionare zero orologi in silenzio.
-        alias = {str(k): str(v) for k, v in (cfg.get("rotation.aliases") or {}).items()}
-        chosen = alias.get(str(args.group), str(args.group))
-        # Un singolo orologio, per id: utile quando ne aggiungi uno e vuoi
-        # vedere subito se le fonti lo trovano, senza aspettare il suo turno.
-        solo = [w for w in watches if w.id == chosen]
-        if solo:
-            return solo, chosen
-        if chosen not in groups:
-            # Meglio un giro completo che un giro quasi vuoto: un nome
-            # sbagliato non deve tradursi in "non ho guardato" senza dirlo.
-            log.warning("'%s' non e' ne' un gruppo (%s) ne' un orologio — controllo tutti",
-                        args.group, ", ".join(groups))
-            return watches, "tutti"
-    else:
-        # fascia di 4 ore: i giri delle 8/12/16/20 si alternano da soli
-        slot = int(datetime.now(timezone.utc).timestamp() // (4 * 3600))
-        chosen = groups[slot % len(groups)]
-
-    picked = [w for w in watches
-              if w.watch.get("group") in (chosen, "always", None)]
-    return picked, chosen
+    # Un nome sbagliato non deve tradursi in "non ho guardato" senza dirlo.
+    log.warning("'%s' non e' un orologio monitorato (%s) — li controllo tutti",
+                scelto, ", ".join(w.id for w in watches))
+    return watches, "tutti"
 
 
 def cmd_check(args) -> int:
@@ -387,13 +374,15 @@ def cmd_check(args) -> int:
     if chiusi:
         log.info("%d annunci di orologi non piu' monitorati messi a riposo", chiusi)
 
-    watches, gruppo = select_watches(cfg, args)
+    watches, scelta = select_watches(cfg, args)
     if not watches:
-        log.warning("Il gruppo '%s' non contiene orologi: niente da fare", gruppo)
+        log.warning("Nessun orologio da controllare: niente da fare")
         return 0
-    log.info("Gruppo di turno: %s  (%d di %d orologi)",
-             gruppo, len(watches), len(cfg.watches))
-    log.info("In questo giro: %s", ", ".join(w.label for w in watches))
+    if scelta == "tutti":
+        log.info("In questo giro tutti e %d gli orologi", len(watches))
+    else:
+        log.info("In questo giro solo: %s", scelta)
+    log.info("Orologi: %s", ", ".join(w.label for w in watches))
 
     markets: list[dict] = []
     all_decisions: list = []
@@ -633,10 +622,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dashboard", default="docs/index.html")
     p.add_argument("--dry-run", action="store_true", help="non scrive nulla, non notifica")
     p.add_argument("--force", action="store_true", help="ignora le ore di silenzio")
-    p.add_argument("--group", default=None,
-                   help="forza un gruppo della rotazione (es. a)")
-    p.add_argument("--all-watches", action="store_true",
-                   help="ignora la rotazione e controlla tutti gli orologi")
+    p.add_argument("--solo", default=None,
+                   help="controlla un orologio solo, per id (es. land-dweller-40)")
+    # `--group` e `--all-watches` restano accettati e non fanno niente di
+    # diverso: servivano alla rotazione, che non c'e' piu'. Toglierli avrebbe
+    # fatto fallire un lancio salvato o un segnalibro con un errore secco.
+    p.add_argument("--group", default=None, help=argparse.SUPPRESS)
+    p.add_argument("--all-watches", action="store_true", help=argparse.SUPPRESS)
     p.add_argument("--watch", default=None,
                    help="id dell'orologio (solo per inspect)")
     p.add_argument("--verbose", "-v", action="store_true",

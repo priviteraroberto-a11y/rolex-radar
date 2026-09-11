@@ -2,9 +2,34 @@ name: Rolex Radar
 
 on:
   schedule:
-    # Orari UTC. In estate (CEST) = 08:00 / 12:00 / 16:00 / 20:00 italiane.
-    # In inverno (CET) scalano di un'ora: 07 / 11 / 15 / 19.
-    - cron: "0 6,10,14,18 * * *"
+    # Tre giri al giorno, ognuno su TUTTI gli orologi.
+    #
+    # Prima erano quattro, ma ciascuno guardava meta' degli orologi a turno:
+    # quindi ogni orologio veniva visto due volte al giorno. Ora che un giro
+    # li copre tutti, tre giri sono piu' copertura di prima, non meno — con un
+    # terzo delle esecuzioni.
+    #
+    # Il ritardo massimo passa da 12 a 8 ore, ed e' meno grave di quanto
+    # sembri: il canale principale sono gli alert email, che restano in
+    # casella e vengono letti con una finestra di 7 giorni. Aspettare non
+    # significa perdere, significa accorgersene piu' tardi.
+    #
+    # I minuti non sono zero di proposito.
+    #
+    # Guardando lo storico vero delle esecuzioni, la programmazione
+    # `0 6,10,14,18` produceva questo: le 06:00 non partivano **mai**, le 10:00
+    # partivano alle 10:22, le 14:00 alle 17:25, le 18:00 alle 20:18. E fra
+    # l'11 e il 12 settembre non e' partito niente per trentasei ore.
+    #
+    # Non e' un guasto: su GitHub la programmazione e' "quando si puo'", e allo
+    # scoccare dell'ora la coda dei runner gratuiti e' piu' affollata. Spostarsi
+    # di qualche minuto aiuta; garanzie non ce ne sono.
+    #
+    # Non si perde niente, si arriva piu' tardi: gli alert restano in casella e
+    # il lettore email guarda indietro di 7 giorni.
+    #
+    # Orari UTC. In estate (CEST) = 08:23 / 14:23 / 20:23 italiane.
+    - cron: "23 6,12,18 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -15,28 +40,15 @@ on:
         description: "Ignora le ore di silenzio"
         type: boolean
         default: false
-      gruppo:
-        description: "Quali orologi controllare (gruppo, uno solo, o tutti)"
-        type: choice
-        default: automatico
-        options:
-          - automatico
-          - 222-overseas-royaloak-elite-snoopy
-          - speedmaster-monaco-blackbay-a384
-          - tutti
-          # oppure un orologio solo:
-          - vc-222
-          - vc-overseas
-          - royal-oak-jumbo-16202
-          - royal-oak-15510
-          - zenith-ultrathin
-          - speedmaster-snoopy
-          - speedmaster
-          - monaco-gulf
-          - bb-chrono-flamingo
-          - el-primero-a384
-          - bb-chrono-panda
-          - panerai-luminor
+      # Casella di testo e non menu a tendina, di proposito: un elenco di
+      # valori scritto qui e' gia' rimasto indietro una volta dopo che gli
+      # orologi erano cambiati, e la scelta finiva scartata in silenzio.
+      # Vuoto = tutti, che e' quello che serve quasi sempre.
+      orologio:
+        description: "Vuoto = tutti. Oppure l'id di uno solo (es. land-dweller-40)"
+        type: string
+        required: false
+        default: ""
 
 concurrency:
   group: radar
@@ -73,25 +85,20 @@ jobs:
           SMTP_USER:          ${{ secrets.SMTP_USER }}
           SMTP_PASS:          ${{ secrets.SMTP_PASS }}
           REPORT_TO:          ${{ secrets.REPORT_TO }}
-          GRUPPO: ${{ inputs.gruppo }}
-          DRY:    ${{ inputs.dry_run }}
-          FORCE:  ${{ inputs.force }}
+          OROLOGIO: ${{ inputs.orologio }}
+          DRY:      ${{ inputs.dry_run }}
+          FORCE:    ${{ inputs.force }}
         # Costruire gli argomenti nella shell invece che con le espressioni di
         # GitHub: si legge, si corregge, e non si sbaglia una parentesi.
         run: |
           ARGS=""
           [ "$DRY" = "true" ]   && ARGS="$ARGS --dry-run"
           [ "$FORCE" = "true" ] && ARGS="$ARGS --force"
-          # Elencare i valori validi qui era una trappola: i gruppi sono stati
-          # rinominati e il "a|b" e' rimasto indietro, cosi' la scelta veniva
-          # buttata via in silenzio e il giro partiva in rotazione automatica.
-          # Ora l'elenco sta in un posto solo, il menu qui sopra.
-          case "$GRUPPO" in
-            automatico|"") ;;
-            tutti)         ARGS="$ARGS --all-watches" ;;
-            *)             ARGS="$ARGS --group $GRUPPO" ;;
+          case "$OROLOGIO" in
+            ""|tutti) ;;
+            *)        ARGS="$ARGS --solo $OROLOGIO" ;;
           esac
-          echo "Argomenti: ${ARGS:-nessuno (rotazione automatica)}"
+          echo "Argomenti: ${ARGS:-nessuno (tutti gli orologi)}"
           python -m radar.main check $ARGS
 
       # I file generati appartengono al bot: se il remoto e' avanzato nel

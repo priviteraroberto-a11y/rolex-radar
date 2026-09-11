@@ -1,0 +1,33 @@
+{
+  "fonte": "chrono24",
+  "data": "2026-09-12",
+  "nota": "Panerai Luminor a quadrante pulito, solo Unione Europea. Due famiglie tenute separate: il Base Logo non ha ne' secondi ne' data, il Marina Logo ha i piccoli secondi a ore 9 e nessuna data. Tutti e due 44 mm in acciaio, carica manuale (P.6000 o OP). Sostituiscono la rilevazione unica del 03/09 sull'intera famiglia Luminor, che mescolava Marina, Due, GMT, Submersible e Base: 100 referenze diverse, 64 viste una volta sola, prezzi da 2.679 a 10.645 euro. Un indice solo su quella base non significava niente. Del Base Logo, su 176 annunci ne e' stato preso uno ogni tre, mantenendo la forma della distribuzione.",
+  "campioni": {
+    "panerai-base-logo": [
+      {"p": 3200}, {"p": 3500}, {"p": 3600}, {"p": 3650}, {"p": 3724},
+      {"p": 3790}, {"p": 3855}, {"p": 3900}, {"p": 3990}, {"p": 3999},
+      {"p": 4018}, {"p": 4050}, {"p": 4100}, {"p": 4150}, {"p": 4178},
+      {"p": 4190}, {"p": 4200}, {"p": 4200}, {"p": 4250}, {"p": 4250},
+      {"p": 4250}, {"p": 4290}, {"p": 4299}, {"p": 4325}, {"p": 4399},
+      {"p": 4450}, {"p": 4480}, {"p": 4490}, {"p": 4500}, {"p": 4550},
+      {"p": 4620}, {"p": 4650}, {"p": 4680}, {"p": 4700}, {"p": 4719},
+      {"p": 4720}, {"p": 4750}, {"p": 4790}, {"p": 4800}, {"p": 4800},
+      {"p": 4850}, {"p": 4950}, {"p": 4991}, {"p": 5000}, {"p": 5099},
+      {"p": 5110}, {"p": 5200}, {"p": 5281}, {"p": 5299}, {"p": 5320},
+      {"p": 5350}, {"p": 5400}, {"p": 5490}, {"p": 5550}, {"p": 5700},
+      {"p": 5759}, {"p": 5771}, {"p": 6000}, {"p": 6448}
+    ],
+    "panerai-marina-logo": [
+      {"p": 3099}, {"p": 3490}, {"p": 3490}, {"p": 3500}, {"p": 3590},
+      {"p": 3590}, {"p": 3799}, {"p": 3850}, {"p": 3900}, {"p": 3990},
+      {"p": 3990}, {"p": 3990}, {"p": 3990}, {"p": 3999}, {"p": 4000},
+      {"p": 4109}, {"p": 4149}, {"p": 4150}, {"p": 4190}, {"p": 4199},
+      {"p": 4290}, {"p": 4290}, {"p": 4290}, {"p": 4290}, {"p": 4296},
+      {"p": 4300}, {"p": 4350}, {"p": 4350}, {"p": 4350}, {"p": 4390},
+      {"p": 4450}, {"p": 4450}, {"p": 4450}, {"p": 4499}, {"p": 4500},
+      {"p": 4500}, {"p": 4500}, {"p": 4545}, {"p": 4550}, {"p": 4700},
+      {"p": 4700}, {"p": 4719}, {"p": 4770}, {"p": 4800}, {"p": 4800},
+      {"p": 4899}, {"p": 4900}, {"p": 5850}
+    ]
+  }
+}

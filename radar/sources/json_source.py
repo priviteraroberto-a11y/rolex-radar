@@ -257,12 +257,29 @@ def _scalari(e: dict) -> str:
     return " ".join(pezzi)
 
 
+# Regole CSS rimaste nel testo: `body { font-family: Arial; margin: 20px; }`.
+# WordPress butta via i tag <style> ma non il loro contenuto, che finisce nella
+# descrizione come testo normale.
+_CSS = re.compile(r"[.#@a-zA-Z][\w\-\s.:#()>,\[\]=\"']*\{[^{}]*\}")
+
+
 def _senza_tag(v: Any) -> str:
-    """Toglie i tag e riporta le entita' al loro carattere."""
+    """Toglie i tag, le regole CSS rimaste nude, e riporta le entita'.
+
+    Il CSS non e' solo brutto da vedere: la scheda di PlusWatch comincia con
+    quattromila caratteri di regole di stile e finisce con le uniche cose che
+    ci servono — "Stato del Vetro: Ottimo", "Data della Garanzia: 06/2000",
+    "Cinturino Originale: Si". Siccome il testo grezzo viene troncato a 4.000
+    caratteri, tenere il CSS significherebbe tenere **solo** il CSS e buttare
+    via esattamente i dati per cui abbiamo scaricato la descrizione.
+    """
     if not v:
         return ""
-    testo = re.sub(r"<[^>]+>", " ", str(v))
-    return re.sub(r"\s+", " ", _html.unescape(testo)).strip()
+    testo = re.sub(r"<(script|style)[^>]*>[\s\S]*?</\1\s*>", " ", str(v), flags=re.I)
+    testo = re.sub(r"<[^>]+>", " ", testo)
+    testo = _html.unescape(testo)
+    testo = _CSS.sub(" ", testo)
+    return re.sub(r"\s+", " ", testo).strip()
 
 
 def _pulisci(v: Any) -> str:

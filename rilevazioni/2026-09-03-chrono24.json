@@ -1,7 +1,7 @@
 {
  "fonte": "chrono24",
  "data": "2026-09-03",
- "nota": "Rilevazione manuale sul catalogo Chrono24, 03/09/2026. Prezzi richiesti, spedizione esclusa, SOLO venditori dell'Unione Europea: fuori dall'Unione il prezzo esposto non e' confrontabile, perche' dazio e IVA aggiungono il 27,5%. Non sono annunci acquistabili e non generano notifiche: servono all'indice come termine di paragone. I 4 campioni 'vc-overseas' del 03/09 sono stati tolti l'11/09: erano gli stessi annunci ancora online, e la rilevazione nuova per generazione li conteneva gia'. Tenerli avrebbe contato quattro volte due volte.",
+ "nota": "Rilevazione manuale sul catalogo Chrono24, 03/09/2026. Prezzi richiesti, spedizione esclusa, SOLO venditori dell'Unione Europea: fuori dall'Unione il prezzo esposto non e' confrontabile, perche' dazio e IVA aggiungono il 27,5%. Non sono annunci acquistabili e non generano notifiche: servono all'indice come termine di paragone. I 4 campioni 'vc-overseas' del 03/09 sono stati tolti l'11/09: erano gli stessi annunci ancora online, e la rilevazione nuova per generazione li conteneva gia'. Tenerli avrebbe contato quattro volte due volte. Anche i 9 campioni 'vc-222' sono stati tolti il 12/09: erano gli stessi annunci ancora online, risurvegliati in una rilevazione nuova fatta solo su acciaio UE. E i 22 campioni 'panerai-luminor' sono stati tolti il 12/09: misuravano l'intera famiglia Luminor mescolata, che non e' piu' un orologio monitorato.",
  "campioni": {
   "monaco-gulf": [
    {
@@ -245,44 +245,6 @@
     "c": "AT"
    }
   ],
-  "vc-222": [
-   {
-    "p": 51950,
-    "c": "NL"
-   },
-   {
-    "p": 48450,
-    "c": "DE"
-   },
-   {
-    "p": 47500,
-    "c": "FR"
-   },
-   {
-    "p": 48373,
-    "c": "SE"
-   },
-   {
-    "p": 55000,
-    "c": "MC"
-   },
-   {
-    "p": 49200,
-    "c": "CZ"
-   },
-   {
-    "p": 47900,
-    "c": "ES"
-   },
-   {
-    "p": 55000,
-    "c": "AT"
-   },
-   {
-    "p": 52000,
-    "c": "SE"
-   }
-  ],
   "el-primero-a384": [
    {
     "p": 7200,
@@ -385,96 +347,6 @@
    {
     "p": 10800,
     "c": "PL"
-   }
-  ],
-  "panerai-luminor": [
-   {
-    "p": 3500,
-    "c": "PL"
-   },
-   {
-    "p": 3616,
-    "c": "RO"
-   },
-   {
-    "p": 6200,
-    "c": "ES"
-   },
-   {
-    "p": 3500,
-    "c": "IT"
-   },
-   {
-    "p": 4999,
-    "c": "DE"
-   },
-   {
-    "p": 3800,
-    "c": "IT"
-   },
-   {
-    "p": 4000,
-    "c": "IT"
-   },
-   {
-    "p": 4390,
-    "c": "DE"
-   },
-   {
-    "p": 3099,
-    "c": "NL"
-   },
-   {
-    "p": 4050,
-    "c": "DE"
-   },
-   {
-    "p": 6489,
-    "c": "FR"
-   },
-   {
-    "p": 3650,
-    "c": "IT"
-   },
-   {
-    "p": 3599,
-    "c": "DE"
-   },
-   {
-    "p": 4200,
-    "c": "NL"
-   },
-   {
-    "p": 3980,
-    "c": "DE"
-   },
-   {
-    "p": 3500,
-    "c": "DE"
-   },
-   {
-    "p": 3990,
-    "c": "DE"
-   },
-   {
-    "p": 5050,
-    "c": "DE"
-   },
-   {
-    "p": 3990,
-    "c": "DE"
-   },
-   {
-    "p": 3799,
-    "c": "DE"
-   },
-   {
-    "p": 8950,
-    "c": "IT"
-   },
-   {
-    "p": 6300,
-    "c": "SE"
    }
   ],
   "royal-oak-jumbo-16202": [

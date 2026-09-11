@@ -202,6 +202,90 @@ def test_le_entita_html_nei_titoli():
 
 
 # =============================================================================
+# La descrizione non e' un di piu': e' meta' del punteggio
+# =============================================================================
+
+_DESCR_PLUSWATCH = (
+    "<p>    <title>Dettagli Orologio</title></p>\n"
+    "<p>        body {<br />\n            font-family: Arial, sans-serif;<br />\n"
+    "            margin: 20px;<br />\n            line-height: 1.6;<br />\n"
+    "            width: 100%;<br />\n        }<br />\n        .title {<br />\n"
+    "            font-size: 20px;<br />\n            color: black;<br />\n        }<br />\n"
+    "        td {<br />\n            border-bottom: 1px solid #ddd;<br />\n        }<br />\n"
+    "        tr:nth-child(even) {<br />\n            background-color: #f2f2f2;<br />\n        }</p>\n"
+    "<p>Questo esemplare del <strong>2000</strong> &egrave; accompagnato dalla "
+    "<strong>scatola originale e dai documenti originali</strong>.</p>\n"
+    "<table><tbody>"
+    "<tr><td><b>Anno di produzione</b></td><td>2000 (Anno approssimativo)</td></tr>"
+    "<tr><td><b>Condizione</b></td><td>Usato (Ottimo)</td></tr>"
+    "<tr><td><b>Corredo</b></td><td>Con scatola originale e documenti originali</td></tr>"
+    "<tr><td><b>Warranty Country &#8211; Provenienza della Garanzia</b></td><td>Japan</td></tr>"
+    "</tbody></table>")
+
+CFG_PLUSWATCH = {
+    "name": "pluswatch", "type": "json",
+    "start_urls": ["https://www.pluswatch.it/wp-json/wc/store/v1/products?page={page}"],
+    "items_path": "", "available_value": "true",
+    "price_scale_from": "prices.currency_minor_unit",
+    "fields": {"title": "name", "price": "prices.price",
+               "available": "is_in_stock", "reference": "sku",
+               "description": "description", "url": "permalink"},
+}
+
+
+def _pluswatch():
+    dati = json.dumps([{
+        "id": 1, "name": "Omega Constellation 1542.40 38mm",
+        "permalink": "https://www.pluswatch.it/p/omega/", "sku": "",
+        "is_in_stock": True,
+        "prices": {"price": "220000", "currency_code": "EUR",
+                   "currency_minor_unit": 2},
+        "description": _DESCR_PLUSWATCH}])
+    prima = CFG_PLUSWATCH["start_urls"][0].replace("{page}", "1")
+    f = _Fetcher({prima: dati}, difetto="[]")
+    return JsonSource(CFG_PLUSWATCH, _Ctx(f)).collect().listings[0]
+
+
+def test_gli_attributi_arrivano_dalla_descrizione():
+    """La regressione peggiore di questa serie di modifiche.
+
+    Convertendo PlusWatch all'API avevo ridotto i campi scaricati per far
+    scendere il peso da 4,6 MB a 52 KB per pagina. Fra i campi tagliati c'era
+    `description`, e li' dentro stanno anno, condizione, corredo e provenienza
+    della garanzia — cioe' meta' di quello che il punteggio guarda.
+
+    Il giorno dopo, in produzione, un Monaco che valeva 92 punti ne valeva 43.
+    Non era cambiato il prezzo e non era cambiato il mercato: era sparito tutto
+    cio' che il sistema sapeva di quell'orologio.
+    """
+    from radar import extract
+    l = _pluswatch()
+    extract.enrich(l)
+    assert l.year == 2000
+    assert l.condition == "excellent"
+    assert l.full_set is True
+    assert l.warranty_region == "JP"
+
+
+def test_il_css_non_mangia_il_testo_utile():
+    """La scheda comincia con quattromila caratteri di regole di stile.
+
+    WordPress butta i tag `<style>` ma lascia il loro contenuto come testo.
+    Siccome il testo grezzo viene troncato a 4.000 caratteri e i dati veri
+    stanno in fondo, tenere il CSS avrebbe voluto dire salvare **solo** il CSS
+    e buttare via esattamente cio' per cui abbiamo scaricato la descrizione.
+    """
+    testo = _pluswatch().raw_text
+    assert "font-family" not in testo and "#f2f2f2" not in testo
+    assert "Anno di produzione" in testo and "Corredo" in testo
+    assert len(testo) < 1500
+
+
+def test_il_prezzo_in_centesimi_resta_giusto():
+    assert _pluswatch().price_eur == 2200.0
+
+
+# =============================================================================
 # Conte Orologi — 1.227 schede in una pagina sola
 # =============================================================================
 
@@ -382,6 +466,136 @@ def test_le_parole_del_titolo_non_guardano_la_descrizione():
     accanto = _tudor("Quadrante opalino con contatori neri. Referenza: 79360N. "
                      "Disponibile anche la versione Flamingo.", "4200.00")
     assert reject_reason(accanto, w) is None
+
+
+# =============================================================================
+# Land-Dweller — la parola "oro" qui e' una trappola
+# =============================================================================
+
+def _annuncio(titolo: str, prezzo: float, anno: int, corpo: str = ""):
+    from radar.models import Listing
+    return Listing(source="chrono24", url="https://www.chrono24.it/rolex/x--id1.htm",
+                   title=titolo, raw_text=f"{titolo} {corpo}",
+                   price_eur=prezzo, year=anno)
+
+
+def test_acciaio_e_oro_bianco_non_e_un_orologio_in_oro():
+    """Il Land-Dweller in acciaio ha la lunetta in oro bianco davvero.
+
+    Mezzo mercato lo scrive nel titolo: "Stahl/Weissgold", "Oystersteel and
+    white gold", "acciaio e oro bianco". Mettere "oro" o "gold" fra le parole
+    escluse — come si fa per il Royal Oak, dove serve — qui avrebbe cancellato
+    ogni annuncio giusto. E' la stessa forma del "quadrante opalino".
+    """
+    for titolo in [
+        "Rolex Land-Dweller 40 Ref. 127334 Stahl/Weissgold 2026 Full Set",
+        "Rolex Land-Dweller 40mm Oystersteel and white gold 127334",
+        "Rolex Land-Dweller 40 - acciaio e oro bianco - Referenza 127334",
+    ]:
+        l = _annuncio(titolo, 22950, 2026)
+        assert reject_reason(l, _orologio("land-dweller-40")) is None, titolo
+
+
+def test_everose_e_platino_restano_fuori():
+    oro = _annuncio("Rolex Land-Dweller 40 Everose 127336", 48000, 2026)
+    plat = _annuncio("Rolex Land-Dweller 127286TBR platino diamanti", 95000, 2026)
+    assert reject_reason(oro, _orologio("land-dweller-40")) is not None
+    assert reject_reason(plat, _orologio("land-dweller-40")) is not None
+
+
+def test_le_due_misure_non_si_mescolano():
+    """23.250 € contro 18.400: sono due mercati, come i due Overseas."""
+    q40 = _annuncio("Rolex Land-Dweller 40 127334 Full Set", 23000, 2026)
+    q36 = _annuncio("Rolex Land-Dweller 36 127234 Unworn", 17590, 2026)
+    assert reject_reason(q40, _orologio("land-dweller-40")) is None
+    assert reject_reason(q36, _orologio("land-dweller-36")) is None
+    assert reject_reason(q40, _orologio("land-dweller-36")) is not None
+    assert reject_reason(q36, _orologio("land-dweller-40")) is not None
+
+
+def test_il_titolo_senza_referenza_si_salva_col_corpo():
+    """Un annuncio su cinque ha un titolo che non dice ne' misura ne' referenza.
+
+    Verificato su Chrono24: quello intitolato solo "Rolex Land-Dweller" porta
+    127234 quattro volte nel corpo della scheda. Per questo il riconoscimento
+    guarda anche li', e per questo non serve allentare il filtro — allentarlo
+    avrebbe rimesso insieme i due mercati che stiamo tenendo separati.
+    """
+    l = _annuncio("Rolex Land-Dweller", 18000, 2026,
+                  corpo="Referenza 127234 Oyster 36 mm acciaio Oystersteel e oro bianco")
+    assert reject_reason(l, _orologio("land-dweller-36")) is None
+
+
+def test_il_222_in_oro_giallo_resta_fuori():
+    """Solo acciaio. E l'oro si toglie con la referenza, non con le parole.
+
+    Su 10 annunci in oro trovati in UE il 12/09, **quattro non nominano il
+    materiale nel titolo**: si chiamano "Historiques 222" e costano 66.720,
+    71.800 e 86.800 euro. Un filtro a parole ne avrebbe presi sei su dieci e
+    avrebbe lasciato gli altri quattro dentro l'indice dell'acciaio, ad
+    alzarlo di migliaia di euro.
+    """
+    w = _orologio("vc-222")
+    oro = _annuncio("Vacheron Constantin Historiques 222", 79800, 2025,
+                    corpo="Referenza 4200H/222J-B935 oro giallo 37mm")
+    assert reject_reason(oro, w) is not None
+    acciaio = _annuncio("Vacheron Constantin Historiques 222", 51950, 2025,
+                        corpo="Referenza 4200H/222A-B934 acciaio 37mm")
+    assert reject_reason(acciaio, w) is None, reject_reason(acciaio, w)
+
+
+def test_il_222_senza_suffisso_passa_lo_stesso():
+    """Meta' degli annunci scrive solo "222" o "4200H".
+
+    Cercare `4200H/222A` invece di `4200H` faceva scendere i risultati da 119
+    a 66: erano acciai veri, al prezzo giusto, che semplicemente non
+    scrivevano il suffisso.
+    """
+    l = _annuncio("Vacheron Constantin Historiques 222 Blue Dial 4200H NEW",
+                  51950, 2025)
+    assert reject_reason(l, _orologio("vc-222")) is None
+
+
+def test_oro_non_e_una_parola_da_escludere():
+    """Fra le fonti c'e' un negozio che si chiama Universo Oro.
+
+    Mettere "Oro" fra le parole escluse sembra la scorciatoia ovvia per
+    togliere l'oro giallo, e taglierebbe fuori un intero negozio per il suo
+    nome. E' la stessa famiglia di errore di "opalino" sul Tudor e di "oro
+    bianco" sul Land-Dweller.
+    """
+    escluse = [k.lower() for k in _orologio("vc-222").exclude_keywords]
+    assert "oro" not in escluse and "gold" not in escluse
+
+
+def test_il_prezzo_di_mercato_non_e_un_affare():
+    """La taratura dei moltiplicatori, provata dove faceva piu' danno.
+
+    Su 87 annunci di Land-Dweller quasi tutti sono nuovi del 2026: l'esemplare
+    tipico di questo mercato e' proprio quello, e l'indice misura lui. Con le
+    tabelle generali — 1,12 per il 2026, 1,11 per il "nuovo" — un esemplare
+    normalissimo a prezzo pieno usciva col valore equo gonfiato del 24%, cioe'
+    81 punti su 100 e una notifica su Telegram. Una raffica di falsi affari,
+    che e' il modo piu' rapido per rendere inutile il sistema.
+    """
+    from radar.fairvalue import FairValueEngine
+    from radar.models import Listing
+    w = _orologio("land-dweller-40")
+    indice = 22958.0
+    comps = [{"price_eur": indice} for _ in range(40)]
+    eng = FairValueEngine(w, comps)
+    a_mercato = Listing(source="x", url="https://www.chrono24.it/rolex/a--id1.htm",
+                        title="Land-Dweller 40", price_eur=indice,
+                        year=2026, condition="new", full_set=True)
+    eng.evaluate(a_mercato)
+    assert abs(a_mercato.delta_pct or 0) < 3, \
+        f"un esemplare tipico a prezzo di mercato risulta {a_mercato.delta_pct:+.1f}%"
+
+
+def test_gli_altri_rolex_non_entrano():
+    """Il Datejust 126334 assomiglia alla referenza e non c'entra niente."""
+    dj = _annuncio("Rolex Datejust 41 126334 acciaio e oro bianco", 11000, 2024)
+    assert reject_reason(dj, _orologio("land-dweller-40")) is not None
 
 
 # =============================================================================

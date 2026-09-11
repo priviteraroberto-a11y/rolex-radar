@@ -1,0 +1,53 @@
+{
+ "fonte": "chrono24",
+ "data": "2026-09-12",
+ "nota": "Vacheron Constantin Historiques 222 in ACCIAIO (4200H/222A-B934), solo Unione Europea. L'oro giallo 4200H/222J-B935 e' escluso: sta fra 65.900 e 86.800 euro, un mercato diverso. Importante: 4 dei 10 annunci in oro trovati oggi NON dicono il materiale nel titolo — si chiamano solo 'Historiques 222'. Separarli guardando le parole del titolo non funziona, serve la referenza. Sostituisce i 9 campioni del 03/09, che erano gli stessi annunci.",
+ "campioni": {
+  "vc-222": [
+   {
+    "p": 47500,
+    "c": "FR"
+   },
+   {
+    "p": 47900,
+    "c": "ES"
+   },
+   {
+    "p": 48049,
+    "c": "SE"
+   },
+   {
+    "p": 48450,
+    "c": "DE"
+   },
+   {
+    "p": 49200,
+    "c": "CZ"
+   },
+   {
+    "p": 51950,
+    "c": "NL"
+   },
+   {
+    "p": 52000,
+    "c": "SE"
+   },
+   {
+    "p": 53000,
+    "c": "ES"
+   },
+   {
+    "p": 53000,
+    "c": "DE"
+   },
+   {
+    "p": 55000,
+    "c": "MC"
+   },
+   {
+    "p": 55000,
+    "c": "AT"
+   }
+  ]
+ }
+}

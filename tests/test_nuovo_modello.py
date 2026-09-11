@@ -56,28 +56,22 @@ def _esegui(tool, corpo, config, tmp_path):
     return rc, esito.read_text(encoding="utf-8")
 
 
-def test_i_gruppi_restano_bilanciati(config, tmp_path):
-    """Due aggiunte di fila devono finire in due turni diversi."""
-    import yaml
-    from collections import Counter
-    tool = _tool()
-    for i, nome in enumerate(("uno", "due")):
-        rc, msg = _esegui(tool, _richiesta(id=f"prova-{nome}"), config, tmp_path)
-        assert rc == 0, msg
-    d = yaml.safe_load(config.read_text(encoding="utf-8"))
-    conteggio = Counter(w.get("group") for w in d["watches"])
-    assert max(conteggio.values()) - min(conteggio.values()) <= 1, conteggio
+def test_nessun_orologio_nuovo_porta_un_gruppo(config, tmp_path):
+    """La rotazione non c'e' piu': `group:` non deve ricomparire nel config.
 
-
-def test_il_gruppo_scritto_nella_richiesta_non_conta(config, tmp_path):
-    """Decide chi scrive, non chi chiede: fra i due momenti puo' cambiare."""
+    Una pagina aperta prima del cambio, o tenuta nei preferiti, puo' ancora
+    mandarlo. Va tolto da chi scrive, non sperato da chi compila.
+    """
     import yaml
     tool = _tool()
-    _esegui(tool, _richiesta(id="prova-gruppo"), config, tmp_path)
+    richiesta = _richiesta(id="prova-gruppo")
+    richiesta = richiesta.replace("  - id: prova-gruppo",
+                                  "  - id: prova-gruppo\n    group: un-turno-che-non-esiste")
+    rc, msg = _esegui(tool, richiesta, config, tmp_path)
+    assert rc == 0, msg
     d = yaml.safe_load(config.read_text(encoding="utf-8"))
     w = next(x for x in d["watches"] if x["id"] == "prova-gruppo")
-    gruppi = d["rotation"]["groups"]
-    assert w["group"] in gruppi, w["group"]
+    assert "group" not in w, w
 
 
 def test_i_commenti_del_config_sopravvivono(config, tmp_path):
@@ -112,18 +106,6 @@ def test_il_config_resta_leggibile_dal_radar(config, tmp_path):
     cfg = Config.load(str(config))
     w = next(x for x in cfg.watches if x.id == "prova-finale")
     assert w.references and w.get("fair_value.seed_price_eur") == 5000
-
-
-def test_la_pagina_e_lo_script_scelgono_lo_stesso_turno():
-    """Se divergessero, la pagina ti direbbe una cosa e il sistema ne farebbe
-    un'altra — il tipo di bugia che non ti accorgi di ricevere."""
-    import yaml
-    from radar.config import Config
-    from radar import nuovo_modello
-    tool = _tool()
-    grezzo = yaml.safe_load((RADICE / "config.yaml").read_text(encoding="utf-8"))
-    assert (nuovo_modello.gruppo_meno_affollato(Config.load(str(RADICE / "config.yaml")))
-            == tool.gruppo_meno_affollato(grezzo))
 
 
 def test_il_modulo_web_si_genera(tmp_path):

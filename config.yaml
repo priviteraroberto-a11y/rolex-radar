@@ -14,24 +14,19 @@
 #
 # `group: always` = controllato a ogni giro, senza aspettare il turno.
 # -----------------------------------------------------------------------------
-rotation:
-  enabled: true
-  groups: [222-overseas-royaloak-elite-snoopy, speedmaster-monaco-blackbay-a384]
-
-  # Il nome del gruppo e' l'elenco degli orologi che contiene. E' lungo, ma e'
-  # l'unica cosa che si legge nel menu a tendina di GitHub (i commenti YAML li'
-  # non si vedono) e nei log: leggendolo sai esattamente cosa sta girando.
-  # Se aggiungi un orologio, aggiungi il suo nome anche qui.
-  #
-  # Nel menu puoi anche scegliere un singolo orologio: basta il suo `id`.
-  #
-  # I nomi vecchi restano validi, cosi' un lancio salvato non si rompe.
-  aliases:
-    a: 222-overseas-royaloak-elite-snoopy
-    222-overseas-royaloak-elite: 222-overseas-royaloak-elite-snoopy
-    b: speedmaster-monaco-blackbay-a384
-    alta-gamma: 222-overseas-royaloak-elite-snoopy
-    accessibili: speedmaster-monaco-blackbay-a384
+# -----------------------------------------------------------------------------
+# Qui c'era la ROTAZIONE: gli orologi divisi in due turni, uno per giro.
+#
+# Serviva quando ogni orologio costava una ricerca su ogni sito — dodici
+# orologi per dieci fonti facevano centoventi interrogazioni. Da quando le
+# fonti leggono il catalogo intero, quel conto non esiste piu': il catalogo di
+# un negozio si scarica una volta per giro e vale per tutti gli orologi
+# insieme. Quindici costano quasi quanto sette.
+#
+# Tolta il 12/09/2026. Dimezzava la copertura senza far risparmiare quasi
+# niente, e aveva un difetto suo: un annuncio comparso e sparito durante il
+# turno sbagliato non lo vedeva nessuno.
+# -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
 # OROLOGI MONITORATI
@@ -61,17 +56,34 @@ watches:
   # Correggili quando vedi i primi prezzi veri in dashboard.
   # ---------------------------------------------------------------------------
 
+  # ATTENZIONE ALL'ID: si chiama `monaco-gulf` ma questo **non e' il Gulf**.
+  #
+  # CAW211P.FC6356 e' il Monaco Calibre 11 blu "Steve McQueen", senza strisce.
+  # Il Gulf vero — quello blu e arancio — porta altre referenze: CAW211R.FC6401
+  # e CAW2113 (Calibre 11), CBL2115 (serie recente). Il radar non le ha mai
+  # cercate, e l'etichetta diceva "Gulf" a un orologio che Gulf non e'.
+  #
+  # Scoperto il 12/09/2026 confrontando le ricerche salvate su Chrono24 con le
+  # referenze: `Monaco Gulf CAW211P` su Chrono24 dava **zero** risultati,
+  # perche' quelle tre parole insieme non stanno in nessun annuncio.
+  #
+  # L'id resta `monaco-gulf` anche se e' fuorviante: cambiarlo staccherebbe
+  # dal database tutto lo storico di questo orologio, ed e' un prezzo piu' alto
+  # di un nome scomodo. Quello che conta — etichetta, referenza, ricerca — e'
+  # corretto.
   - id: monaco-gulf
     # photo: "https://..."
-    group: speedmaster-monaco-blackbay-a384
     brand: TAG Heuer
-    model: Monaco
-    nickname: Gulf
+    model: Monaco Calibre 11
+    nickname: Steve McQueen
     references: ["CAW211P.FC6356"]
     reference_stems: ["CAW211P"]
-    search_terms: ["CAW211P", "Monaco Gulf"]
+    search_terms: ["CAW211P", "Monaco Steve McQueen"]
     model_keywords: ["Monaco"]
-    exclude_keywords: ["Carrera", "Formula 1", "Aquaracer"]
+    # "Gulf" fra le escluse e' una rete di sicurezza, non il filtro vero: a
+    # tenerlo fuori basta la referenza, che e' esatta. Ma un Gulf che finisse
+    # in questo indice lo abbasserebbe di circa mille euro.
+    exclude_keywords: ["Carrera", "Formula 1", "Aquaracer", "Gulf"]
     hard_filters:
       min_year: 2015
       max_year: 2027
@@ -85,13 +97,19 @@ watches:
     # corona a sinistra. Un listino attuale per questo non esiste, quindi il
     # radar non scrive niente invece di confrontarti con un prezzo che non c'e'.
     fair_value:
-      seed_price_eur: 7000    # osservato 7.300 su PlusWatch
+      # mediana UE 7.100 su 19 annunci (rilevazione 12/09/2026). Conferma la
+      # stima che c'era (7.000, osservata su PlusWatch).
+      #
+      # Nota metodo: la stessa ricerca senza filtro geografico dava 6.397, e
+      # sarebbe stata una stima sbagliata per difetto — sotto ci sono Hong Kong
+      # e Giappone, dove il prezzo non e' confrontabile perche' all'importazione
+      # si aggiunge il 27,5% fra dazio e IVA.
+      seed_price_eur: 7100
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
   - id: speedmaster
     # photo: "https://..."
-    group: speedmaster-monaco-blackbay-a384
     brand: Omega
     model: Speedmaster Moonwatch Professional
     references: ["310.30.42.50.01.002"]
@@ -126,7 +144,6 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: bb-chrono-flamingo
-    group: speedmaster-monaco-blackbay-a384
     brand: Tudor
     model: Black Bay Chrono
     nickname: Flamingo Blue
@@ -162,7 +179,6 @@ watches:
   # Il fratello economico, separato di proposito: costa la meta' e mescolarlo
   # al Flamingo rendeva senza senso l'indice di tutti e due.
   - id: bb-chrono-panda
-    group: speedmaster-monaco-blackbay-a384
     brand: Tudor
     model: Black Bay Chrono
     nickname: Panda
@@ -203,7 +219,6 @@ watches:
 
   - id: zenith-ultrathin
     # photo: "https://..."
-    group: 222-overseas-royaloak-elite-snoopy
     brand: Zenith
     model: Elite Ultra Thin
     # Riconosciuto dal NOME, non dalla referenza.
@@ -254,17 +269,35 @@ watches:
 
   - id: vc-222
     # photo: "https://..."
-    group: 222-overseas-royaloak-elite-snoopy
     brand: Vacheron Constantin
     model: Historiques 222
     references: ["4200H/222A-B934"]
-    # La radice prende anche il 4200H/222J-B935, la versione in oro giallo:
-    # e' un altro orologio e costa quasi il doppio, ma la banda di prezzo
-    # arriva fin la' apposta per non nasconderlo se capita a un buon prezzo.
+    # SOLO ACCIAIO (12/09/2026). Prima la radice nuda `4200H` prendeva anche
+    # l'oro giallo 4200H/222J-B935, e il commento diceva che era voluto — "non
+    # nasconderlo se capita a un buon prezzo". Era un'intenzione che non
+    # funzionava: l'indice di questo orologio e' costruito sull'acciaio
+    # (52.000), quindi un oro a 66.000 risultava sempre caro. Un oro davvero
+    # in saldo sarebbe stato archiviato come fuori prezzo, e intanto quelli a
+    # prezzo pieno alzavano la mediana degli acciai.
+    #
+    # La radice resta larga — meta' degli annunci scrive solo "222" o "4200H"
+    # — e a togliere l'oro ci pensa la referenza esclusa, che e' esatta.
     reference_stems: ["4200H"]
+    exclude_references: ["4200H/222J", "4200H/222R", "4200H/222G"]
     search_terms: ["4200H", "Historiques 222"]
     model_keywords: ["222", "Historiques"]
-    exclude_keywords: ["Overseas", "Patrimony", "Traditionnelle", "Fiftysix"]
+    # Niente "Oro" o "Gold" fra le parole escluse, per due motivi.
+    #
+    # Il primo: non funzionerebbe. Su 10 annunci in oro trovati oggi in UE,
+    # **4 non nominano il materiale nel titolo**: si chiamano "Historiques
+    # 222" e basta, a 66.720, 71.800 e 86.800 euro. Le parole non li prendono.
+    #
+    # Il secondo: farebbe danni altrove. Fra le fonti c'e' un negozio che si
+    # chiama **Universo Oro**, e un titolo che finisse per contenere il nome
+    # del negozio verrebbe scartato per la parola sbagliata.
+    exclude_keywords: ["Overseas", "Patrimony", "Traditionnelle", "Fiftysix",
+                       "222J", "Oro giallo", "Yellow gold", "Gelbgold",
+                       "Or jaune", "18K", "18 K"]
     hard_filters:
       min_year: 2022
       max_year: 2027
@@ -282,10 +315,35 @@ watches:
       # dello Zenith — una stima dedotta invece che osservata — e produceva
       # l'effetto peggiore: ogni annuncio normale sembrava un affare del 50%.
       # L'unico annuncio visto finora, giapponese, chiedeva 45.353 euro.
-      # mediana UE 48.825 su 34 annunci in acciaio (rilev. 03/09/2026)
-      seed_price_eur: 49000
+      #
+      # mediana UE 51.950 su 11 annunci in ACCIAIO (rilevazione 12/09/2026),
+      # tutti fra 47.500 e 55.000. Sostituisce i 9 campioni del 03/09, che
+      # erano in gran parte gli stessi annunci ancora online: tenerli tutti e
+      # due avrebbe contato nove prezzi due volte.
+      seed_price_eur: 52000
       # listino Vacheron: CHF 32.200 al cambio 1,0635 del 05/09/2026
       list_price_eur: 34250
+      # Tabelle centrate su questo mercato, come per il Land-Dweller.
+      # Gli 11 annunci in acciaio sono quasi tutti "Unworn" o "Full set" del
+      # 2025-2026: l'esemplare tipico e' un nuovo recente, ed e' quello che
+      # l'indice misura. Con le tabelle generali (1,05 per il 2025 e 1,11 per
+      # il "nuovo") un 222 a prezzo pieno di mercato risultava il 14% sotto il
+      # valore equo: 81 punti su 100 e una notifica, per un annuncio normale.
+      multipliers:
+        year:
+          2026: 1.00
+          2025: 1.00
+          2024: 0.98
+          _default: 0.96
+        condition:
+          unworn: 1.00
+          new: 1.00
+          mint: 0.99
+          like_new: 0.98
+          excellent: 0.96
+          very_good: 0.92
+          good: 0.88
+          _default: 0.98
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -313,7 +371,6 @@ watches:
   # materiale lo decide la referenza, che e' un filtro esatto.
   - id: vc-overseas-4520
     # photo: "https://..."
-    group: 222-overseas-royaloak-elite-snoopy
     brand: Vacheron Constantin
     model: Overseas 41 (4520V)
     nickname: Overseas nuovo
@@ -344,7 +401,6 @@ watches:
       always_notify_if_underpriced_pct: 15.0
 
   - id: vc-overseas-4500
-    group: speedmaster-monaco-blackbay-a384
     brand: Vacheron Constantin
     model: Overseas 41 (4500V)
     nickname: Overseas precedente
@@ -417,7 +473,6 @@ watches:
   # Il 15450 da 37mm, che seguivamo prima, e' stato tolto: e' fuori produzione
   # e non era fra i due che hai indicato. Rimetterlo costa tre righe.
   - id: royal-oak-jumbo-16202
-    group: 222-overseas-royaloak-elite-snoopy
     brand: Audemars Piguet
     model: Royal Oak Jumbo Extra-Thin
     nickname: Jumbo
@@ -456,7 +511,6 @@ watches:
       always_notify_if_underpriced_pct: 10.0
 
   - id: royal-oak-15510
-    group: speedmaster-monaco-blackbay-a384
     brand: Audemars Piguet
     model: Royal Oak Selfwinding 41
     references: ["15510ST.OO.1320ST.06"]
@@ -485,7 +539,6 @@ watches:
 
   - id: el-primero-a384
     # photo: "https://..."
-    group: speedmaster-monaco-blackbay-a384
     brand: Zenith
     model: Chronomaster Revival A384
     # Due referenze, non una: la prima e' l'A384 Revival classico, la seconda
@@ -522,7 +575,6 @@ watches:
 # -----------------------------------------------------------------------------
 
   - id: speedmaster-snoopy
-    group: 222-overseas-royaloak-elite-snoopy
     brand: Omega
     model: Speedmaster Moonwatch
     nickname: Silver Snoopy Award 50th
@@ -568,44 +620,273 @@ watches:
     notifications:
       always_notify_if_underpriced_pct: 12.0
 
-  - id: panerai-luminor
-    group: 222-overseas-royaloak-elite-snoopy
+  # ---------------------------------------------------------------------------
+  # I due Panerai a quadrante pulito (12/09/2026)
+  #
+  # Qui c'era un orologio solo, `panerai-luminor`, che seguiva tutta la
+  # famiglia. Sembrava generoso e invece non diceva niente: in produzione
+  # aveva 260 annunci attivi, **100 referenze PAM diverse, 64 viste una volta
+  # sola**, prezzi da 2.679 a 10.645 euro. Marina, Due, GMT, Base e
+  # Submersible finivano nella stessa mediana.
+  #
+  # Non e' un problema di soglia da ritoccare: un "valore equo del Luminor"
+  # non esiste, perche' il Luminor non e' un orologio, e' un catalogo. Ogni
+  # punteggio mostrato li' era finta precisione. Provato anche a dividere per
+  # famiglia e misura: dentro ogni gruppo il prezzo variava ancora due o tre
+  # volte, e la misura nel titolo spesso non c'e'.
+  #
+  # La via d'uscita e' stata restringere il bersaglio, non allargare il
+  # filtro: quadrante pulito, al massimo i piccoli secondi, niente data.
+  # Restano due famiglie, tutte e due 44 mm in acciaio a carica manuale:
+  #
+  #   Base Logo    nessun secondo, nessuna data   176 annunci UE, mediana 4.570
+  #   Marina Logo  piccoli secondi a ore 9,        48 annunci UE, mediana 4.293
+  #                nessuna data
+  #
+  # Si riconoscono per REFERENZA e non per nome, al contrario di prima: i
+  # nomi qui sono un pasticcio — esistono annunci intitolati "Luminor Marina
+  # Base Logo", che mettono insieme le due famiglie. Le PAM invece sono nette.
+  # ---------------------------------------------------------------------------
+  - id: panerai-base-logo
     brand: Panerai
-    model: Luminor
-    # Tutta la famiglia Luminor: Marina, Base Logo e Due. Riconosciuto per
-    # nome perche' le referenze PAM sono centinaia e cambiano a ogni serie.
-    #
-    # Una cosa da sapere: dentro questa famiglia i prezzi europei vanno da
-    # 3.100 a 8.950 euro, con la meta' degli annunci stretta fra 3.600 e
-    # 5.000. Un solo indice per tutti significa che un Base Logo a 3.600 —
-    # che e' a prezzo pieno — sembrera' un affare, e un Marina Quaranta a
-    # 5.200 sembrera' caro. E' lo stesso problema del Tudor: se diventa
-    # fastidioso, si separano come abbiamo fatto per Flamingo e Panda.
+    model: Luminor Base Logo
+    nickname: quadrante pulito
+    # Niente secondi, niente data: solo ore e minuti.
+    # Riconosciuto per NOME, non per referenza, e la ragione sta nei dati:
+    # provando le referenze sui 254 annunci veri in produzione ne venivano
+    # riconosciuti 18. Meta' dei venditori la PAM nel titolo non la scrive.
+    # "Base" invece c'e' quasi sempre, ed e' la parola che distingue questa
+    # famiglia.
     identify_by: name
-    must_include: ["Luminor"]
-    references: []
-    search_terms: ["Panerai Luminor", "Luminor Marina", "Luminor Base Logo", "Luminor Due"]
-    # Il Submersible e' un'altra famiglia e costa il doppio; Radiomir e'
-    # un'altra cassa; i cronografi e le complicazioni escono dalla banda.
-    exclude_keywords: ["Submersible", "Radiomir", "Chrono", "Regatta",
-                       "Tourbillon", "Ferrari", "Equation", "Perpetual"]
+    must_include: ["Base"]
+    references: ["PAM01084", "PAM01085", "PAM01086", "PAM01087",
+                 "PAM01000", "PAM00000", "PAM00773", "PAM00774", "PAM00630"]
+    search_terms: ["Luminor Base Logo", "PAM01084", "PAM01000"]
+    model_keywords: ["Luminor"]
+    # "Marina" fra le escluse: esistono annunci intitolati "Luminor Marina
+    # Base Logo", e quelli sono Marina Logo, non Base Logo. Senza questa riga
+    # finirebbero in tutte e due i secchi.
+    exclude_keywords: ["Marina", "Submersible", "Radiomir", "Chrono", "Regatta",
+                       "Tourbillon", "Ferrari", "Equation", "Perpetual",
+                       "Due", "GMT", "Power Reserve", "8 Days", "Militare"]
     hard_filters:
       min_year: 2005
       max_year: 2027
-      absolute_min_price_eur: 1800
-      absolute_max_price_eur: 11000
+      absolute_min_price_eur: 2000
+      absolute_max_price_eur: 9000
     preferences:
-      target_years: [2022, 2023, 2024, 2025, 2026]
-      acceptable_years: [2016, 2017, 2018, 2019, 2020, 2021]
-      tolerated_years: [2010, 2011, 2012, 2013, 2014, 2015]
+      target_years: [2020, 2021, 2022, 2023, 2024, 2025, 2026]
+      acceptable_years: [2014, 2015, 2016, 2017, 2018, 2019]
+      tolerated_years: [2008, 2009, 2010, 2011, 2012, 2013]
     fair_value:
-      # mediana UE 3.990 su 22 annunci (rilevazione 03/09/2026); in Italia 3.800
-      seed_price_eur: 3990
-      # listino Panerai per il Luminor Base
+      # mediana UE 4.570 su 176 annunci (rilevazione 12/09/2026),
+      # meta' degli annunci fra 4.190 e 5.100
+      seed_price_eur: 4570
+      # listino Panerai per il Luminor Base Logo 44mm
       list_price_eur: 5700
+      # Tabella degli anni centrata su QUESTO mercato, non su un orologio in
+      # produzione. Il Base Logo e' un usato: gli esemplari in vendita sono
+      # per lo piu' fra il 2015 e il 2021, ed e' quello che l'indice misura.
+      # Con la tabella generale (2024 = 1,00, tutto il resto 0,89) un
+      # esemplare tipico a prezzo pieno di mercato risultava il 13% CARO, e
+      # nessun Panerai avrebbe mai fatto scattare una notifica.
+      multipliers:
+        year:
+          2026: 1.05
+          2025: 1.04
+          2024: 1.03
+          2023: 1.02
+          2022: 1.01
+          2021: 1.01
+          2020: 1.00
+          2019: 1.00
+          2018: 0.99
+          2017: 0.98
+          2016: 0.97
+          2015: 0.96
+          _default: 0.94
     notifications:
-      always_notify_if_underpriced_pct: 15.0
+      always_notify_if_underpriced_pct: 12.0
 
+  - id: panerai-marina-logo
+    brand: Panerai
+    model: Luminor Marina Logo
+    nickname: piccoli secondi
+    # Piccoli secondi a ore 9, nessuna data. Da non confondere col Luminor
+    # Marina normale, che la data ce l'ha e costa diversamente.
+    # Per nome anche questo. "Logo" e' la parola che separa questo dal
+    # Luminor Marina normale, che la data ce l'ha: chiedere tutte e due le
+    # parole, "Marina" e "Logo", e' esattamente la distinzione che ti serve.
+    identify_by: name
+    must_include: ["Marina", "Logo"]
+    references: ["PAM00005", "PAM01005", "PAM00631", "PAM00632",
+                 "PAM00660", "PAM00776", "PAM00777", "PAM00778"]
+    search_terms: ["Luminor Marina Logo", "PAM01005", "PAM00632"]
+    model_keywords: ["Luminor"]
+    exclude_keywords: ["Submersible", "Radiomir", "Chrono", "Regatta",
+                       "Tourbillon", "Ferrari", "Equation", "Perpetual",
+                       "Due", "GMT", "Power Reserve", "8 Days", "Militare"]
+    hard_filters:
+      min_year: 2005
+      max_year: 2027
+      absolute_min_price_eur: 2000
+      absolute_max_price_eur: 9000
+    preferences:
+      target_years: [2020, 2021, 2022, 2023, 2024, 2025, 2026]
+      acceptable_years: [2014, 2015, 2016, 2017, 2018, 2019]
+      tolerated_years: [2008, 2009, 2010, 2011, 2012, 2013]
+    fair_value:
+      # mediana UE 4.293 su 48 annunci (rilevazione 12/09/2026) — qui il
+      # campione e' tutto il mercato europeo, non un estratto
+      seed_price_eur: 4293
+      # Fuori produzione: Panerai oggi fa il Marina con la data.
+      # Tabella degli anni centrata su QUESTO mercato, non su un orologio in
+      # produzione. Il Marina Logo e' un usato: gli esemplari in vendita sono
+      # per lo piu' fra il 2015 e il 2021, ed e' quello che l'indice misura.
+      # Con la tabella generale (2024 = 1,00, tutto il resto 0,89) un
+      # esemplare tipico a prezzo pieno di mercato risultava il 13% CARO, e
+      # nessun Panerai avrebbe mai fatto scattare una notifica.
+      multipliers:
+        year:
+          2026: 1.05
+          2025: 1.04
+          2024: 1.03
+          2023: 1.02
+          2022: 1.01
+          2021: 1.01
+          2020: 1.00
+          2019: 1.00
+          2018: 0.99
+          2017: 0.98
+          2016: 0.97
+          2015: 0.96
+          _default: 0.94
+    notifications:
+      always_notify_if_underpriced_pct: 12.0
+
+  # ---------------------------------------------------------------------------
+  # Rolex Land-Dweller, le due misure tenute separate (12/09/2026)
+  #
+  # Con questi rientra Rolex fra i marchi seguiti, dopo che il GMT Pepsi ne era
+  # uscito. Le pagine Rolex dei negozi, che avevo tolto dalle fonti perche' non
+  # servivano piu', sono tornate dentro.
+  #
+  # Una parola che NON va fra le esclusioni, per nessuna delle due: **"oro"**.
+  # Il Land-Dweller in acciaio e' "Oystersteel e oro bianco" — la lunetta e'
+  # davvero in oro bianco, e mezzo mercato lo scrive nel titolo
+  # ("Stahl/Weissgold", "acciaio e oro bianco"). Escludere "oro" o "gold"
+  # avrebbe cancellato tutti gli annunci giusti, ed e' la stessa trappola del
+  # "quadrante opalino" del Tudor. Qui non serve comunque: la referenza
+  # distingue gia' i materiali da sola, cifra per cifra.
+  #
+  #   127334 / 127234 = acciaio e oro bianco  (quelli che ti interessano)
+  #   127336          = Everose
+  #   127285TBR/127286TBR = platino con lunetta di diamanti
+  #
+  # Mercato appena nato e sorprendentemente compatto: quasi tutto nuovo o mai
+  # indossato del 2026, e i prezzi stanno in una fascia di poche centinaia di
+  # euro. Vuol dire che uno scarto del 10% qui e' un fatto raro e vero, non
+  # rumore — per questo la soglia di notifica e' stretta.
+  # ---------------------------------------------------------------------------
+  - id: land-dweller-40
+    # photo: "https://..."
+    brand: Rolex
+    model: Land-Dweller 40
+    references: ["127334", "127334-0001"]
+    reference_stems: ["127334"]
+    exclude_references: ["127336", "127285", "127286", "127234"]
+    search_terms: ["127334", "Land-Dweller 40"]
+    model_keywords: ["Land-Dweller", "Land Dweller"]
+    exclude_keywords: ["Everose", "Oro rosa", "Rose Gold", "Rosegold",
+                       "Platino", "Platinum", "TBR", "Diamanti", "Diamond",
+                       "Oro giallo", "Yellow Gold",
+                       # altri Rolex che non segui
+                       "Datejust", "Submariner", "Daytona", "GMT", "Explorer",
+                       "Sky-Dweller", "Yacht-Master", "Day-Date", "Milgauss"]
+    hard_filters:
+      # Presentato nell'aprile 2025: prima di allora non esiste.
+      min_year: 2025
+      max_year: 2027
+      absolute_min_price_eur: 12000
+      absolute_max_price_eur: 45000
+    preferences:
+      target_years: [2025, 2026]
+    fair_value:
+      # mediana UE 23.250 su 87 annunci in acciaio (rilevazione 12/09/2026)
+      seed_price_eur: 23250
+      # listino Rolex Italia, letto sul sito ufficiale il 12/09/2026
+      list_price_eur: 16200
+      # Tabelle tarate su QUESTO mercato, ed e' la parte che conta.
+      #
+      # Le tabelle generali danno 1,12 a un 2026 e 1,11 a un "nuovo": premi
+      # giusti quando l'esemplare tipico e' un usato di qualche anno fa. Qui
+      # l'esemplare tipico *e'* un nuovo del 2026 — su 87 annunci quasi tutti
+      # sono mai indossati — e l'indice misura proprio quelli. Moltiplicare
+      # ancora per 1,24 significava dare a un Land-Dweller a prezzo pieno di
+      # mercato un valore equo del 24% piu' alto, cioe' 81 punti su 100 e una
+      # notifica su Telegram. Falsi affari, a raffica.
+      #
+      # Centrate cosi', il prezzo di mercato vale zero e solo chi sta davvero
+      # sotto si fa notare.
+      multipliers:
+        year:
+          2026: 1.00
+          2025: 0.99
+          _default: 0.98
+        condition:
+          unworn: 1.00
+          new: 1.00
+          mint: 0.99
+          like_new: 0.98
+          excellent: 0.96
+          very_good: 0.92
+          good: 0.88
+          _default: 0.98
+    notifications:
+      always_notify_if_underpriced_pct: 10.0
+
+  - id: land-dweller-36
+    brand: Rolex
+    model: Land-Dweller 36
+    references: ["127234", "127234-0001"]
+    reference_stems: ["127234"]
+    exclude_references: ["127236", "127285", "127286", "127334"]
+    search_terms: ["127234", "Land-Dweller 36"]
+    model_keywords: ["Land-Dweller", "Land Dweller"]
+    exclude_keywords: ["Everose", "Oro rosa", "Rose Gold", "Rosegold",
+                       "Platino", "Platinum", "TBR", "Diamanti", "Diamond",
+                       "Oro giallo", "Yellow Gold",
+                       "Datejust", "Submariner", "Daytona", "GMT", "Explorer",
+                       "Sky-Dweller", "Yacht-Master", "Day-Date", "Milgauss"]
+    hard_filters:
+      min_year: 2025
+      max_year: 2027
+      absolute_min_price_eur: 9000
+      absolute_max_price_eur: 36000
+    preferences:
+      target_years: [2025, 2026]
+    fair_value:
+      # mediana UE 18.400 su 54 annunci in acciaio (rilevazione 12/09/2026)
+      seed_price_eur: 18400
+      # listino Rolex Italia, letto sul sito ufficiale il 12/09/2026
+      list_price_eur: 15200
+      # Stesse tabelle del 40: l'esemplare tipico e' un nuovo del 2026.
+      multipliers:
+        year:
+          2026: 1.00
+          2025: 0.99
+          _default: 0.98
+        condition:
+          unworn: 1.00
+          new: 1.00
+          mint: 0.99
+          like_new: 0.98
+          excellent: 0.96
+          very_good: 0.92
+          good: 0.88
+          _default: 0.98
+    notifications:
+      always_notify_if_underpriced_pct: 10.0
 
 
 hard_filters:
@@ -889,7 +1170,7 @@ sources:
     seller_trust: 4
     base_url: "https://www.pluswatch.it"
     start_urls:
-      - "https://www.pluswatch.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+      - "https://www.pluswatch.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku,description"
     paginate: {max: 25}
     items_path: ""
     available_value: "true"
@@ -902,6 +1183,12 @@ sources:
       price: "prices.price"
       available: is_in_stock
       reference: sku
+      # Senza questa riga il punteggio crolla, ed e' successo davvero.
+      # Qui dentro stanno anno di garanzia, stato del vetro e del bracciale,
+      # cinturino originale, condizione della scatola: meta' di quello che il
+      # punteggio guarda. Toglierla per alleggerire il download ha portato un
+      # Monaco da 92 a 43 punti in un solo giro.
+      description: description
       url: permalink
 
   # --- Universo Oro (Roma) ---------------------------------------------------
@@ -1000,6 +1287,9 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
+      # Rolex e' tornato fra i marchi seguiti col Land-Dweller (12/09).
+      - "https://www.dellaroccagioielli.it/o_32-Rolex+Professionali.php"
+      - "https://www.dellaroccagioielli.it/o_31-Rolex+Oyster.php"
       - "https://www.dellaroccagioielli.it/o_9-Audemars+Piguet.php"
       - "https://www.dellaroccagioielli.it/o_24-Vacheron+Constantin.php"
       - "https://www.dellaroccagioielli.it/o_4-Omega.php"
@@ -1025,7 +1315,7 @@ sources:
     seller_trust: 5
     base_url: "https://shop.davidepedretti.com"
     start_urls:
-      - "https://shop.davidepedretti.com/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+      - "https://shop.davidepedretti.com/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku,description"
     paginate: {max: 10}
     items_path: ""
     available_value: "true"
@@ -1035,6 +1325,12 @@ sources:
       price: "prices.price"
       available: is_in_stock
       reference: sku
+      # Senza questa riga il punteggio crolla, ed e' successo davvero.
+      # Qui dentro stanno anno di garanzia, stato del vetro e del bracciale,
+      # cinturino originale, condizione della scatola: meta' di quello che il
+      # punteggio guarda. Toglierla per alleggerire il download ha portato un
+      # Monaco da 92 a 43 punti in un solo giro.
+      description: description
       url: permalink
 
   # --- VERIFICATO A MANO: ha 3 Pepsi 126710BLRO a catalogo -------------------
@@ -1067,8 +1363,9 @@ sources:
 
   # --- L'Orologiaio di Corte (Bologna) --------------------------------------
   # Stesso difetto di della Rocca: `catId=2` e' la pagina **Rolex**, l'unica
-  # che veniva letta. Sotto ci sono le categorie delle marche che seguiamo.
-  # (Rolex = 2, se un giorno torna utile.)
+  # che veniva letta, mentre Rolex non era piu' fra i marchi seguiti. Ora ci
+  # sono tutte le categorie che servono — Rolex compreso, che col Land-Dweller
+  # e' rientrato.
   - name: lorologiaiodicorte
     type: html
     enabled: true
@@ -1076,6 +1373,7 @@ sources:
     dealer: true
     seller_trust: 3
     start_urls:
+      - "https://www.lorologiaiodicorte.it/?catId=2"    # Rolex
       - "https://www.lorologiaiodicorte.it/?catId=26"   # Audemars Piguet
       - "https://www.lorologiaiodicorte.it/?catId=9"    # Vacheron Constantin
       - "https://www.lorologiaiodicorte.it/?catId=10"   # Omega
@@ -1110,7 +1408,7 @@ sources:
     seller_trust: 4
     base_url: "https://www.gioielleriabonanno.it"
     start_urls:
-      - "https://www.gioielleriabonanno.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+      - "https://www.gioielleriabonanno.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku,description"
     paginate: {max: 20}
     items_path: ""
     available_value: "true"
@@ -1120,6 +1418,12 @@ sources:
       price: "prices.price"
       available: is_in_stock
       reference: sku
+      # Senza questa riga il punteggio crolla, ed e' successo davvero.
+      # Qui dentro stanno anno di garanzia, stato del vetro e del bracciale,
+      # cinturino originale, condizione della scatola: meta' di quello che il
+      # punteggio guarda. Toglierla per alleggerire il download ha portato un
+      # Monaco da 92 a 43 punti in un solo giro.
+      description: description
       url: permalink
 
   # --- Ed Watch: 104 orologi ------------------------------------------------
@@ -1135,7 +1439,7 @@ sources:
     seller_trust: 4
     base_url: "https://edwatch.it"
     start_urls:
-      - "https://edwatch.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+      - "https://edwatch.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku,description"
     paginate: {max: 10}
     items_path: ""
     available_value: "true"
@@ -1145,6 +1449,12 @@ sources:
       price: "prices.price"
       available: is_in_stock
       reference: sku
+      # Senza questa riga il punteggio crolla, ed e' successo davvero.
+      # Qui dentro stanno anno di garanzia, stato del vetro e del bracciale,
+      # cinturino originale, condizione della scatola: meta' di quello che il
+      # punteggio guarda. Toglierla per alleggerire il download ha portato un
+      # Monaco da 92 a 43 punti in un solo giro.
+      description: description
       url: permalink
 
   # Spenta: /?s=126710 non estrae nulla, /orologi/ e /shop/ danno 404.
@@ -1223,6 +1533,7 @@ sources:
     # non ci sono proprio, e non e' un errore da inseguire.
     # Le schede stanno su /scheda/..., gli esauriti sono marcati "Venduto".
     start_urls:
+      - "https://www.venditaorologiusati.it/catalogo/rolex-1/{page}"
       - "https://www.venditaorologiusati.it/catalogo/omega-2/{page}"
       - "https://www.venditaorologiusati.it/catalogo/tudor-5/{page}"
       - "https://www.venditaorologiusati.it/catalogo/tag-heuer-3/{page}"

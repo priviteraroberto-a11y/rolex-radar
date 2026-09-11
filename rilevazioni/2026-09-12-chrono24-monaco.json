@@ -1,0 +1,28 @@
+{
+  "fonte": "chrono24",
+  "data": "2026-09-12",
+  "nota": "TAG Heuer Monaco Calibre 11 CAW211P.FC6356 (il blu 'Steve McQueen', non il Gulf), solo Unione Europea. Fuori produzione, quindi il campione e' tutto usato: da qui la forbice larga fra 4.900 e 8.442 euro. Senza il filtro geografico la mediana sarebbe stata 6.397 invece di 7.100, trascinata giu' da Hong Kong e Giappone, dove il prezzo non e' confrontabile per via del 27,5% fra dazio e IVA all'importazione.",
+  "campioni": {
+    "monaco-gulf": [
+      {"p": 4900, "c": "IT"},
+      {"p": 5890, "c": "IT"},
+      {"p": 5990, "c": "BE"},
+      {"p": 5990, "c": "BE"},
+      {"p": 6290, "c": "IT"},
+      {"p": 6500, "c": "BE"},
+      {"p": 6600, "c": "DE"},
+      {"p": 6750, "c": "IT"},
+      {"p": 6850, "c": "MT"},
+      {"p": 7100, "c": "DE"},
+      {"p": 7209, "c": "BE"},
+      {"p": 7300, "c": "IT"},
+      {"p": 7330, "c": "DE"},
+      {"p": 7380, "c": "DE"},
+      {"p": 7760, "c": "IT"},
+      {"p": 7965, "c": "BE"},
+      {"p": 8186, "c": "DE"},
+      {"p": 8350, "c": "IT"},
+      {"p": 8442, "c": "SM"}
+    ]
+  }
+}
