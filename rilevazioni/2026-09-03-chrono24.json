@@ -1,7 +1,7 @@
 {
  "fonte": "chrono24",
  "data": "2026-09-03",
- "nota": "Rilevazione manuale sul catalogo Chrono24, 03/09/2026. Prezzi richiesti, spedizione esclusa, SOLO venditori dell'Unione Europea: fuori dall'Unione il prezzo esposto non e' confrontabile, perche' dazio e IVA aggiungono il 27,5%. Non sono annunci acquistabili e non generano notifiche: servono all'indice come termine di paragone.",
+ "nota": "Rilevazione manuale sul catalogo Chrono24, 03/09/2026. Prezzi richiesti, spedizione esclusa, SOLO venditori dell'Unione Europea: fuori dall'Unione il prezzo esposto non e' confrontabile, perche' dazio e IVA aggiungono il 27,5%. Non sono annunci acquistabili e non generano notifiche: servono all'indice come termine di paragone. I 4 campioni 'vc-overseas' del 03/09 sono stati tolti l'11/09: erano gli stessi annunci ancora online, e la rilevazione nuova per generazione li conteneva gia'. Tenerli avrebbe contato quattro volte due volte.",
  "campioni": {
   "monaco-gulf": [
    {
@@ -281,24 +281,6 @@
    {
     "p": 52000,
     "c": "SE"
-   }
-  ],
-  "vc-overseas": [
-   {
-    "p": 33000,
-    "c": "BG"
-   },
-   {
-    "p": 35000,
-    "c": "CZ"
-   },
-   {
-    "p": 34000,
-    "c": "FR"
-   },
-   {
-    "p": 34600,
-    "c": "DE"
    }
   ],
   "el-primero-a384": [

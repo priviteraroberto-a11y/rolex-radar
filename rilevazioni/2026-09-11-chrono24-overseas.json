@@ -1,0 +1,44 @@
+{
+  "fonte": "chrono24",
+  "data": "2026-09-11",
+  "nota": "Overseas 41 in acciaio, solo Unione Europea, raccolti a mano per dare un indice separato alle due generazioni. Esclusi gli oro rosa (4520V/210R a 60.500-64.300 e 4500V/000R a 38.400-41.800) e l'etichetta del pannello filtri, che per prezzo e posizione sembra un annuncio e non lo e'.",
+  "campioni": {
+    "vc-overseas-4520": [
+      {"p": 30500, "c": "ES"},
+      {"p": 33000, "c": "BG"},
+      {"p": 33600, "c": "ES"},
+      {"p": 34000, "c": "FR"},
+      {"p": 34600, "c": "ES"},
+      {"p": 34600, "c": "DE"},
+      {"p": 35000, "c": "CZ"}
+    ],
+    "vc-overseas-4500": [
+      {"p": 20350, "c": "NL"},
+      {"p": 23000, "c": "FR"},
+      {"p": 23500, "c": "FR"},
+      {"p": 23500, "c": "FR"},
+      {"p": 23990, "c": "ES"},
+      {"p": 23996, "c": "DK"},
+      {"p": 24800, "c": "DE"},
+      {"p": 24900, "c": "CZ"},
+      {"p": 25900, "c": "FR"},
+      {"p": 26500, "c": "DE"},
+      {"p": 26500, "c": "NL"},
+      {"p": 26750, "c": "NL"},
+      {"p": 27400, "c": "CZ"},
+      {"p": 28000, "c": "CZ"},
+      {"p": 28000, "c": "FR"},
+      {"p": 28616, "c": "NL"},
+      {"p": 30100, "c": "CZ"},
+      {"p": 32000, "c": "ES"},
+      {"p": 32000, "c": "IT"},
+      {"p": 32300, "c": "DE"},
+      {"p": 32750, "c": "ES"},
+      {"p": 34200, "c": "ES"},
+      {"p": 34699, "c": "IT"},
+      {"p": 35000, "c": "DE"},
+      {"p": 35000, "c": "ES"},
+      {"p": 35050, "c": "DE"}
+    ]
+  }
+}

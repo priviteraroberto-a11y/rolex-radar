@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -49,6 +50,25 @@ class Context:
 # raccolta
 # =============================================================================
 
+# I soli segnaposto che dipendono dall'orologio cercato. Tutto il resto —
+# `{page}` in testa — deve arrivare intatto a chi legge la fonte.
+_CERCA = re.compile(r"\{(?:q|ref|ref6)\}")
+
+
+def _sostituisci(tpl: str, term: str) -> str:
+    """Riempie `{q}`, `{ref}`, `{ref6}` e non tocca nient'altro.
+
+    Prima qui c'era `str.format()`, che pretende di conoscere *tutti* i
+    segnaposto della stringa: incontrando `{page}` sollevava KeyError e
+    l'indirizzo veniva buttato via con un warning nei log. Il giorno che le
+    fonti sono passate ai cataloghi paginati, ogni catalogo sarebbe sparito in
+    silenzio — lo stesso modo di perdere orologi che stiamo togliendo.
+    """
+    return (tpl.replace("{q}", quote(str(term)))
+               .replace("{ref}", str(term))
+               .replace("{ref6}", str(term)[:6]))
+
+
 def expand_urls(src_cfg: dict, watch: WatchView) -> dict:
     """Costruisce gli URL di ricerca di questa fonte per questo orologio.
 
@@ -63,15 +83,13 @@ def expand_urls(src_cfg: dict, watch: WatchView) -> dict:
     terms = watch.search_terms
     urls: list[str] = []
     for tpl in src_cfg.get("start_urls", []):
-        if "{" not in tpl:
+        if not _CERCA.search(tpl):
+            # Nessun termine da sostituire: e' un catalogo, uguale per tutti
+            # gli orologi. Il fetcher lo scarica una volta sola per giro.
             urls.append(tpl)
             continue
         for term in terms:
-            try:
-                urls.append(tpl.format(q=quote(str(term)), ref=term,
-                                       ref6=str(term)[:6]))
-            except (KeyError, IndexError):
-                log.warning("segnaposto sconosciuto in %s", tpl)
+            urls.append(_sostituisci(tpl, term))
 
     extra = (watch.watch.get("extra_urls") or {}).get(src_cfg.get("name"), [])
     urls.extend(extra)
@@ -144,6 +162,27 @@ def reject_reason(l: Listing, cfg) -> Optional[str]:
         getattr(cfg, "exclude_references", []) or [])
     if variante:
         return f"variante esclusa: {variante}"
+
+    # Esclusioni che valgono anche se la parola sta solo nella descrizione.
+    #
+    # Le `exclude_keywords` normali guardano **solo il titolo**, di proposito:
+    # il corpo di una pagina nomina quasi sempre anche altri orologi, e
+    # cercarci parole chiave scarterebbe annunci buoni per colpa del vicino.
+    #
+    # Ma esistono casi in cui il titolo non basta perche' non dice niente. Il
+    # Tudor Black Bay Chrono si chiama cosi' e basta, per tutti e quattro i
+    # quadranti che condividono la referenza 79360N: il Panda da 4.300 e il
+    # giallo da 8.000 hanno lo stesso titolo e la stessa referenza, e l'unica
+    # differenza e' scritta nella descrizione.
+    #
+    # Va usata con parsimonia, e solo dove il testo grezzo appartiene a un
+    # orologio solo — cosa oggi vera per le fonti JSON, che lo costruiscono
+    # dai campi della scheda, e ragionevole per quelle HTML, dove la vetrina
+    # dei prodotti correlati viene tagliata prima.
+    testo_norm = extract.norm(text)
+    for k in (getattr(cfg, "exclude_in_text", None) or []):
+        if extract.norm(k) in testo_norm:
+            return f"escluso dalla descrizione: {k}"
 
     if getattr(cfg, "identify_by", "reference") == "name":
         if not extract.matches_by_name(l.title, text, cfg.brand,

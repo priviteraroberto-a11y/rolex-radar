@@ -169,7 +169,21 @@ watches:
     references: ["M79360N-0002"]
     reference_stems: ["79360N"]
     search_terms: ["79360N", "Black Bay Chrono"]
+    # "Giallo"/"Yellow" e' il quarto quadrante sotto la stessa referenza
+    # 79360N: quello che da Zorzoli sta a 8.000 € contro i 4.330 di mediana
+    # del Panda. Da solo spostava l'indice di tutti gli altri.
+    #
+    # Una parola che NON va messa qui: "opalino". Il negozio lo descrive come
+    # "quadrante opalino con contatori giallo" — ma guardando la foto il
+    # quadrante e' giallo pieno con i contatori neri, e "opalino" e' proprio
+    # come si descrive il Panda. Escludendo quella parola avremmo cancellato
+    # l'orologio che cerchi, e nei log sarebbe sembrato che il mercato fosse
+    # semplicemente vuoto.
     exclude_keywords: ["Flamingo", "Pink", "Inter Miami", "Miami"]
+    # E deve valere anche quando la parola sta solo nella descrizione: il
+    # titolo di tutti e quattro i quadranti e' "Tudor Black Bay Chrono", e da
+    # li' non si distingue niente.
+    exclude_in_text: ["Giallo", "Yellow"]
     hard_filters:
       min_year: 2021
       max_year: 2027
@@ -275,30 +289,124 @@ watches:
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
-  - id: vc-overseas
+  # I due Overseas 41 in acciaio, tenuti separati come i due Royal Oak.
+  #
+  # Sono lo stesso orologio a una generazione di distanza — 41 mm, acciaio,
+  # tre cinturini — ma non lo stesso mercato: rilevazione Chrono24 UE dell'11
+  # settembre, 27.700 € di mediana il 4500V contro 34.000 € il 4520V. Un
+  # indice solo per entrambi si sarebbe piazzato in mezzo, e avrebbe detto a
+  # ogni 4500V che e' un affare e a ogni 4520V che e' caro.
+  #
+  # E attenzione alle due lettere dopo la barra, che qui sono il materiale
+  # esattamente come `ST` in Audemars Piguet:
+  #   4520V/**210A** e 4500V/**110A** = acciaio, 30-35.000 €
+  #   4520V/**210R** e 4500V/**000R** = oro rosa, 60-64.000 €
+  # La radice nuda (`4520V`) le prende tutte e due. La teniamo lo stesso —
+  # meta' dei venditori scrive solo quella, e perdere un acciaio vero costa
+  # piu' che scartare a mano un oro — con due reti sotto: le referenze escluse
+  # e le parole dell'oro.
+  #
+  # Avevo messo anche un tetto di prezzo sotto il primo oro rosa, e un test
+  # l'ha bocciato: e' la regola, gia' scritta sul Royal Oak, che il tetto non
+  # deve fare da filtro sul materiale. Se il mercato dell'acciaio sale, un
+  # tetto stretto comincia a tagliare via acciai veri, in silenzio. Il
+  # materiale lo decide la referenza, che e' un filtro esatto.
+  - id: vc-overseas-4520
     # photo: "https://..."
     group: 222-overseas-royaloak-elite-snoopy
     brand: Vacheron Constantin
-    model: Overseas
+    model: Overseas 41 (4520V)
+    nickname: Overseas nuovo
     references: ["4520V/210A-B128"]
     reference_stems: ["4520V"]
+    exclude_references: ["4520V/210R", "4520V/210T", "4520V/000R"]
     search_terms: ["4520V", "Overseas"]
     model_keywords: ["Overseas"]
-    exclude_keywords: ["222", "Patrimony", "Traditionnelle", "Fiftysix", "Malte"]
+    exclude_keywords: ["222", "Patrimony", "Traditionnelle", "Fiftysix", "Malte",
+                       "Chronograph", "Cronografo", "Dual Time", "Tourbillon",
+                       # materiali che non ti interessano
+                       "Oro", "Gold", "Rose", "Rosegold", "Rosé", "Platino",
+                       "Platinum", "18K", "18 K", "Titanio", "Titanium"]
     hard_filters:
-      min_year: 2016
+      min_year: 2023
       max_year: 2027
-      absolute_min_price_eur: 12000
-      absolute_max_price_eur: 70000
+      absolute_min_price_eur: 18000
+      absolute_max_price_eur: 68000
     preferences:
       target_years: [2024, 2025, 2026]
-      acceptable_years: [2021, 2022, 2023]
-      tolerated_years: [2018, 2019, 2020]
+      acceptable_years: [2023]
     fair_value:
-      # mediana UE 34.300 su 34 annunci (rilevazione 03/09/2026)
-      seed_price_eur: 34300
+      # mediana UE 34.000 su 7 annunci in acciaio (rilevazione 11/09/2026)
+      seed_price_eur: 34000
       # listino Vacheron: CHF 25.400 al cambio 1,0635 del 05/09/2026
       list_price_eur: 27000
+    notifications:
+      always_notify_if_underpriced_pct: 15.0
+
+  - id: vc-overseas-4500
+    group: speedmaster-monaco-blackbay-a384
+    brand: Vacheron Constantin
+    model: Overseas 41 (4500V)
+    nickname: Overseas precedente
+    references: ["4500V/110A-B128"]
+    reference_stems: ["4500V"]
+    exclude_references: ["4500V/000R", "4500V/000G", "4500V/000P"]
+    search_terms: ["4500V", "Overseas"]
+    model_keywords: ["Overseas"]
+    exclude_keywords: ["222", "Patrimony", "Traditionnelle", "Fiftysix", "Malte",
+                       "Chronograph", "Cronografo", "Dual Time", "Tourbillon",
+                       "Oro", "Gold", "Rose", "Rosegold", "Rosé", "Platino",
+                       "Platinum", "18K", "18 K", "Titanio", "Titanium"]
+    hard_filters:
+      # 2016 e' l'anno di lancio, 2025 l'ultimo plausibile: dopo c'e' il 4520V.
+      min_year: 2016
+      max_year: 2025
+      absolute_min_price_eur: 14000
+      absolute_max_price_eur: 56000
+    preferences:
+      target_years: [2022, 2023, 2024]
+      acceptable_years: [2019, 2020, 2021]
+      tolerated_years: [2016, 2017, 2018]
+    fair_value:
+      # mediana UE 27.700 su 26 annunci in acciaio (rilevazione 11/09/2026).
+      # Campione largo e prezzi sparsi fra 20.350 e 35.050: sul fuori
+      # produzione contano molto anno, corredo e stato, e il modello lo sa.
+      seed_price_eur: 27700
+      # Fuori produzione: nessun listino con cui confrontarsi.
+      #
+      # E una tabella degli anni tutta sua, che e' la cosa piu' importante di
+      # questo blocco.
+      #
+      # Quella generale e' centrata sul 2024 (=1,00) perche' descrive un
+      # orologio ancora in produzione, dove un esemplare dell'anno scorso e'
+      # davvero quello tipico. Il 4500V e' uscito di produzione: di esemplari
+      # 2024 non ce ne sono quasi, il tipico e' un 2021. Con la tabella
+      # generale ogni 4500V prendeva `_default` 0,89 e risultava caro rispetto
+      # a un indice che invece misura proprio quegli esemplari li'. Risultato:
+      # il Vacheron di Zorzoli veniva dato al 17% SOPRA il valore equo, e in
+      # pratica non sarebbe mai arrivata una notifica su questo modello.
+      #
+      # Qui il centro e' il 2021, e lo scarto fra il primo e l'ultimo anno di
+      # produzione resta stretto: su un fuori produzione l'anno pesa molto
+      # meno di corredo e stato.
+      #
+      # Gli anni vanno scritti senza virgolette, come nella tabella generale:
+      # la fusione e' per chiave, e `"2024"` e `2024` sono chiavi diverse —
+      # resterebbero tutte e due, e quale vince dipenderebbe dall'ordine.
+      multipliers:
+        year:
+          2026: 1.06
+          2025: 1.06
+          2024: 1.06
+          2023: 1.04
+          2022: 1.02
+          2021: 1.00
+          2020: 0.99
+          2019: 0.97
+          2018: 0.96
+          2017: 0.95
+          2016: 0.94
+          _default: 0.97
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -741,21 +849,60 @@ sources:
     unseen_only: false
     mark_seen: false
 
-  # --- VERIFICATA: funziona ------------------------------------------------
+  # =========================================================================
+  # UNA REGOLA SOPRA TUTTE: si legge il catalogo, non i risultati di una
+  # ricerca.
+  #
+  # Il 11/09 il Vacheron Overseas di Zorzoli era in vetrina a 25.900 € e il
+  # radar non lo vedeva. Non era rotto niente: la ricerca del sito restituisce
+  # i primi dieci risultati per pertinenza, e quello era l'undicesimo. Nessun
+  # errore, nessuna riga nei log, semplicemente un orologio che per il sistema
+  # non esisteva.
+  #
+  # E' lo stesso difetto di elencare le pagine a mano, o di puntare una fonte
+  # su una sola marca: funziona finche' non funziona, e quando smette non te
+  # lo dice. Trovare qualcosa e' facile; il lavoro e' trovarli tutti e poi
+  # scartarli con il punteggio.
+  #
+  # Quindi, in ordine di preferenza:
+  #   1. il catalogo in JSON che il sito usa per disegnarsi
+  #      (Shopify: /products.json — WooCommerce: /wp-json/wc/store/v1/products)
+  #   2. la pagina che elenca tutto il catalogo
+  #   3. una pagina per ogni marca che seguiamo
+  # La ricerca per parola chiave e' l'ultima spiaggia, non la prima scelta.
+  # =========================================================================
+
+  # --- PlusWatch: 1.550 orologi ---------------------------------------------
+  # Prima leggeva `?s={q}`: una ricerca per orologio, e solo quello che la
+  # ricerca del sito decideva di mostrare. Ora legge l'API pubblica di
+  # WooCommerce, che restituisce il catalogo intero.
+  #
+  # `_fields` non e' un vezzo: senza, ogni pagina pesa 4,6 MB perche' porta
+  # dentro il `srcset` di ogni immagine. Con, ne pesa 52 KB. Il prezzo di
+  # questa scelta e' che le immagini non arrivano, e in dashboard queste
+  # schede restano senza foto.
   - name: pluswatch
-    type: html
+    type: json
     enabled: true
     country: IT
     dealer: true
     seller_trust: 4
+    base_url: "https://www.pluswatch.it"
     start_urls:
-      - "https://www.pluswatch.it/?s={q}&post_type=product"
-    item_selector: "li.product, div.product, article.product"
+      - "https://www.pluswatch.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+    paginate: {max: 25}
+    items_path: ""
+    available_value: "true"
+    # Qui il prezzo arriva in centesimi (220000 = 2.200 €). Su Bonanno arriva
+    # in euro interi. Lo dice `currency_minor_unit`, dentro la risposta: e'
+    # per questo che la scala si legge dal dato e non si scrive qui.
+    price_scale_from: "prices.currency_minor_unit"
     fields:
-      title: "h2, h3, .woocommerce-loop-product__title"
-      price: ".price, .woocommerce-Price-amount"
-      url: "a@href"
-      image: "img@src"
+      title: name
+      price: "prices.price"
+      available: is_in_stock
+      reference: sku
+      url: permalink
 
   # --- Universo Oro (Roma) ---------------------------------------------------
   # Non e' una pagina HTML ma il catalogo in JSON che il sito usa per
@@ -774,9 +921,13 @@ sources:
     dealer: true
     seller_trust: 4
     base_url: "https://www.universo-oro.it"
+    # `{page}` e non due righe fisse: oggi il catalogo sta in due pagine, ma
+    # il giorno che passa da 121 a 210 orologi le due righe ne coprirebbero
+    # 200 e le altre dieci sparirebbero senza un errore. Il ciclo si ferma da
+    # solo quando una pagina torna vuota.
     start_urls:
-      - "https://www.universo-oro.it/api/public/watches?page=1&limit=100"
-      - "https://www.universo-oro.it/api/public/watches?page=2&limit=100"
+      - "https://www.universo-oro.it/api/public/watches?page={page}&limit=100"
+    paginate: {max: 20}
     items_path: items
     available_value: available
     fields:
@@ -791,15 +942,25 @@ sources:
       image: primaryImage
       url: "https://www.universo-oro.it/orologi/{id}"
 
-  # --- Zorzoli Orologi (Pavia) ----------------------------------------------
-  # Negozio su Shopify con quasi settecento orologi. La ricerca normale del
-  # sito e' larghissima — "Speedmaster" restituisce 145 risultati, Rolex
-  # compresi — ma Shopify espone gli stessi risultati in JSON, e li' i campi
-  # arrivano separati: prezzo, disponibilita', e dentro la scheda anche
-  # referenza, anno, condizione e corredo.
+  # --- Zorzoli Orologi (Pavia): 716 orologi ---------------------------------
+  # E' la fonte che ha insegnato la regola scritta sopra.
   #
-  # `available_value: "true"` e non "available": qui la disponibilita' e' un
-  # valore booleano, non una parola. Meta' del loro catalogo e' gia' venduto.
+  # Leggeva `/search/suggest.json?...&resources[limit]=10`: i primi dieci
+  # risultati per pertinenza. Il Vacheron Overseas a 25.900 € era in vetrina
+  # e il radar diceva "nessun riscontro", perche' arrivava undicesimo. Peggio:
+  # l'ordinamento per pertinenza cambia, quindi lo stesso orologio entrava e
+  # usciva dal database da un giro all'altro, e in dashboard sembrava venduto.
+  #
+  # Ora legge `/products.json`, che e' il catalogo intero: 716 schede in tre
+  # pagine, 1,7 MB, scaricate una volta per giro e usate per tutti e dodici
+  # gli orologi. Costa meno delle dodici ricerche di prima.
+  #
+  # Due cose da sapere su questo catalogo:
+  #   - **663 delle 716 schede sono gia' vendute.** Il negozio tiene online lo
+  #     storico. Senza `available` verrebbero tutte prese per disponibili.
+  #   - **il titolo non contiene la referenza**: "Vacheron Constantin
+  #     Overseas" e basta. Referenza, anno, condizione e corredo stanno in
+  #     `body_html`, in mezzo ai tag. Per questo c'e' `description`.
   - name: zorzoli
     type: json
     enabled: true
@@ -808,20 +969,30 @@ sources:
     seller_trust: 4
     base_url: "https://zorzoliorologi.com"
     start_urls:
-      - "https://zorzoliorologi.com/search/suggest.json?q={q}&resources[type]=product&resources[limit]=10"
-    items_path: resources.results.products
+      - "https://zorzoliorologi.com/collections/i-nostri-orologi/products.json?limit=250&page={page}"
+    paginate: {max: 12}
+    items_path: products
     available_value: "true"
     fields:
-      title: "{vendor} {title}"
-      price: price
-      available: available
-      image: image
+      title: title
+      description: body_html
+      price: "variants.0.price"
+      available: "variants.0.available"
+      image: "images.0.src"
       url: "https://zorzoliorologi.com/products/{handle}"
 
-  # --- della Rocca: dominio corretto, pagina modello -------------------------
-  # La loro ricerca interna ignora la referenza e restituisce tutto il catalogo
-  # Rolex, con "126710BLRO" appiccicato alle descrizioni per SEO. Inutilizzabile.
-  # Usiamo invece le pagine di modello, che contengono prodotti veri.
+  # --- della Rocca (Milano) --------------------------------------------------
+  # Qui c'era il buco piu' grosso, e il piu' invisibile: la fonte leggeva UNA
+  # pagina, "Rolex Professionali". Da quando il Rolex Pepsi e' uscito dai
+  # modelli seguiti, questa fonte non poteva piu' restituire niente di utile,
+  # per costruzione — e continuava a rispondere "ok" a ogni giro.
+  #
+  # Il sito ha una pagina per marca. Ci sono tutte quelle che ci servono, e
+  # sono queste. Se un giorno aggiungi un Patek o un IWC, la pagina va
+  # aggiunta qui: `o_3-Patek+Philippe.php`, `o_21-Iwc.php`.
+  #
+  # I selettori di prima (`div.prodotto`) non esistevano su questo sito: il
+  # contenitore vero e' `div.box_lista_prodotti2`.
   - name: dellarocca
     type: html
     enabled: true
@@ -829,31 +1000,55 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
-      - "https://www.dellaroccagioielli.it/o_32-Rolex+Professionali.php"
-    item_selector: "div.prodotto, div.box_prodotto, td.prodotto"
+      - "https://www.dellaroccagioielli.it/o_9-Audemars+Piguet.php"
+      - "https://www.dellaroccagioielli.it/o_24-Vacheron+Constantin.php"
+      - "https://www.dellaroccagioielli.it/o_4-Omega.php"
+      - "https://www.dellaroccagioielli.it/o_25-Zenith.php"
+      - "https://www.dellaroccagioielli.it/o_23-Tudor.php"
+      - "https://www.dellaroccagioielli.it/o_22-Tag+Heuer.php"
+      - "https://www.dellaroccagioielli.it/o_5-Officine+Panerai.php"
+    item_selector: "div.box_lista_prodotti2"
     fields:
       title: "h3, h2, a"
       price: ".prezzo, .price"
       url: "a@href"
       image: "img@src"
 
-  # --- Davide Pedretti: dominio corretto ------------------------------------
+  # --- Davide Pedretti: 28 orologi ------------------------------------------
+  # Catalogo piccolo, quindi la ricerca sbagliava di rado — ma sbagliava allo
+  # stesso modo. Una pagina sola di API e c'e' tutto.
   - name: davidepedretti
-    type: html
+    type: json
     enabled: true
     country: IT
     dealer: true
     seller_trust: 5
+    base_url: "https://shop.davidepedretti.com"
     start_urls:
-      - "https://shop.davidepedretti.com/?s={q}&post_type=product"
-    item_selector: "li.product, article.product, .product-item, .type-product"
+      - "https://shop.davidepedretti.com/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+    paginate: {max: 10}
+    items_path: ""
+    available_value: "true"
+    price_scale_from: "prices.currency_minor_unit"
     fields:
-      title: "h2, h3, .woocommerce-loop-product__title, .product-item__title"
-      price: ".price, .amount"
-      url: "a@href"
-      image: "img@src"
+      title: name
+      price: "prices.price"
+      available: is_in_stock
+      reference: sku
+      url: permalink
 
   # --- VERIFICATO A MANO: ha 3 Pepsi 126710BLRO a catalogo -------------------
+  # --- Conte Orologi (Roma): 1.227 orologi ----------------------------------
+  # Non e' WooCommerce e non ha API. Ma `/orologi/` e' una pagina sola,
+  # renderizzata dal server, che contiene TUTTO il catalogo: 1.227 schede,
+  # ognuna con titolo, referenza, prezzo e disponibilita' gia' separati.
+  # Un megabyte, una richiesta per giro.
+  #
+  # I selettori di prima (`li.product`) non trovavano niente: il tema e' fatto
+  # su misura e il contenitore si chiama `.box_orologio`.
+  #
+  # `max_detail` conta: senza, il radar aprirebbe 1.227 schede a ogni giro.
+  # Con, ne apre solo quelle che nominano un orologio seguito.
   - name: conteorologi
     type: html
     enabled: true
@@ -861,17 +1056,19 @@ sources:
     dealer: true
     seller_trust: 4
     start_urls:
-      - "https://www.conteorologi.it/?s={q}&post_type=product"
-    item_selector: "li.product, .product, article.product, .type-product"
+      - "https://www.conteorologi.it/orologi/"
+    item_selector: ".box_orologio"
+    max_detail: 30
     fields:
-      title: "h2, h3, .woocommerce-loop-product__title"
-      price: ".price, .amount, .woocommerce-Price-amount"
-      url: "a@href"
+      title: ".titolo a, .titolo"
+      price: ".prezzo"
+      url: ".titolo a@href, a@href"
       image: "img@src"
 
-  # --- VERIFICATO A MANO: ha un "GMT MASTER II BLRO REF. 126710" -------------
-  # Sito su misura, non WooCommerce. Scrive la referenza invertita: il matching
-  # ora la riconosce. I selettori sono un'ipotesi: verifica con `inspect`.
+  # --- L'Orologiaio di Corte (Bologna) --------------------------------------
+  # Stesso difetto di della Rocca: `catId=2` e' la pagina **Rolex**, l'unica
+  # che veniva letta. Sotto ci sono le categorie delle marche che seguiamo.
+  # (Rolex = 2, se un giorno torna utile.)
   - name: lorologiaiodicorte
     type: html
     enabled: true
@@ -879,7 +1076,13 @@ sources:
     dealer: true
     seller_trust: 3
     start_urls:
-      - "https://www.lorologiaiodicorte.it/?catId=2"
+      - "https://www.lorologiaiodicorte.it/?catId=26"   # Audemars Piguet
+      - "https://www.lorologiaiodicorte.it/?catId=9"    # Vacheron Constantin
+      - "https://www.lorologiaiodicorte.it/?catId=10"   # Omega
+      - "https://www.lorologiaiodicorte.it/?catId=15"   # Zenith
+      - "https://www.lorologiaiodicorte.it/?catId=1"    # Tudor
+      - "https://www.lorologiaiodicorte.it/?catId=12"   # Tag Heuer
+      - "https://www.lorologiaiodicorte.it/?catId=17"   # Panerai
     item_selector: ".product, .card, .item, .col-md-4, .col-lg-4"
     fields:
       title: "h6, h5, h2, a"
@@ -887,41 +1090,62 @@ sources:
       url: "a@href"
       image: "img@src"
 
-  # --- Da verificare col probe ----------------------------------------------
+  # --- Gioielleria Bonanno (Catania): 800 orologi ---------------------------
+  # Il secondo dominio, bonannovintage.it, e' vuoto: risponde ma non ha
+  # catalogo. Tolto.
+  #
+  # Attenzione a questo catalogo: 370 schede su 800 hanno prezzo 0, che qui
+  # vuol dire "prezzo su richiesta". Zero non e' un prezzo basso, e' un prezzo
+  # che non c'e': verrebbe fuori l'affare del secolo su ogni scheda. Il
+  # lettore JSON scarta i prezzi non positivi, ed e' l'unica ragione per cui
+  # questa fonte si puo' accendere.
+  #
+  # E qui il prezzo arriva in euro interi (`currency_minor_unit: 0`), non in
+  # centesimi come PlusWatch. Stesso software, scala diversa.
   - name: bonanno
-    type: html
+    type: json
     enabled: true
     country: IT
     dealer: true
     seller_trust: 4
+    base_url: "https://www.gioielleriabonanno.it"
     start_urls:
-      - "https://www.gioielleriabonanno.it/?s={q}&post_type=product"
-      - "https://www.bonannovintage.it/?s={q}"
-    item_selector: "li.product, .product, article"
+      - "https://www.gioielleriabonanno.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+    paginate: {max: 20}
+    items_path: ""
+    available_value: "true"
+    price_scale_from: "prices.currency_minor_unit"
     fields:
-      title: "h2, h3, .woocommerce-loop-product__title, .entry-title"
-      price: ".price, .amount"
-      url: "a@href"
-      image: "img@src"
+      title: name
+      price: "prices.price"
+      available: is_in_stock
+      reference: sku
+      url: permalink
 
+  # --- Ed Watch: 104 orologi ------------------------------------------------
+  # Prima leggeva `?s={q}` e la conclusione scritta qui era "hanno solo Batman
+  # e Sprite, quindi 0 pertinenti e' il risultato corretto". Era una
+  # conclusione tratta da cio' che la ricerca mostrava. Il catalogo vero ne ha
+  # 104, in due pagine.
   - name: edwatch
-    type: html
+    type: json
     enabled: true
     country: IT
     dealer: true
     seller_trust: 4
-    # VERIFICATO: la ricerca funziona. Oggi hanno solo Batman e Sprite, quindi
-    # 0 pertinenti è il risultato corretto, non un selettore rotto.
+    base_url: "https://edwatch.it"
     start_urls:
-      # La pagina /negozio/ portava 31 annunci grezzi, 0 pertinenti e 90
-      # secondi di giro: la ricerca copre gia' tutto il catalogo.
-      - "https://edwatch.it/?s={q}&post_type=product"
-    item_selector: "li.product, .product, article"
+      - "https://edwatch.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku"
+    paginate: {max: 10}
+    items_path: ""
+    available_value: "true"
+    price_scale_from: "prices.currency_minor_unit"
     fields:
-      title: "h2, h3, .woocommerce-loop-product__title"
-      price: ".price, .amount"
-      url: "a@href"
-      image: "img@src"
+      title: name
+      price: "prices.price"
+      available: is_in_stock
+      reference: sku
+      url: permalink
 
   # Spenta: /?s=126710 non estrae nulla, /orologi/ e /shop/ danno 404.
   # Il loro sito non espone un catalogo leggibile. Da coprire con newsletter.
@@ -989,18 +1213,33 @@ sources:
     country: IT
     dealer: true
     seller_trust: 3
-    # Catalogo Rolex: /catalogo/rolex-1. Le schede stanno su /scheda/...
-    # Gli esauriti sono marcati "Venduto": il filtro li scarta da solo.
-    # Il catalogo risponde ma non estrae: probabilmente renderizzato in JS.
-    # Verificare con `inspect orologifamosi -v` prima di spegnerla.
+    # Terza fonte puntata solo su Rolex, terza corretta. Qui i cataloghi di
+    # marca sono paginati (`/catalogo/omega-2/2`, `/3`...), quindi `{page}`.
+    # La prima pagina non ha il numero, e infatti la serie parte da 1 e
+    # `/catalogo/omega-2/1` esiste. Il ciclo si ferma quando una pagina non
+    # porta niente di nuovo.
+    #
+    # Non hanno Vacheron ne' Audemars Piguet ne' Panerai: quelle marche qui
+    # non ci sono proprio, e non e' un errore da inseguire.
+    # Le schede stanno su /scheda/..., gli esauriti sono marcati "Venduto".
     start_urls:
-      - "https://www.venditaorologiusati.it/catalogo/rolex-1"
-    item_selector: "li.product, .product, article"
+      - "https://www.venditaorologiusati.it/catalogo/omega-2/{page}"
+      - "https://www.venditaorologiusati.it/catalogo/tudor-5/{page}"
+      - "https://www.venditaorologiusati.it/catalogo/tag-heuer-3/{page}"
+      - "https://www.venditaorologiusati.it/catalogo/zenith-10/{page}"
+    paginate: {max: 15}
+    # Il commento di prima diceva "il catalogo risponde ma non estrae:
+    # probabilmente renderizzato in JS". Era sbagliato, e vale la pena dire
+    # perche': i link delle schede sono scritti **relativi**
+    # (`scheda/omega-...`, senza barra iniziale), quindi il selettore
+    # `a[href*="/scheda/"]` non li trovava e sembrava una pagina vuota.
+    # Le schede ci sono tutte, nell'HTML, gia' pronte.
+    item_selector: ".col-lg-4.marginbot-l, .col-md-4.marginbot-l"
     fields:
-      title: "h2, h3, .woocommerce-loop-product__title"
-      price: ".price, .amount"
+      title: ".carat1b, .carat1b strong"
+      price: ".carat1x"
       url: "a@href"
-      image: "img@src"
+      image: "img.w100@src"
 
   # --- Spente: verificate come non utilizzabili ------------------------------
   # orologiepassioni.com restituisce una pagina vuota (sito JS o dismesso).

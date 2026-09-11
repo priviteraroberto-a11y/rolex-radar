@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 
 from .. import extract
 from ..models import Listing
+from . import pagine
 from .base import BaseSource, SourceResult
 
 log = logging.getLogger("radar.html")
@@ -47,28 +48,49 @@ class HtmlSource(BaseSource):
         errors: list[str] = []
         pages_ok = 0
 
-        for url in self.cfg.get("start_urls", []):
-            html, detail = self.ctx.fetcher.get(url)
-            if html is None:
-                errors.append(f"{url} → {detail}")
-                continue
-            pages_ok += 1
-            soup = BeautifulSoup(html, "lxml")
-            extract.togli_eco_ricerca(soup)
+        visti: set[str] = set()
+        for gruppo in pagine.serie(self.cfg):
+            for url in gruppo:
+                html, detail = self.ctx.fetcher.get(url)
+                if html is None:
+                    errors.append(f"{url} → {detail}")
+                    break
+                pages_ok += 1
+                soup = BeautifulSoup(html, "lxml")
+                extract.togli_eco_ricerca(soup)
+                base = _base_dichiarata(soup, url)
 
-            found = list(self._from_jsonld(soup, url))
-            if not found:
-                found = list(self._from_selectors(soup, url))
-            if not found:
-                found = list(self._from_heuristic(soup, url))
+                found = list(self._from_jsonld(soup, base))
+                if not found:
+                    found = list(self._from_selectors(soup, base))
+                if not found:
+                    found = list(self._from_heuristic(soup, base))
 
-            log.info("%s: %d annunci grezzi da %s", self.name, len(found), url)
-            listings.extend(found)
+                # Le pagine oltre l'ultima esistono e rispondono: restituiscono
+                # la griglia vuota, o ripetono l'ultima. In tutti e due i casi
+                # la fine si riconosce cosi': niente di nuovo.
+                nuovi = [l for l in found if l.url not in visti]
+                visti.update(l.url for l in nuovi)
+                log.info("%s: %d annunci grezzi (%d nuovi) da %s",
+                         self.name, len(found), len(nuovi), url)
+                listings.extend(nuovi)
+                if not nuovi and len(gruppo) > 1:
+                    break
 
-        # arricchimento: se la pagina di dettaglio è raggiungibile, la leggiamo
+        # Arricchimento: la scheda del prodotto contiene anno, corredo e
+        # condizioni, che nella griglia non ci sono.
+        #
+        # Ma va fatto SOLO su quello che ci riguarda. Da quando le fonti
+        # leggono il catalogo intero invece dei risultati di una ricerca, una
+        # sola pagina puo' portare milleduecento schede: scaricarle tutte
+        # sarebbe un'ora di giro e un piccolo attacco al sito del negozio, per
+        # arricchire dodici orologi.
+        #
+        # Il setaccio e' volutamente grossolano — nome o referenza nel testo
+        # gia' raccolto — perche' qui un falso positivo costa una richiesta in
+        # piu', mentre un falso negativo costa un orologio.
         if self.cfg.get("fetch_detail", True):
-            for l in listings:
-                self._augment_from_detail(l)
+            self._augment_relevant(listings)
 
         ok = pages_ok > 0
         detail = "; ".join(errors) if errors else "ok"
@@ -141,7 +163,7 @@ class HtmlSource(BaseSource):
                 source=self.name,
                 url=url,
                 title=title or "",
-                raw_text=node.get_text(" ", strip=True)[:4000],
+                raw_text=_testo(node),
                 raw_price=price_txt,
                 image=image,
             )
@@ -186,7 +208,7 @@ class HtmlSource(BaseSource):
                 continue
             seen.add(url)
 
-            text = block.get_text(" ", strip=True)
+            text = _testo(block)
             heading = block.find(["h1", "h2", "h3", "h4"])
             title = (heading.get_text(" ", strip=True) if heading
                      else a.get_text(" ", strip=True) or text)
@@ -204,6 +226,21 @@ class HtmlSource(BaseSource):
             )
 
     # -- dettaglio ------------------------------------------------------------
+
+    def _augment_relevant(self, listings: list[Listing]) -> None:
+        tetto = int(self.cfg.get("max_detail", 40))
+        candidati = [l for l in listings
+                     if self.ctx.config.riguarda_un_orologio(
+                         f"{l.title} {l.raw_text or ''}")]
+        if len(candidati) > tetto:
+            log.warning("%s: %d schede pertinenti, ne apro %d (max_detail)",
+                        self.name, len(candidati), tetto)
+            candidati = candidati[:tetto]
+        if candidati:
+            log.info("%s: apro %d schede su %d annunci",
+                     self.name, len(candidati), len(listings))
+        for l in candidati:
+            self._augment_from_detail(l)
 
     def _augment_from_detail(self, listing: Listing) -> None:
         """Scarica la scheda prodotto: lì stanno anno, garanzia, corredo."""
@@ -228,6 +265,36 @@ class HtmlSource(BaseSource):
 # =============================================================================
 # helper
 # =============================================================================
+
+def _testo(node) -> str:
+    """Il testo del blocco, comprese le scritte dentro le immagini.
+
+    Molti negozi non scrivono "Venduto": ci mettono sopra un bollino, cioe'
+    `<img alt="Venduto">`. Il testo normale non lo vede, e un orologio gia'
+    venduto arriva in dashboard come disponibile — con il suo bel punteggio,
+    perche' di solito e' proprio quello a buon mercato a essere stato venduto
+    per primo.
+    """
+    parti = [node.get_text(" ", strip=True)]
+    parti += [img["alt"].strip() for img in node.find_all("img", alt=True)
+              if img["alt"].strip()]
+    return " ".join(parti)[:4000]
+
+
+def _base_dichiarata(soup: BeautifulSoup, url: str) -> str:
+    """L'indirizzo su cui vanno risolti i link relativi della pagina.
+
+    Di norma e' la pagina stessa. Ma se c'e' un `<base href>`, comanda quello,
+    e la differenza non e' teorica: Orologi Famosi scrive i link delle schede
+    senza barra iniziale (`scheda/omega-...`) e dichiara `<base
+    href="https://www.venditaorologiusati.it/">`. Risolvendoli sulla pagina
+    del catalogo verrebbe fuori `/catalogo/scheda/omega-...`, che non esiste:
+    o l'annuncio viene scartato come "pagina di elenco", o finisce in
+    dashboard con un link morto. Tutti e due sono gia' successi.
+    """
+    tag = soup.find("base", href=True)
+    return urljoin(url, tag["href"]) if tag else url
+
 
 def _same_page(url: str, base_url: str) -> bool:
     """L'URL punta alla pagina che stiamo leggendo?"""

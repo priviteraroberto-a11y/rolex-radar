@@ -13,30 +13,53 @@ anno, condizioni, scatola e documenti arrivano gia' separati, invece di dover
 essere indovinati dal testo. Nessun prodotto correlato da tagliare, nessun
 prezzo barrato da distinguere, nessuna vetrina che inquina l'anno.
 
-Una richiesta per pagina, due in tutto: piu' leggero di una singola ricerca
-HTML, e infinitamente piu' affidabile.
+Poi si e' scoperto che quasi tutti i negozi ne hanno uno: Shopify espone
+`/products.json`, WooCommerce espone `/wp-json/wc/store/v1/products`. Sono
+cataloghi **interi**, non risultati di ricerca — ed e' questa la differenza
+che conta, perche' una ricerca restituisce i primi dieci e gli altri li perde
+in silenzio.
 
 Come si configura
 -----------------
     - name: universooro
       type: json
-      start_urls: ["https://.../api/public/watches?page=1&limit=100"]
-      items_path: items          # dove sta la lista dentro la risposta
+      start_urls: ["https://.../api/public/watches?page={page}&limit=100"]
+      paginate: {da: 1, max: 20}   # si ferma da sola quando la pagina e' vuota
+      items_path: items            # dove sta la lista dentro la risposta
       fields:
         title: "{brand} {model} {referenceNumber}"   # modello con segnaposto
         price: pricePublic                            # oppure nome di campo
         url: "https://.../orologi/{id}"
 
 Un valore fra graffe e' un modello da riempire con i campi dell'elemento; un
-valore senza graffe e' il nome di un campo da leggere cosi' com'e'.
+valore senza graffe e' il nome di un campo da leggere cosi' com'e'. In tutti e
+due i casi il nome puo' essere un percorso: `prices.price`, `variants.0.price`.
+
+Le tre trappole trovate sui dati veri
+-------------------------------------
+1. **La scala del prezzo cambia da sito a sito.** WooCommerce restituisce il
+   prezzo in centesimi su PlusWatch (`220000` = 2.200 €) e in euro interi su
+   Bonanno (`23000` = 23.000 €). La distingue solo il campo
+   `currency_minor_unit`, che sta dentro la risposta. Un divisore scritto a
+   mano sarebbe sbagliato di cento volte su uno dei due — cioe' o una valanga
+   di finti affari, o il silenzio totale.
+   Per questo `price_scale_from` punta al campo, e non e' un numero.
+2. **La descrizione e' HTML.** Zorzoli tiene referenza, anno, condizione e
+   corredo dentro `body_html`, con i tag in mezzo. Vanno tolti, altrimenti il
+   riconoscimento legge `<p>` invece di `4500V`.
+3. **Il prezzo mancante non e' zero.** Meta' del catalogo di Bonanno ha prezzo
+   0, che vuol dire "su richiesta". Zero passerebbe per l'affare del secolo.
 """
 from __future__ import annotations
 
+import html as _html
 import json
 import logging
+import re
 from typing import Any, Iterator
 
 from ..models import Listing
+from . import pagine
 from .base import BaseSource, SourceResult
 
 log = logging.getLogger("radar.json")
@@ -48,27 +71,37 @@ class JsonSource(BaseSource):
         listings: list[Listing] = []
         errori: list[str] = []
         pagine_ok = 0
+        visti: set[str] = set()
 
-        for url in self.cfg.get("start_urls", []):
-            corpo, detail = self.ctx.fetcher.get(url)
-            if corpo is None:
-                errori.append(f"{url} → {detail}")
-                continue
-            try:
-                dati = json.loads(corpo)
-            except (json.JSONDecodeError, TypeError) as exc:
-                errori.append(f"{url} → risposta non JSON: {exc}")
-                continue
+        for gruppo in pagine.serie(self.cfg):
+            for url in gruppo:
+                corpo, detail = self.ctx.fetcher.get(url)
+                if corpo is None:
+                    errori.append(f"{url} → {detail}")
+                    break        # la pagina non risponde: inutile insistere
+                try:
+                    dati = json.loads(corpo)
+                except (json.JSONDecodeError, TypeError) as exc:
+                    errori.append(f"{url} → risposta non JSON: {exc}")
+                    break
 
-            pagine_ok += 1
-            elementi = _scava(dati, self.cfg.get("items_path", "items"))
-            if not isinstance(elementi, list):
-                errori.append(f"{url} → '{self.cfg.get('items_path')}' non e' una lista")
-                continue
-            trovati = list(self._leggi(elementi))
-            log.info("%s: %d annunci da %s", self.name, len(trovati), url)
-            listings.extend(trovati)
+                elementi = _scava(dati, self.cfg.get("items_path", "items"))
+                if not isinstance(elementi, list):
+                    errori.append(
+                        f"{url} → '{self.cfg.get('items_path')}' non e' una lista")
+                    break
 
+                pagine_ok += 1
+                if not elementi:
+                    break        # pagina vuota: questo catalogo e' finito
+
+                trovati = [l for l in self._leggi(elementi) if l.url not in visti]
+                visti.update(l.url for l in trovati)
+                log.info("%s: %d annunci da %s", self.name, len(trovati), url)
+                listings.extend(trovati)
+
+        log.info("%s: %d annunci in totale su %d pagine",
+                 self.name, len(listings), pagine_ok)
         ok = pagine_ok > 0
         return SourceResult(self.name, ok, listings,
                             "; ".join(errori) if errori else "ok")
@@ -84,14 +117,16 @@ class JsonSource(BaseSource):
             if not url:
                 continue
 
+            descrizione = self._descrizione(e, campi)
+
             l = Listing(
                 source=self.name,
                 url=str(url),
-                title=str(_valore(e, campi.get("title")) or "")[:200],
+                title=_pulisci(_valore(e, campi.get("title")))[:200],
                 image=_assoluto(_valore(e, campi.get("image")), self.cfg),
             )
 
-            prezzo = _numero(_valore(e, campi.get("price")))
+            prezzo = self._prezzo(e, campi)
             if prezzo:
                 l.price_original = prezzo
                 l.currency = str(self.cfg.get("currency", "EUR"))
@@ -114,10 +149,39 @@ class JsonSource(BaseSource):
 
             # Il testo grezzo serve al riconoscimento, che lavora su stringhe.
             # Qui lo componiamo dai campi invece di raccoglierlo dalla pagina:
-            # contiene solo questo orologio, e nient'altro.
-            l.raw_text = " ".join(str(v) for v in e.values()
-                                  if isinstance(v, (str, int, float)))[:4000]
+            # contiene solo questo orologio, e nient'altro. Niente prodotti
+            # correlati, niente vetrina, niente eco della ricerca.
+            l.raw_text = " ".join(
+                x for x in (l.title, descrizione, _scalari(e)) if x
+            )[:4000]
             yield l
+
+    # ------------------------------------------------------------------
+
+    def _descrizione(self, e: dict, campi: dict) -> str:
+        """Il testo lungo della scheda, ripulito dai tag."""
+        spec = campi.get("description")
+        if not spec:
+            return ""
+        pezzi = spec if isinstance(spec, list) else [spec]
+        return " ".join(_senza_tag(_valore(e, p)) for p in pezzi).strip()
+
+    def _prezzo(self, e: dict, campi: dict) -> float | None:
+        """Il prezzo, riportato alla scala giusta.
+
+        `price_scale_from` punta al campo che dice quante cifre decimali sono
+        gia' dentro il numero. Se il campo manca la scala e' 1: meglio un
+        prezzo grezzo e visibilmente assurdo che uno diviso a caso.
+        """
+        grezzo = _numero(_valore(e, campi.get("price")))
+        if grezzo is None:
+            return None
+        scala = self.cfg.get("price_scale_from")
+        if scala:
+            cifre = _intero_semplice(_valore(e, scala))
+            if cifre:
+                grezzo = grezzo / (10 ** cifre)
+        return grezzo or None
 
 
 # =============================================================================
@@ -125,12 +189,17 @@ class JsonSource(BaseSource):
 # =============================================================================
 
 def _scava(dati: Any, percorso: str) -> Any:
-    """`items` oppure `data.results`: segue il percorso puntato."""
+    """`items`, `data.results`, `variants.0.price`: segue il percorso puntato."""
     if not percorso:
         return dati
-    for pezzo in percorso.split("."):
+    for pezzo in str(percorso).split("."):
         if isinstance(dati, dict):
             dati = dati.get(pezzo)
+        elif isinstance(dati, list):
+            if not pezzo.lstrip("-").isdigit():
+                return None
+            i = int(pezzo)
+            dati = dati[i] if -len(dati) <= i < len(dati) else None
         else:
             return None
     return dati
@@ -140,6 +209,7 @@ def _valore(elemento: dict, spec: Any) -> Any:
     """Legge un campo, oppure riempie un modello con piu' campi.
 
     "pricePublic"            -> il valore di quel campo
+    "variants.0.price"       -> il valore in fondo al percorso
     "{brand} {model}"        -> i due campi uniti
     "https://x.it/p/{id}"    -> un indirizzo costruito
     """
@@ -147,11 +217,11 @@ def _valore(elemento: dict, spec: Any) -> Any:
         return None
     testo = str(spec)
     if "{" not in testo:
-        return elemento.get(testo)
+        return _scava(elemento, testo)
     fuori = []
 
     def riempi(pezzo: str) -> str:
-        v = elemento.get(pezzo)
+        v = _scava(elemento, pezzo)
         if v is None:
             fuori.append(pezzo)
             return ""
@@ -170,10 +240,42 @@ def _valore(elemento: dict, spec: Any) -> Any:
     return risultato.strip()
 
 
+def _scalari(e: dict) -> str:
+    """I valori semplici dell'elemento, per il riconoscimento.
+
+    Solo il primo livello e solo stringhe e numeri: le liste annidate
+    porterebbero dentro varianti, immagini e categorie di tutto il negozio.
+    Le stringhe che sembrano HTML sono ripulite: `body_html` finisce qui, e
+    senza pulizia il testo grezzo sarebbe per meta' fatto di tag.
+    """
+    pezzi = []
+    for v in e.values():
+        if isinstance(v, str):
+            pezzi.append(_senza_tag(v) if "<" in v else v)
+        elif isinstance(v, (int, float)) and not isinstance(v, bool):
+            pezzi.append(str(v))
+    return " ".join(pezzi)
+
+
+def _senza_tag(v: Any) -> str:
+    """Toglie i tag e riporta le entita' al loro carattere."""
+    if not v:
+        return ""
+    testo = re.sub(r"<[^>]+>", " ", str(v))
+    return re.sub(r"\s+", " ", _html.unescape(testo)).strip()
+
+
+def _pulisci(v: Any) -> str:
+    """I titoli WooCommerce arrivano con le entita' dentro: `ROLEX &#8211; 6827`."""
+    return _senza_tag(v) if v is not None else ""
+
+
 def _assoluto(valore: Any, cfg: dict) -> Any:
     if not valore:
         return None
     testo = str(valore)
+    if testo.startswith("//"):
+        return "https:" + testo
     base = str(cfg.get("base_url", "")).rstrip("/")
     if testo.startswith("/") and base:
         return base + testo
@@ -192,6 +294,13 @@ def _intero(v: Any) -> int | None:
     try:
         n = int(float(v))
         return n if 1900 <= n <= 2100 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _intero_semplice(v: Any) -> int | None:
+    try:
+        return int(float(v))
     except (TypeError, ValueError):
         return None
 

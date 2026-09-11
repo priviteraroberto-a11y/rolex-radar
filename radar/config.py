@@ -199,6 +199,18 @@ class WatchView:
     def exclude_keywords(self) -> list[str]:
         return self.watch.get("exclude_keywords", [])
 
+    @property
+    def exclude_in_text(self) -> list[str]:
+        """Parole che escludono anche se stanno solo nella descrizione.
+
+        Le `exclude_keywords` guardano solo il titolo, perche' il corpo di una
+        pagina nomina quasi sempre anche altri orologi. Questa e' la deroga,
+        per i casi in cui il titolo non distingue niente: quattro quadranti di
+        Black Bay Chrono si chiamano tutti "Tudor Black Bay Chrono" e portano
+        tutti la referenza 79360N.
+        """
+        return self.watch.get("exclude_in_text", [])
+
     def get(self, dotted: str, default: Any = None) -> Any:
         """Valore dell'orologio, fuso con quello globale.
 

@@ -57,8 +57,30 @@ def _selezione(cfg) -> str:
     nearby = ", ".join(geo.get("nearby", ["EU", "CH"]))
     n = cfg.get("notifications", {}) or {}
     return f"""
-<p>Un annuncio attraversa tre cancelli, in quest'ordine. Solo il primo puo'
-escluderlo per sempre.</p>
+<h3>0. Prima di tutto: guardare tutto</h3>
+<p>Nessun cancello serve a niente se l'annuncio non arriva mai. Per questo il
+radar non <em>cerca</em> sui siti dei negozi: ne <b>legge il catalogo intero</b>,
+e poi scarta col punteggio.</p>
+<p>La differenza l'ha insegnata un Vacheron Overseas. Era in vetrina da Zorzoli
+a 25.900&nbsp;€, e il radar diceva &ldquo;nessun riscontro&rdquo;. Non era rotto
+niente: la ricerca di quel sito restituisce i primi dieci risultati per
+pertinenza, e quello arrivava undicesimo. Nessun errore, nessuna riga nei log —
+solo un orologio che per il sistema non esisteva. E siccome l'ordine per
+pertinenza cambia, lo stesso annuncio entrava e usciva dal database da un giro
+all'altro.</p>
+<p>Lo stesso difetto si presenta sotto altre forme, tutte silenziose: elencare
+a mano le pagine di un catalogo (finche' il negozio non ne aggiunge una), o
+puntare una fonte su una marca sola (tre fonti leggevano solo la pagina Rolex,
+che e' una marca che non segui piu'). In tutti e tre i casi la fonte continua a
+rispondere &ldquo;ok&rdquo; mentre non porta piu' niente.</p>
+<p>Oggi, dove il sito lo permette, si legge: il catalogo in JSON che il sito usa
+per disegnarsi, oppure la pagina che elenca tutto, oppure una pagina per ogni
+marca seguita. La ricerca per parola chiave e' l'ultima spiaggia. Costa anche
+meno: un catalogo si scarica una volta per giro e vale per tutti gli orologi,
+mentre le ricerche erano una per orologio.</p>
+
+<p>Fatto questo, un annuncio attraversa tre cancelli, in quest'ordine. Solo il
+primo puo' escluderlo per sempre.</p>
 
 <h3>1. Identificazione — l'unico filtro assoluto</h3>
 <p>L'annuncio parla di <em>questo</em> orologio? Il riconoscimento avviene in
