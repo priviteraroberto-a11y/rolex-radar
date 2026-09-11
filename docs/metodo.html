@@ -56,7 +56,7 @@
   <a class="back" href="index.html">&larr; torna al radar</a>
   <div class="eyebrow">RADAR OROLOGI</div>
   <h1>Logiche di selezione</h1>
-  <div class="upd">generata dal config attivo il 10/09/2026 22:29</div>
+  <div class="upd">generata dal config attivo il 11/09/2026 02:48</div>
 
   <section>
     <h2>Il principio</h2>
@@ -73,8 +73,30 @@
     <h2>1. La selezione</h2>
     <p class="sub">chi entra, chi viene ignorato, chi entra ma non ti disturba</p>
     
-<p>Un annuncio attraversa tre cancelli, in quest'ordine. Solo il primo puo'
-escluderlo per sempre.</p>
+<h3>0. Prima di tutto: guardare tutto</h3>
+<p>Nessun cancello serve a niente se l'annuncio non arriva mai. Per questo il
+radar non <em>cerca</em> sui siti dei negozi: ne <b>legge il catalogo intero</b>,
+e poi scarta col punteggio.</p>
+<p>La differenza l'ha insegnata un Vacheron Overseas. Era in vetrina da Zorzoli
+a 25.900&nbsp;€, e il radar diceva &ldquo;nessun riscontro&rdquo;. Non era rotto
+niente: la ricerca di quel sito restituisce i primi dieci risultati per
+pertinenza, e quello arrivava undicesimo. Nessun errore, nessuna riga nei log —
+solo un orologio che per il sistema non esisteva. E siccome l'ordine per
+pertinenza cambia, lo stesso annuncio entrava e usciva dal database da un giro
+all'altro.</p>
+<p>Lo stesso difetto si presenta sotto altre forme, tutte silenziose: elencare
+a mano le pagine di un catalogo (finche' il negozio non ne aggiunge una), o
+puntare una fonte su una marca sola (tre fonti leggevano solo la pagina Rolex,
+che e' una marca che non segui piu'). In tutti e tre i casi la fonte continua a
+rispondere &ldquo;ok&rdquo; mentre non porta piu' niente.</p>
+<p>Oggi, dove il sito lo permette, si legge: il catalogo in JSON che il sito usa
+per disegnarsi, oppure la pagina che elenca tutto, oppure una pagina per ogni
+marca seguita. La ricerca per parola chiave e' l'ultima spiaggia. Costa anche
+meno: un catalogo si scarica una volta per giro e vale per tutti gli orologi,
+mentre le ricerche erano una per orologio.</p>
+
+<p>Fatto questo, un annuncio attraversa tre cancelli, in quest'ordine. Solo il
+primo puo' escluderlo per sempre.</p>
 
 <h3>1. Identificazione — l'unico filtro assoluto</h3>
 <p>L'annuncio parla di <em>questo</em> orologio? Il riconoscimento avviene in
@@ -262,7 +284,7 @@ sanita', tenuto largo apposta.</p>
 <table class="orologi">
   <tr><th>orologio</th><th>riconosciuto per</th><th class="n">stima</th>
       <th class="n">banda di prezzo</th></tr>
-  <tr><td><b>TAG Heuer Monaco “Gulf”</b></td><td class='ref'>CAW211P.FC6356, CAW211P</td><td class='n'>7.000 €</td><td class='n'>2.000 € – 14.000 €</td></tr><tr><td><b>Omega Speedmaster Moonwatch Professional</b></td><td class='ref'>310.30.42.50.01.002, 310.30.42.50.01</td><td class='n'>6.800 €</td><td class='n'>3.000 € – 14.000 €</td></tr><tr><td><b>Tudor Black Bay Chrono “Flamingo Blue”</b></td><td class='ref'>nome: Flamingo</td><td class='n'>7.900 €</td><td class='n'>3.500 € – 16.000 €</td></tr><tr><td><b>Tudor Black Bay Chrono “Panda”</b></td><td class='ref'>M79360N-0002, 79360N</td><td class='n'>4.330 €</td><td class='n'>1.900 € – 9.000 €</td></tr><tr><td><b>Zenith Elite Ultra Thin</b></td><td class='ref'>nome: Elite</td><td class='n'>3.500 €</td><td class='n'>1.500 € – 12.000 €</td></tr><tr><td><b>Vacheron Constantin Historiques 222</b></td><td class='ref'>4200H/222A-B934, 4200H</td><td class='n'>49.000 €</td><td class='n'>25.000 € – 160.000 €</td></tr><tr><td><b>Vacheron Constantin Overseas</b></td><td class='ref'>4520V/210A-B128, 4520V</td><td class='n'>34.300 €</td><td class='n'>12.000 € – 70.000 €</td></tr><tr><td><b>Audemars Piguet Royal Oak Jumbo Extra-Thin “Jumbo”</b></td><td class='ref'>16202ST.OO.1240ST.02, 16202ST</td><td class='n'>79.950 €</td><td class='n'>30.000 € – 145.000 €</td></tr><tr><td><b>Audemars Piguet Royal Oak Selfwinding 41</b></td><td class='ref'>15510ST.OO.1320ST.06, 15510ST</td><td class='n'>47.300 €</td><td class='n'>21.000 € – 105.000 €</td></tr><tr><td><b>Zenith Chronomaster Revival A384</b></td><td class='ref'>03.A384.400/21.M384, 03.A384.400/3817.M3817, A384</td><td class='n'>7.200 €</td><td class='n'>3.000 € – 18.000 €</td></tr><tr><td><b>Omega Speedmaster Moonwatch “Silver Snoopy Award 50th”</b></td><td class='ref'>nome: Snoopy</td><td class='n'>13.900 €</td><td class='n'>5.850 € – 28.600 €</td></tr><tr><td><b>Panerai Luminor</b></td><td class='ref'>nome: Luminor</td><td class='n'>3.990 €</td><td class='n'>1.800 € – 11.000 €</td></tr>
+  <tr><td><b>TAG Heuer Monaco “Gulf”</b></td><td class='ref'>CAW211P.FC6356, CAW211P</td><td class='n'>7.000 €</td><td class='n'>2.000 € – 14.000 €</td></tr><tr><td><b>Omega Speedmaster Moonwatch Professional</b></td><td class='ref'>310.30.42.50.01.002, 310.30.42.50.01</td><td class='n'>6.800 €</td><td class='n'>3.000 € – 14.000 €</td></tr><tr><td><b>Tudor Black Bay Chrono “Flamingo Blue”</b></td><td class='ref'>nome: Flamingo</td><td class='n'>7.900 €</td><td class='n'>3.500 € – 16.000 €</td></tr><tr><td><b>Tudor Black Bay Chrono “Panda”</b></td><td class='ref'>M79360N-0002, 79360N</td><td class='n'>4.330 €</td><td class='n'>1.900 € – 9.000 €</td></tr><tr><td><b>Zenith Elite Ultra Thin</b></td><td class='ref'>nome: Elite</td><td class='n'>3.500 €</td><td class='n'>1.500 € – 12.000 €</td></tr><tr><td><b>Vacheron Constantin Historiques 222</b></td><td class='ref'>4200H/222A-B934, 4200H</td><td class='n'>49.000 €</td><td class='n'>25.000 € – 160.000 €</td></tr><tr><td><b>Vacheron Constantin Overseas 41 (4520V) “Overseas nuovo”</b></td><td class='ref'>4520V/210A-B128, 4520V</td><td class='n'>34.000 €</td><td class='n'>18.000 € – 68.000 €</td></tr><tr><td><b>Vacheron Constantin Overseas 41 (4500V) “Overseas precedente”</b></td><td class='ref'>4500V/110A-B128, 4500V</td><td class='n'>27.700 €</td><td class='n'>14.000 € – 56.000 €</td></tr><tr><td><b>Audemars Piguet Royal Oak Jumbo Extra-Thin “Jumbo”</b></td><td class='ref'>16202ST.OO.1240ST.02, 16202ST</td><td class='n'>79.950 €</td><td class='n'>30.000 € – 145.000 €</td></tr><tr><td><b>Audemars Piguet Royal Oak Selfwinding 41</b></td><td class='ref'>15510ST.OO.1320ST.06, 15510ST</td><td class='n'>47.300 €</td><td class='n'>21.000 € – 105.000 €</td></tr><tr><td><b>Zenith Chronomaster Revival A384</b></td><td class='ref'>03.A384.400/21.M384, 03.A384.400/3817.M3817, A384</td><td class='n'>7.200 €</td><td class='n'>3.000 € – 18.000 €</td></tr><tr><td><b>Omega Speedmaster Moonwatch “Silver Snoopy Award 50th”</b></td><td class='ref'>nome: Snoopy</td><td class='n'>13.900 €</td><td class='n'>5.850 € – 28.600 €</td></tr><tr><td><b>Panerai Luminor</b></td><td class='ref'>nome: Luminor</td><td class='n'>3.990 €</td><td class='n'>1.800 € – 11.000 €</td></tr>
 </table>
 
   </section>
