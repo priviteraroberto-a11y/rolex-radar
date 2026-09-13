@@ -60,6 +60,8 @@ def _eur(v) -> str:
 
 def _plain(decisions, market) -> str:
     lines = ["ROLEX RADAR", ""]
+    if market.get("label"):
+        lines.append(str(market["label"]))
     lines.append(f"Indice di mercato stimato: {_eur(market.get('index'))} "
                  f"({market.get('samples', 0)} annunci)")
     lines.append("")
@@ -77,10 +79,12 @@ def _plain(decisions, market) -> str:
 
 
 def _html(decisions, market) -> str:
+    # Fuori dal ciclo: l'intestazione la usa anche quando non c'e' nessun
+    # annuncio da mostrare, e li' dentro non ci arriverebbe mai.
+    e = html.escape
     cards = []
     for d in decisions:
         l = d.listing
-        e = html.escape
         color = "#16a34a" if (l.delta_pct or 0) > 0 else "#64748b"
         chips = "".join(
             f'<span style="display:inline-block;background:#f1f5f9;border-radius:99px;'
@@ -124,7 +128,7 @@ def _html(decisions, market) -> str:
           <tr><td>
             <div style="font-size:12px;letter-spacing:.16em;color:#94a3b8">ROLEX RADAR</div>
             <h1 style="margin:6px 0 2px;font-size:22px;color:#0f172a">
-              GMT-Master II “Pepsi” · 126710BLRO</h1>
+              {e(str(market.get('label') or 'Orologi monitorati'))}</h1>
             <div style="font-size:13px;color:#64748b;margin-bottom:6px">
               Indice di mercato stimato <b>{_eur(market.get('index'))}</b>
               · {market.get('samples', 0)} annunci nel campione

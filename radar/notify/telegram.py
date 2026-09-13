@@ -76,13 +76,26 @@ class TelegramNotifier:
         e = html.escape
         icon = REASON_ICON.get(d.reason, "🔔")
 
-        lines = [
-            f"{icon} <b>{e(d.headline)}</b>",
-            "",
-            "<b>Rolex GMT-Master II “Pepsi”</b>",
-            f"<code>{e(l.reference or '126710BLRO')}</code>",
-            "",
-        ]
+        # Il nome dell'orologio, non una scritta fissa.
+        #
+        # Qui c'era "Rolex GMT-Master II Pepsi" scritto a mano, con
+        # `126710BLRO` come ripiego per la referenza. Andava bene finche' gli
+        # orologi seguiti erano uno; da quando sono sedici, ogni messaggio
+        # annunciava un Pepsi qualunque cosa avesse trovato.
+        #
+        # Tre livelli, dal piu' preciso: il nome dell'orologio monitorato, il
+        # titolo dell'annuncio, e in ultimo niente — mai un nome inventato.
+        nome = d.label or (l.title or "").strip()
+        lines = [f"{icon} <b>{e(d.headline)}</b>", ""]
+        if nome:
+            lines.append(f"<b>{e(nome[:90])}</b>")
+        # La referenza vera dell'annuncio; se non c'e', quella che cercavamo,
+        # marcata come tale per non farla sembrare letta sull'annuncio.
+        if l.reference:
+            lines.append(f"<code>{e(l.reference)}</code>")
+        elif d.reference_attesa:
+            lines.append(f"<code>{e(d.reference_attesa)}</code> (attesa)")
+        lines.append("")
 
         def row(label: str, value) -> None:
             if value not in (None, "", False):

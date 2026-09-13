@@ -50,6 +50,17 @@ class NotifyDecision:
     priority: int        # più alto = più urgente
     tier: str = "home"   # home | nearby
 
+    # Di quale orologio stiamo parlando.
+    #
+    # Sembra ridondante — l'annuncio ce l'ha, il titolo pure — e invece
+    # mancava, e il messaggio Telegram diceva "Rolex GMT-Master II Pepsi" a
+    # ogni segnalazione, qualunque orologio fosse. Era una scritta fissa nel
+    # codice, rimasta da quando il sistema ne seguiva uno solo: foto, prezzo e
+    # link erano giusti, il nome no. Un errore che non rompe niente e ti fa
+    # perdere fiducia in tutto il resto.
+    label: str = ""
+    reference_attesa: str = ""
+
 
 def decide_notifications(
     scored: list[tuple[Listing, dict]],
@@ -114,6 +125,12 @@ def decide_notifications(
 
         if decision:
             decision.tier = tier
+            # Il nome dell'orologio si sa qui e solo qui: `cfg` e' la scheda
+            # dell'orologio in corso, l'annuncio da solo non lo sa.
+            decision.label = str(getattr(cfg, "label", "") or "")
+            attese = (getattr(cfg, "references_esatte", None)
+                      or getattr(cfg, "references", None) or [])
+            decision.reference_attesa = str(attese[0]) if attese else ""
             if tier != "home":
                 decision.priority -= 5      # a parità, l'Italia passa prima
             out.append(decision)
