@@ -89,8 +89,7 @@ class HtmlSource(BaseSource):
         # Il setaccio e' volutamente grossolano — nome o referenza nel testo
         # gia' raccolto — perche' qui un falso positivo costa una richiesta in
         # piu', mentre un falso negativo costa un orologio.
-        if self.cfg.get("fetch_detail", True):
-            self._augment_relevant(listings)
+        self.arricchisci(listings)
 
         ok = pages_ok > 0
         detail = "; ".join(errors) if errors else "ok"
@@ -224,43 +223,6 @@ class HtmlSource(BaseSource):
                 raw_price=price_m.group(0) if price_m else None,
                 image=urljoin(base_url, img["src"]) if img and img.get("src") else None,
             )
-
-    # -- dettaglio ------------------------------------------------------------
-
-    def _augment_relevant(self, listings: list[Listing]) -> None:
-        tetto = int(self.cfg.get("max_detail", 40))
-        candidati = [l for l in listings
-                     if self.ctx.config.riguarda_un_orologio(
-                         f"{l.title} {l.raw_text or ''}")]
-        if len(candidati) > tetto:
-            log.warning("%s: %d schede pertinenti, ne apro %d (max_detail)",
-                        self.name, len(candidati), tetto)
-            candidati = candidati[:tetto]
-        if candidati:
-            log.info("%s: apro %d schede su %d annunci",
-                     self.name, len(candidati), len(listings))
-        for l in candidati:
-            self._augment_from_detail(l)
-
-    def _augment_from_detail(self, listing: Listing) -> None:
-        """Scarica la scheda prodotto: lì stanno anno, garanzia, corredo."""
-        if not listing.url or listing.url.rstrip("/") in {
-            u.rstrip("/") for u in self.cfg.get("start_urls", [])
-        }:
-            return
-        html, _ = self.ctx.fetcher.get(listing.url)
-        if not html:
-            return
-        soup = BeautifulSoup(html, "lxml")
-        for tag in soup(["script", "style", "nav", "footer", "header"]):
-            tag.decompose()
-        body = soup.get_text(" ", strip=True)[:8000]
-        listing.raw_text = f"{listing.raw_text} {body}"
-        if not listing.image:
-            img = soup.find("meta", property="og:image")
-            if img and img.get("content"):
-                listing.image = urljoin(listing.url, img["content"])
-
 
 # =============================================================================
 # helper

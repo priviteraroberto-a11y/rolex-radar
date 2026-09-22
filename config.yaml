@@ -1334,6 +1334,52 @@ sources:
       image: "images.0.src"
       url: "https://zorzoliorologi.com/products/{handle}"
 
+  # --- CHLW (Bari): 105 orologi, 91 disponibili (22/09/2026) -----------------
+  # Shopify come Zorzoli, quindi il catalogo intero si scarica in una richiesta
+  # da 209 KB. Ma qui c'e' una differenza che conta:
+  #
+  # **La descrizione e' vuota su tutti e 105 i prodotti.** Il JSON da' titolo,
+  # prezzo e disponibilita', e basta: niente referenza, niente SKU, e i tag
+  # sono i segnaposto del tema ("lotto", "referenza"). Con quei soli dati un
+  # "Tudor Black Bay 41 CHRONO PANDA lotto 39419" non si riconosce, perche' il
+  # Panda lo si identifica dalla referenza 79360N.
+  #
+  # La scheda del prodotto invece dice tutto: "Referenza: 79360N, Anno: 2026,
+  # Corredo: Nuovo Scatola e Garanzia Ufficiali, Diametro: 41mm". Per questo
+  # `fetch_detail: true` — l'unica fonte JSON che ne ha bisogno.
+  #
+  # Attenzione ai prezzi barrati: le schede mostrano "PREZZO SCONTATO €5.110"
+  # accanto a "PREZZO €6.480". Quello giusto arriva dal JSON, che porta solo
+  # il prezzo di vendita: un motivo in piu' per leggere il catalogo e non la
+  # pagina.
+  - name: chlw
+    type: json
+    enabled: true
+    country: IT
+    dealer: true
+    seller_trust: 4
+    base_url: "https://www.chlw.it"
+    start_urls:
+      - "https://www.chlw.it/products.json?limit=250&page={page}"
+    paginate: {max: 8}
+    items_path: products
+    available_value: "true"
+    # `detail_scope: brand` perche' senza si mordeva la coda: la referenza sta
+    # solo nella scheda, quindi finche' non la apri l'annuncio non ti riguarda,
+    # e siccome non ti riguarda non la apri. Qui si aprono le schede di tutti
+    # gli Omega, Tudor, Panerai e cosi' via — su 105 prodotti si puo' fare.
+    fetch_detail: true
+    detail_scope: brand
+    max_detail: 50
+    fields:
+      # Solo `title`: qui il titolo comincia gia' con la marca ("Rolex Yacht
+      # Master BLUE lotto 39490"), e anteporre `vendor` faceva "Rolex Rolex".
+      title: title
+      price: "variants.0.price"
+      available: "variants.0.available"
+      image: "images.0.src"
+      url: "https://www.chlw.it/products/{handle}"
+
   # --- della Rocca (Milano) --------------------------------------------------
   # Qui c'era il buco piu' grosso, e il piu' invisibile: la fonte leggeva UNA
   # pagina, "Rolex Professionali". Da quando il Rolex Pepsi e' uscito dai

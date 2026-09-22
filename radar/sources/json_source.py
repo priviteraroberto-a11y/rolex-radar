@@ -102,6 +102,19 @@ class JsonSource(BaseSource):
 
         log.info("%s: %d annunci in totale su %d pagine",
                  self.name, len(listings), pagine_ok)
+
+        # Il catalogo JSON non sempre basta. Da CHLW la descrizione e' vuota su
+        # tutti e 105 i prodotti: titolo, prezzo, disponibilita' e nient'altro.
+        # Anno, referenza e corredo stanno nella scheda, e senza quelli il
+        # punteggio e' cieco — e per referenza un Black Bay Chrono non si
+        # riconosce nemmeno.
+        #
+        # Spento di default (`fetch_detail: false`) perche' le altre fonti
+        # JSON la descrizione ce l'hanno gia' dentro e aprire le schede
+        # sarebbe lavoro inutile.
+        if self.cfg.get("fetch_detail", False):
+            self.arricchisci(listings)
+
         ok = pagine_ok > 0
         return SourceResult(self.name, ok, listings,
                             "; ".join(errori) if errori else "ok")

@@ -286,6 +286,98 @@ def test_il_prezzo_in_centesimi_resta_giusto():
 
 
 # =============================================================================
+# CHLW — il catalogo che non dice niente
+# =============================================================================
+
+_CHLW_PROD = [
+    ("Omega Speedmaster MOONWATCH ZAFFIRO lotto 39428", "omega-zaffiro", "7330.00",
+     "Lotto: 39428 Referenza: 31030425001002 Anno: 2026 Corredo: Nuovo Scatola "
+     "e Garanzia Ufficiali Diametro: 42mm Cassa: Acciaio"),
+    ("Tudor Black Bay CHRONO 41 PANDA lotto 39394", "tudor-panda", "5110.00",
+     "Lotto: 39394 Referenza: 79360N Anno: 2026 Corredo: Nuovo Scatola e "
+     "Garanzia Ufficiali Diametro: 41mm Cassa: Acciaio"),
+    ("Panerai Luminor lotto 39456", "panerai-39456", "7770.00",
+     "Lotto: 39456 Referenza: PAM01538 Anno: 2024 Corredo: Mai Indossato Full "
+     "Set Diametro: 44mm Cassa: Acciaio"),
+]
+
+CFG_CHLW = {
+    "name": "chlw", "type": "json", "base_url": "https://www.chlw.it",
+    "start_urls": ["https://www.chlw.it/products.json?limit=250&page={page}"],
+    "paginate": {"max": 8}, "items_path": "products", "available_value": "true",
+    "fetch_detail": True, "detail_scope": "brand", "max_detail": 50,
+    "fields": {"title": "title", "price": "variants.0.price",
+               "available": "variants.0.available", "image": "images.0.src",
+               "url": "https://www.chlw.it/products/{handle}"},
+}
+
+
+def _chlw():
+    catalogo = json.dumps({"products": [
+        {"id": i, "title": t, "handle": h, "vendor": t.split()[0],
+         "body_html": "", "tags": ["lotto", "referenza"],
+         "variants": [{"price": p, "available": True}], "images": [{"src": ""}]}
+        for i, (t, h, p, _) in enumerate(_CHLW_PROD)]})
+    schede = {f"https://www.chlw.it/products/{h}":
+              f"<html><body><main>{t} {d}</main></body></html>"
+              for (t, h, _p, d) in _CHLW_PROD}
+    prima = CFG_CHLW["start_urls"][0].replace("{page}", "1")
+    f = _Fetcher({prima: catalogo, **schede}, difetto='{"products": []}')
+    cfg = _config_vera()
+    return JsonSource(CFG_CHLW, _Ctx(f, cfg)).collect().listings, cfg
+
+
+def test_il_catalogo_muto_si_completa_dalla_scheda():
+    """Su CHLW la descrizione e' vuota su tutti e 105 i prodotti.
+
+    Il JSON da' titolo, prezzo e disponibilita'; referenza, anno e corredo
+    stanno solo nella scheda. Senza aprirla, un "Tudor Black Bay CHRONO 41
+    PANDA lotto 39394" non si riconosce, perche' il Panda lo identifica la
+    referenza 79360N.
+    """
+    from radar import extract
+    annunci, cfg = _chlw()
+    assert len(annunci) == 3
+    for a in annunci:
+        extract.enrich(a)
+    per_ref = {a.title.split()[0]: a for a in annunci}
+    assert "79360N" in (per_ref["Tudor"].raw_text or "")
+    assert per_ref["Tudor"].year == 2026
+
+
+def test_la_scheda_si_apre_anche_se_il_catalogo_non_basta():
+    """Il cortocircuito che ha richiesto `detail_scope: brand`.
+
+    Il setaccio normale apre le schede di cio' che il radar riconosce gia'.
+    Qui la referenza sta SOLO nella scheda: finche' non la apri l'annuncio non
+    ti riguarda, e siccome non ti riguarda non la apri. Quattro orologi
+    giusti, fra cui un PAM01538 sotto mercato, restavano invisibili.
+    """
+    from radar import extract
+    annunci, cfg = _chlw()
+    trovati = {}
+    for a in annunci:
+        extract.enrich(a)
+        for w in cfg.watches:
+            if reject_reason(a, w) is None:
+                trovati[w.id] = a.price_eur
+                break
+    assert trovati.get("speedmaster") == 7330.0
+    assert trovati.get("bb-chrono-panda") == 5110.0
+    assert trovati.get("panerai-marina-militare") == 7770.0
+
+
+def test_la_referenza_senza_punti_si_riconosce_lo_stesso():
+    """CHLW scrive `31030425001002`, non `310.30.42.50.01.002`."""
+    from radar import extract
+    annunci, cfg = _chlw()
+    a = next(x for x in annunci if "ZAFFIRO" in x.title)
+    extract.enrich(a)
+    w = next(x for x in cfg.watches if x.id == "speedmaster")
+    assert reject_reason(a, w) is None, reject_reason(a, w)
+
+
+# =============================================================================
 # Conte Orologi — 1.227 schede in una pagina sola
 # =============================================================================
 
