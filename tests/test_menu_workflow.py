@@ -115,10 +115,70 @@ def test_la_verifica_accorge_del_disallineamento(tmp_path):
         WORKFLOW.write_text(originale, encoding="utf-8")
 
 
-def test_il_workflow_resta_leggibile():
-    """Uno script che riscrive un YAML puo' romperlo: qui si controlla."""
+def test_il_workflow_resta_intero():
+    """Uno script che riscrive un YAML puo' demolirlo, ed e' successo.
+
+    La prima versione di `aggiorna_menu.py` usava un'espressione regolare con
+    `^\\s*-[ ]` fra le alternative. `\\s` comprende gli a-capo, quindi il match
+    e' saltato oltre la riga vuota dopo le opzioni e ha continuato a divorare
+    ogni riga che cominciasse per trattino — fino in fondo al file. Il
+    workflow e' arrivato su GitHub senza `jobs:` e si e' rifiutato di partire
+    con "Required property is missing: jobs".
+
+    Questo test c'era gia' e non se n'e' accorto, perche' controllava solo
+    `schedule` e `workflow_dispatch` — le due sezioni che stanno PRIMA del
+    punto in cui il file veniva troncato. Ora guarda anche quello che viene
+    dopo.
+    """
+    d = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     w = _workflow()
     assert "schedule" in w and "workflow_dispatch" in w
     inputs = w["workflow_dispatch"]["inputs"]
     assert set(inputs) == {"dry_run", "force", "orologio"}
     assert inputs["orologio"]["default"] == "tutti"
+
+    # Tutto cio' che sta DOPO il blocco riscritto.
+    assert "jobs" in d, "manca la sezione jobs"
+    assert "concurrency" in d and "permissions" in d
+    passi = d["jobs"]["check"]["steps"]
+    nomi = [p.get("name", p.get("uses", "")) for p in passi]
+    assert any("Esegui il controllo" in n for n in nomi), nomi
+    assert any("Salva storico" in n for n in nomi), nomi
+    assert any("Notifica fallimento" in n for n in nomi), nomi
+
+
+def test_lo_script_si_rifiuta_di_demolire_il_file(tmp_path):
+    """La rete di sicurezza dentro lo script, provata davvero.
+
+    I test si scrivono su cio' che ci si aspetta possa rompersi, e nessuno si
+    aspettava che un aggiorna-menu cancellasse `jobs`. Per questo il controllo
+    sta anche dentro lo script: prima di scrivere rilegge il risultato e si
+    ferma se non e' YAML valido, se manca `jobs`, o se il file si e' accorciato
+    di oltre un terzo.
+    """
+    import shutil
+    finto = tmp_path / "check.yml"
+    shutil.copy(WORKFLOW, finto)
+    testo = finto.read_text(encoding="utf-8")
+    # Tolgo `jobs:` e tutto quello che segue, come faceva il baco. E tolgo
+    # anche una voce dal menu: altrimenti lo script vede il menu gia' allineato
+    # ed esce prima di arrivare al controllo, e il test proverebbe niente.
+    rotto = testo[:testo.index("\njobs:")] + "\n"
+    rotto = rotto.replace('          - "Rolex Land-Dweller 36 — land-dweller-36"\n', "", 1)
+
+    sys.path.insert(0, str(RADICE / "tools"))
+    try:
+        import importlib
+        modulo = importlib.import_module("aggiorna_menu")
+        importlib.reload(modulo)
+        originale = modulo.WORKFLOW
+        modulo.WORKFLOW = finto
+        try:
+            finto.write_text(rotto, encoding="utf-8")
+            # Ora il file non ha jobs: lo script deve rifiutarsi di riscriverlo
+            # invece di peggiorare le cose.
+            assert modulo.main([]) == 3
+        finally:
+            modulo.WORKFLOW = originale
+    finally:
+        sys.path.remove(str(RADICE / "tools"))

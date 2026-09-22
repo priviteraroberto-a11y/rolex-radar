@@ -34,12 +34,56 @@ RADICE = Path(__file__).resolve().parent.parent
 CONFIG = RADICE / "config.yaml"
 WORKFLOW = RADICE / ".github" / "workflows" / "check.yml"
 
-# Il blocco che questo script possiede, dall'inizio di `orologio:` fino alla
-# riga vuota prima di `concurrency:`.
-BLOCCO = re.compile(
-    r"(?ms)^(?P<testa>[ ]*# --- MENU GENERATO.*?\n)?^(?P<ind>[ ]+)orologio:\n"
-    r"(?:^(?P=ind)[ ]+.*\n|^[ ]*#.*\n|^\s*-[ ].*\n)*"
-)
+CHIAVE = "orologio:"
+
+
+def _indentazione(riga: str) -> int:
+    return len(riga) - len(riga.lstrip(" "))
+
+
+def localizza_blocco(righe: list[str]) -> tuple[int, int, str]:
+    """Trova il blocco `orologio:` contando l'indentazione, riga per riga.
+
+    Qui prima c'era un'espressione regolare, e ha cancellato meta' del file.
+    Fra le alternative c'era `^\\s*-[ ].*\\n` per riconoscere le voci
+    dell'elenco: ma `\\s` comprende gli a-capo, quindi il match e' saltato
+    oltre la riga vuota dopo le opzioni e ha continuato a divorare ogni riga
+    che cominciasse per trattino — fino all'ultima del file, dentro `jobs:`.
+    Il workflow e' arrivato su GitHub senza la sezione `jobs` e si e'
+    rifiutato di partire.
+
+    La regola giusta e' quella dello YAML e si scrive in tre righe: il blocco
+    sono `orologio:` e tutte le righe SUCCESSIVE piu' indentate di lui. La
+    prima riga non vuota con indentazione minore o uguale lo chiude.
+
+    Ritorna (inizio, fine, indentazione) con `fine` esclusa.
+    """
+    for i, riga in enumerate(righe):
+        if riga.strip() != CHIAVE:
+            continue
+        ind = _indentazione(riga)
+        # I commenti generati stanno subito sopra e appartengono al blocco.
+        inizio = i
+        while inizio > 0 and righe[inizio - 1].lstrip().startswith("# --- MENU GENERATO") is False \
+                and righe[inizio - 1].lstrip().startswith("#") \
+                and _indentazione(righe[inizio - 1]) == ind:
+            inizio -= 1
+        if inizio > 0 and righe[inizio - 1].lstrip().startswith("# --- MENU GENERATO"):
+            inizio -= 1
+
+        fine = i + 1
+        while fine < len(righe):
+            r = righe[fine]
+            if r.strip() and _indentazione(r) <= ind:
+                break
+            fine += 1
+        # Le righe vuote in coda separano questo blocco da quello dopo:
+        # appartengono al file, non al menu. Riassorbirle vorrebbe dire
+        # incollare `concurrency:` alle opzioni a ogni rigenerazione.
+        while fine > i + 1 and not righe[fine - 1].strip():
+            fine -= 1
+        return inizio, fine, " " * ind
+    raise LookupError("Non trovo la chiave `orologio:` nel workflow.")
 
 
 SEPARATORE = " — "      # trattino lungo: negli id non compare mai
@@ -94,14 +138,16 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
 
     testo = WORKFLOW.read_text(encoding="utf-8")
-    m = BLOCCO.search(testo)
-    if not m:
-        print("Non trovo il blocco `orologio:` nel workflow.", file=sys.stderr)
+    righe = testo.splitlines(keepends=True)
+    try:
+        inizio, fine, ind = localizza_blocco(righe)
+    except LookupError as exc:
+        print(exc, file=sys.stderr)
         return 2
 
     voci = voci_dal_config()
-    nuovo = blocco_nuovo(voci, m.group("ind"))
-    if m.group(0) == nuovo:
+    nuovo = blocco_nuovo(voci, ind)
+    if "".join(righe[inizio:fine]) == nuovo:
         if not args.verifica:
             print(f"menu gia' allineato ({len(voci)} orologi)")
         return 0
@@ -111,8 +157,27 @@ def main(argv=None) -> int:
               file=sys.stderr)
         return 1
 
-    WORKFLOW.write_text(testo[:m.start()] + nuovo + testo[m.end():],
-                        encoding="utf-8")
+    risultato = "".join(righe[:inizio]) + nuovo + "".join(righe[fine:])
+
+    # Rete di sicurezza, messa dopo che una versione di questo script ha
+    # cancellato `jobs:` e il workflow e' arrivato rotto su GitHub. Uno script
+    # che riscrive un file deve accorgersi da solo se lo ha demolito: non
+    # bastano i test, perche' i test si scrivono su cio' che ci si aspetta
+    # possa rompersi, e nessuno si aspettava questo.
+    try:
+        dopo = yaml.safe_load(risultato) or {}
+    except yaml.YAMLError as exc:
+        print(f"Non riscrivo: il risultato non e' YAML valido.\n{exc}", file=sys.stderr)
+        return 3
+    if "jobs" not in dopo:
+        print("Non riscrivo: nel risultato manca la sezione `jobs`.", file=sys.stderr)
+        return 3
+    if len(risultato) < len(testo) * 0.7:
+        print(f"Non riscrivo: il file passerebbe da {len(testo)} a "
+              f"{len(risultato)} caratteri.", file=sys.stderr)
+        return 3
+
+    WORKFLOW.write_text(risultato, encoding="utf-8")
     print(f"menu aggiornato: tutti + {len(voci)} orologi")
     return 0
 
