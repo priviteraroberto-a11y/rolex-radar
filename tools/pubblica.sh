@@ -33,6 +33,14 @@ fi
 # shellcheck disable=SC1091
 [ -f .venv/bin/activate ] && source .venv/bin/activate
 
+# Il menu a tendina di "Run workflow" su GitHub deve essere un elenco fisso nel
+# file YAML: non c'e' modo di riempirlo al volo. Quindi e' una copia degli id
+# del config, e le copie divergono — era gia' successo coi gruppi di rotazione,
+# e la scelta finiva scartata in silenzio. Qui la copia viene rifatta ogni
+# volta, cosi' non puo' restare indietro.
+echo "→ menu del workflow"
+python tools/aggiorna_menu.py
+
 echo "→ test"
 python -m pytest tests/ -q
 

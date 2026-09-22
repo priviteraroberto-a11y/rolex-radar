@@ -40,121 +40,30 @@ on:
         description: "Ignora le ore di silenzio"
         type: boolean
         default: false
-      # Casella di testo e non menu a tendina, di proposito: un elenco di
-      # valori scritto qui e' gia' rimasto indietro una volta dopo che gli
-      # orologi erano cambiati, e la scelta finiva scartata in silenzio.
-      # Vuoto = tutti, che e' quello che serve quasi sempre.
+      # --- MENU GENERATO da tools/aggiorna_menu.py — non modificare a mano.
+      # L'elenco qui sotto e' una copia di cio' che sta in config.yaml, e le
+      # copie divergono: era gia' successo coi gruppi di rotazione, e la
+      # scelta finiva scartata in silenzio. Lo riscrive `pubblica.sh`.
       orologio:
-        description: "Vuoto = tutti. Oppure l'id di uno solo (es. land-dweller-40)"
-        type: string
-        required: false
-        default: ""
-
-concurrency:
-  group: radar
-  cancel-in-progress: false
-
-permissions:
-  contents: write
-
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Installa dipendenze
-        run: pip install -r requirements.txt
-
-      - name: Esegui il controllo
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-          IMAP_HOST:          ${{ secrets.IMAP_HOST }}
-          IMAP_USER:          ${{ secrets.IMAP_USER }}
-          IMAP_PASS:          ${{ secrets.IMAP_PASS }}
-          SMTP_HOST:          ${{ secrets.SMTP_HOST }}
-          SMTP_PORT:          ${{ secrets.SMTP_PORT }}
-          SMTP_USER:          ${{ secrets.SMTP_USER }}
-          SMTP_PASS:          ${{ secrets.SMTP_PASS }}
-          REPORT_TO:          ${{ secrets.REPORT_TO }}
-          OROLOGIO: ${{ inputs.orologio }}
-          DRY:      ${{ inputs.dry_run }}
-          FORCE:    ${{ inputs.force }}
-        # Costruire gli argomenti nella shell invece che con le espressioni di
-        # GitHub: si legge, si corregge, e non si sbaglia una parentesi.
-        run: |
-          ARGS=""
-          [ "$DRY" = "true" ]   && ARGS="$ARGS --dry-run"
-          [ "$FORCE" = "true" ] && ARGS="$ARGS --force"
-          case "$OROLOGIO" in
-            ""|tutti) ;;
-            *)        ARGS="$ARGS --solo $OROLOGIO" ;;
-          esac
-          echo "Argomenti: ${ARGS:-nessuno (tutti gli orologi)}"
-          python -m radar.main check $ARGS
-
-      # I file generati appartengono al bot: se il remoto e' avanzato nel
-      # frattempo (un altro giro, o un push dal Mac) git non sa fondere un
-      # database binario e si blocca. Qui il conflitto e' previsto e risolto
-      # sempre allo stesso modo: vince la versione appena prodotta.
-      - name: Salva storico e dashboard
-        if: ${{ always() && !inputs.dry_run }}
-        run: |
-          set -u
-          git config user.name  "rolex-radar[bot]"
-          git config user.email "actions@github.com"
-
-          git add -A history.db docs/ 2>/dev/null || true
-          if git diff --staged --quiet; then
-            echo "Niente da salvare."
-            exit 0
-          fi
-          MSG="radar: $(date -u '+%Y-%m-%d %H:%M') UTC"
-          git commit -m "$MSG"
-
-          # mette da parte i file generati: sono la nostra unica fonte di verita'
-          cp history.db      /tmp/history.db
-          cp docs/index.html /tmp/index.html
-
-          for tentativo in 1 2 3; do
-            git fetch -q origin main
-            if git rebase -q origin/main 2>/dev/null; then
-              :
-            else
-              echo "Conflitto sui file generati: tengo la versione di questo giro."
-              git rebase --abort 2>/dev/null || true
-              git reset -q --hard origin/main
-              cp /tmp/history.db history.db
-              cp /tmp/index.html docs/index.html
-              git add history.db docs/index.html
-              git commit -q -m "$MSG"
-            fi
-            if git push -q; then
-              echo "Salvato al tentativo $tentativo."
-              exit 0
-            fi
-            echo "Push respinto, riprovo."
-            sleep 5
-          done
-          echo "Non sono riuscito a salvare dopo tre tentativi." >&2
-          exit 1
-
-      - name: Notifica fallimento
-        if: failure()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          [ -z "$TELEGRAM_BOT_TOKEN" ] && exit 0
-          curl -s -X POST \
-            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            -d chat_id="$TELEGRAM_CHAT_ID" \
-            -d text="⚠️ Rolex Radar: il controllo è fallito. Vedi i log su GitHub Actions."
+        description: "Quali orologi controllare"
+        type: choice
+        default: tutti
+        options:
+          - tutti
+          - "TAG Heuer Monaco Calibre 11 Steve McQueen — monaco-gulf"
+          - "Omega Speedmaster Moonwatch Professional — speedmaster"
+          - "Tudor Black Bay Chrono Flamingo Blue — bb-chrono-flamingo"
+          - "Tudor Black Bay Chrono Panda — bb-chrono-panda"
+          - "Zenith Elite Ultra Thin — zenith-ultrathin"
+          - "Vacheron Constantin Historiques 222 — vc-222"
+          - "Vacheron Constantin Overseas 41 (4520V) Overseas nuovo — vc-overseas-4520"
+          - "Vacheron Constantin Overseas 41 (4500V) Overseas precedente — vc-overseas-4500"
+          - "Audemars Piguet Royal Oak Jumbo Extra-Thin Jumbo — royal-oak-jumbo-16202"
+          - "Audemars Piguet Royal Oak Selfwinding 41 — royal-oak-15510"
+          - "Zenith Chronomaster Revival A384 — el-primero-a384"
+          - "Omega Speedmaster Moonwatch Silver Snoopy Award 50th — speedmaster-snoopy"
+          - "Panerai Luminor Base Logo quadrante pulito — panerai-base-logo"
+          - "Panerai Luminor Marina Logo piccoli secondi — panerai-marina-logo"
+          - "Panerai Luminor Marina Militare 1000 pezzi — panerai-marina-militare"
+          - "Rolex Land-Dweller 40 — land-dweller-40"
+          - "Rolex Land-Dweller 36 — land-dweller-36"

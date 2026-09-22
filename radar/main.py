@@ -347,13 +347,36 @@ def select_watches(cfg: Config, args) -> tuple[list, str]:
     giro intero.
     """
     watches = cfg.watches
-    scelto = getattr(args, "solo", None) or getattr(args, "group", None)
-    if not scelto or str(scelto) in ("tutti", "automatico"):
+    scelto = str(getattr(args, "solo", None)
+                 or getattr(args, "group", None) or "").strip()
+    if not scelto or scelto in ("tutti", "automatico"):
         return watches, "tutti"
 
-    uno = [w for w in watches if w.id == str(scelto)]
+    # Il menu di GitHub mostra "Panerai Luminor Base Logo — panerai-base-logo":
+    # il nome per leggerlo, l'id per lavorarci. Qui teniamo l'id.
+    if " — " in scelto:
+        scelto = scelto.rsplit(" — ", 1)[-1].strip()
+
+    uno = [w for w in watches if w.id == scelto]
     if uno:
-        return uno, str(scelto)
+        return uno, scelto
+
+    # Anche per nome, cosi' `--solo "Land-Dweller 40"` da riga di comando
+    # funziona senza andare a cercare l'id nel config.
+    #
+    # Da quattro lettere in su, e non meno: con una soglia piu' bassa un
+    # vecchio `--group a` trovava "senza-gruppo" e faceva partire il giro su
+    # quell'unico orologio invece che su tutti. Un frammento corto non e' una
+    # scelta, e' un caso.
+    basso = scelto.lower()
+    per_nome = ([w for w in watches if basso in (w.label or "").lower()]
+                if len(basso) >= 4 else [])
+    if len(per_nome) == 1:
+        return per_nome, per_nome[0].id
+    if len(per_nome) > 1:
+        log.warning("'%s' corrisponde a %d orologi (%s) — li controllo tutti",
+                    scelto, len(per_nome), ", ".join(w.id for w in per_nome))
+        return watches, "tutti"
 
     # Un nome sbagliato non deve tradursi in "non ho guardato" senza dirlo.
     log.warning("'%s' non e' un orologio monitorato (%s) — li controllo tutti",
