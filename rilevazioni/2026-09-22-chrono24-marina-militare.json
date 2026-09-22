@@ -1,0 +1,20 @@
+{
+  "fonte": "chrono24",
+  "data": "2026-09-22",
+  "nota": "Panerai Luminor Marina Militare PAM01538, edizione limitata 1000 pezzi del 2024, 44 mm acciaio quadrante blu, carica manuale. Sono tutti gli annunci esistenti su Chrono24, non un estratto: undici in tutto, e sono tutti in Unione Europea (nove in Italia, uno in Germania, uno in Spagna). Mercato piccolo e concentrato, quindi bastano due o tre vendite per spostarlo: da ricontrollare fra qualche settimana.",
+  "campioni": {
+    "panerai-marina-militare": [
+      {"p": 7490, "c": "IT"},
+      {"p": 7700, "c": "IT"},
+      {"p": 7900, "c": "IT"},
+      {"p": 8200, "c": "IT"},
+      {"p": 8350, "c": "DE"},
+      {"p": 8400, "c": "IT"},
+      {"p": 8600, "c": "IT"},
+      {"p": 8650, "c": "ES"},
+      {"p": 9400, "c": "IT"},
+      {"p": 9450, "c": "IT"},
+      {"p": 10000, "c": "IT"}
+    ]
+  }
+}

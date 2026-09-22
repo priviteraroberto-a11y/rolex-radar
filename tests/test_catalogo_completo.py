@@ -568,6 +568,37 @@ def test_oro_non_e_una_parola_da_escludere():
     assert "oro" not in escluse and "gold" not in escluse
 
 
+def test_il_marina_militare_non_inquina_gli_altri_due_panerai():
+    """Vale il doppio degli altri, e i titoli non lo dicono.
+
+    Il PAM01538 sta a 8.400 €, il Base Logo a 4.570 e il Marina Logo a 4.293.
+    Se finisse in uno di quei due secchi li alzerebbe entrambi, e lui
+    sembrerebbe un furto a qualunque prezzo.
+
+    Il guaio e' che meta' dei suoi annunci si intitola solo "Luminor Marina" —
+    la parola "Militare" non c'e'. Per questo l'esclusione e' per referenza e
+    non per parola: la PAM sta sempre nella scheda, anche quando il titolo
+    tace. Titoli presi dagli annunci veri del 22/09.
+    """
+    militare = _orologio("panerai-marina-militare")
+    base = _orologio("panerai-base-logo")
+    marina = _orologio("panerai-marina-logo")
+
+    veri = [
+        "Panerai Luminor Marina Militare Ref. Pam 01538 Year 2024 Limited Edition",
+        "Panerai Luminor Marina MILITARE PAM01538 (NEW w TAGS & BOX)",
+        "Panerai Luminor Marina PAM 01538",
+        "Panerai Luminor Marina 2026 LIKE NEW 99%",
+    ]
+    for titolo in veri:
+        corpo = "Referenza PAM01538 44mm acciaio quadrante blu carica manuale"
+        l = _annuncio(titolo, 8400, 2024, corpo=corpo)
+        assert reject_reason(l, militare) is None, (titolo, reject_reason(l, militare))
+        for altro in (base, marina):
+            assert reject_reason(l, altro) is not None, \
+                f"{titolo} finito in {altro.id}"
+
+
 def test_il_prezzo_di_mercato_non_e_un_affare():
     """La taratura dei moltiplicatori, provata dove faceva piu' danno.
 

@@ -659,6 +659,11 @@ watches:
     # famiglia.
     identify_by: name
     must_include: ["Base"]
+    # Il Marina Militare PAM01538 vale 8.400 e questo 4.xxx: se ci finisse
+    # dentro alzerebbe l'indice per tutti. L'esclusione e' per REFERENZA e non
+    # per parola, perche' meta' dei suoi annunci si intitola solo "Luminor
+    # Marina" senza dire "Militare" — la PAM invece sta sempre nella scheda.
+    exclude_references: ["PAM01538"]
     references: ["PAM01084", "PAM01085", "PAM01086", "PAM01087",
                  "PAM01000", "PAM00000", "PAM00773", "PAM00774", "PAM00630"]
     search_terms: ["Luminor Base Logo", "PAM01084", "PAM01000"]
@@ -719,6 +724,11 @@ watches:
     # parole, "Marina" e "Logo", e' esattamente la distinzione che ti serve.
     identify_by: name
     must_include: ["Marina", "Logo"]
+    # Il Marina Militare PAM01538 vale 8.400 e questo 4.xxx: se ci finisse
+    # dentro alzerebbe l'indice per tutti. L'esclusione e' per REFERENZA e non
+    # per parola, perche' meta' dei suoi annunci si intitola solo "Luminor
+    # Marina" senza dire "Militare" — la PAM invece sta sempre nella scheda.
+    exclude_references: ["PAM01538"]
     references: ["PAM00005", "PAM01005", "PAM00631", "PAM00632",
                  "PAM00660", "PAM00776", "PAM00777", "PAM00778"]
     search_terms: ["Luminor Marina Logo", "PAM01005", "PAM00632"]
@@ -763,6 +773,62 @@ watches:
           _default: 0.94
     notifications:
       always_notify_if_underpriced_pct: 12.0
+
+  # --- Panerai Luminor Marina Militare, edizione 2024 (22/09/2026) -----------
+  #
+  # Edizione limitata a 1000 pezzi, 44 mm in acciaio, quadrante blu, carica
+  # manuale. Mercato piccolo e quasi tutto italiano: 11 annunci in Europa, 9
+  # dei quali in Italia, fra 7.490 e 10.000 euro.
+  #
+  # Niente listino: la pagina sul sito Panerai non esiste piu', l'edizione e'
+  # esaurita. Meglio nessun confronto che un numero inventato.
+  #
+  # Sta il doppio degli altri due Panerai (8.400 contro 4.570 e 4.293), e per
+  # questo ha il suo indice: se fosse finito in uno di quei secchi li avrebbe
+  # alzati tutti e due, e lui sarebbe sembrato un furto a qualunque prezzo.
+  - id: panerai-marina-militare
+    brand: Panerai
+    model: Luminor Marina Militare
+    nickname: 1000 pezzi
+    references: ["PAM01538"]
+    reference_stems: ["PAM01538"]
+    search_terms: ["PAM01538", "Luminor Marina Militare"]
+    model_keywords: ["Luminor"]
+    exclude_keywords: ["Submersible", "Radiomir", "Chrono", "Regatta",
+                       "Due", "GMT", "Tourbillon", "Carbotech", "Goldtech"]
+    hard_filters:
+      # Presentato nel 2024: prima non esiste.
+      min_year: 2024
+      max_year: 2027
+      absolute_min_price_eur: 4000
+      absolute_max_price_eur: 18000
+    preferences:
+      target_years: [2024, 2025, 2026]
+    fair_value:
+      # mediana UE 8.400 su 11 annunci (rilevazione 22/09/2026)
+      seed_price_eur: 8400
+      # Tabelle centrate su questo mercato, come per il Land-Dweller: sono
+      # tutti esemplari del 2024-2026 nuovi o quasi ("nuovo con pellicole",
+      # "new with tags", "like new 99%"). L'esemplare tipico e' quello, ed e'
+      # quello che l'indice misura: premiarlo ancora vorrebbe dire dare 80
+      # punti a un annuncio a prezzo pieno.
+      multipliers:
+        year:
+          2026: 1.00
+          2025: 1.00
+          2024: 1.00
+          _default: 0.97
+        condition:
+          unworn: 1.00
+          new: 1.00
+          mint: 0.99
+          like_new: 0.98
+          excellent: 0.96
+          very_good: 0.92
+          good: 0.88
+          _default: 0.98
+    notifications:
+      always_notify_if_underpriced_pct: 10.0
 
   # ---------------------------------------------------------------------------
   # Rolex Land-Dweller, le due misure tenute separate (12/09/2026)
