@@ -77,13 +77,27 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # `ubuntu-24.04` e non `ubuntu-latest`, dal 23/09/2026.
+    #
+    # GitHub avvisa che dal 19 ottobre 2026 `ubuntu-latest` diventera' Ubuntu
+    # 26. Cambiare sistema operativo sotto i piedi a un giro che funziona non
+    # porta niente di buono, e succederebbe in un giorno a caso senza che
+    # nessuno tocchi niente. Meglio spostarsi quando lo decidiamo noi: quando
+    # vorrai passare a Ubuntu 26, si cambia questa riga e si guarda cosa
+    # succede, invece di scoprirlo da un giro fallito.
+    runs-on: ubuntu-24.04
+    # 50 minuti restano larghi: il giro del 22/09, con CHLW e le schede da
+    # aprire, ne ha impiegati 18.
     timeout-minutes: 50
 
     steps:
-      - uses: actions/checkout@v4
+      # v7 e non v4: le versioni vecchie girano su Node 20, che GitHub ha
+      # dichiarato superato. Per ora le fa girare lo stesso forzandole su Node
+      # 24 e stampando un avviso; quando smettera', il giro fallira' e basta.
+      # Tanto vale passarci adesso, che e' una riga.
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
