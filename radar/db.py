@@ -114,6 +114,11 @@ class Database:
                 (DEFAULT_WATCH_ID,))
         if "seller_country" not in cols:
             self.conn.execute("ALTER TABLE listings ADD COLUMN seller_country TEXT")
+        if "last_check" not in cols:
+            # Quando l'annuncio e' stato controllato l'ultima volta, cioe'
+            # quando si e' verificato che il suo link porti ancora a lui.
+            # NULL = mai controllato, e sono i primi della fila.
+            self.conn.execute("ALTER TABLE listings ADD COLUMN last_check TEXT")
         if "delta_listino_pct" not in cols:
             # Il confronto col listino: calcolato a ogni giro ma, finche' non
             # esisteva questa colonna, buttato via subito dopo. La dashboard
@@ -307,6 +312,30 @@ class Database:
         )
         self.conn.commit()
         return cur.rowcount
+
+    def da_verificare(self, limite: int = 40) -> list[dict]:
+        """Gli annunci attivi da ricontrollare, i piu' trascurati per primi.
+
+        Prima quelli mai controllati (`last_check IS NULL`), poi i piu'
+        vecchi: cosi' un gruppo per giro basta a coprire tutto in qualche
+        giorno, e gli annunci appena arrivati vengono guardati subito.
+        """
+        cur = self.conn.execute(
+            "SELECT key, url, source, last_seen FROM listings "
+            "WHERE active = 1 "
+            "ORDER BY last_check IS NOT NULL, last_check ASC, last_seen ASC "
+            "LIMIT ?", (limite,))
+        return [dict(r) for r in cur.fetchall()]
+
+    def segna_verificato(self, key: str) -> None:
+        self.conn.execute("UPDATE listings SET last_check = ? WHERE key = ?",
+                          (_now(), key))
+        self.conn.commit()
+
+    def chiudi(self, key: str) -> None:
+        """Mette a riposo un annuncio: resta nell'indice, sparisce dalla lista."""
+        self.conn.execute("UPDATE listings SET active = 0 WHERE key = ?", (key,))
+        self.conn.commit()
 
     def log_notification(self, key: str, reason: str, price: float | None, score: int) -> None:
         self.conn.execute(

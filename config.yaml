@@ -1735,6 +1735,14 @@ sources:
 # HTTP
 # -----------------------------------------------------------------------------
 http:
+  # Quanti link ricontrollare a ogni giro.
+  #
+  # Non si controllano tutti: sono centinaia, e a 2,5 secondi l'uno sarebbe
+  # un quarto d'ora di giro solo per quello. Quaranta per volta, i meno
+  # recentemente controllati per primi: con tre giri al giorno l'intero
+  # elenco si ripassa in due o tre giorni, e gli annunci appena arrivati
+  # vengono guardati subito perche' stanno in cima alla fila.
+  verifiche_per_giro: 40
   timeout: 25
   retries: 2
   delay_between_requests: 2.5      # secondi, per non martellare i dealer

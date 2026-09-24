@@ -103,6 +103,41 @@ class Fetcher:
                 time.sleep(2 * (attempt + 1))
         return None, last_error
 
+    def dove_porta(self, url: str) -> tuple[str | None, int | None, str]:
+        """Segue i reindirizzamenti e dice dove si finisce.
+
+        Diversa da `get()` di proposito: qui il contenuto non interessa, e
+        soprattutto **la schermata anti-bot non e' un fallimento**. Chrono24
+        da GitHub risponde con il controllo automatico, ma il
+        reindirizzamento avviene prima, a livello di protocollo: l'indirizzo
+        finale si vede comunque, ed e' l'unica cosa che serve per sapere se
+        un annuncio e' ancora al suo posto.
+
+        Ritorna (indirizzo_finale, codice, dettaglio). Il primo e' None solo
+        quando non si e' riusciti a chiedere: in quel caso chi legge deve
+        lasciare le cose come stanno.
+        """
+        if not self._allowed(url):
+            return None, None, "bloccato da robots.txt"
+        ultimo = "sconosciuto"
+        for tentativo in range(self.retries + 1):
+            self._throttle()
+            try:
+                r = self.session.get(url, timeout=self.timeout,
+                                     allow_redirects=True, stream=True)
+                # `stream=True` e poi chiudo: serve l'intestazione, non il
+                # corpo. Su centinaia di verifiche e' la differenza fra
+                # scaricare qualche kilobyte e scaricare qualche decina di
+                # megabyte.
+                finale = r.url
+                codice = r.status_code
+                r.close()
+                return finale, codice, "ok"
+            except requests.RequestException as exc:
+                ultimo = f"{type(exc).__name__}: {exc}"
+                time.sleep(2 * (tentativo + 1))
+        return None, None, ultimo
+
     def _throttle(self) -> None:
         elapsed = time.monotonic() - self._last_request
         if elapsed < self.delay:

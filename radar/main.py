@@ -23,6 +23,7 @@ from . import dashboard as dash
 from . import metodo
 from . import nuovo_modello
 from . import rilevazione
+from . import vivo
 from . import extract, sources
 from .config import Config, WatchView
 from .db import Database
@@ -396,6 +397,20 @@ def cmd_check(args) -> int:
     chiusi = db.close_unmonitored({w.id for w in cfg.watches})
     if chiusi:
         log.info("%d annunci di orologi non piu' monitorati messi a riposo", chiusi)
+
+    # Prima di tutto il resto: i link che non portano piu' da nessuna parte.
+    #
+    # Le fonti dei negozi si ripuliscono da sole — si rilegge il catalogo e
+    # chi non c'e' piu' viene chiuso. Chrono24 no: li' gli annunci arrivano
+    # una volta sola via email e nessuno li richiama mai. Si erano accumulati
+    # in 320, il piu' vecchio di diciannove giorni, e cliccandoli si finiva
+    # sulla pagina generica del modello invece che sull'annuncio.
+    #
+    # Qui e non dentro il ciclo degli orologi perche' e' un lavoro sul
+    # database, non su un orologio: va fatto una volta per giro.
+    if not args.dry_run:
+        vivo.ripulisci(db, ctx.fetcher,
+                       limite=int(cfg.get("http.verifiche_per_giro", 40)))
 
     watches, scelta = select_watches(cfg, args)
     if not watches:
