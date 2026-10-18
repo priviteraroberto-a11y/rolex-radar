@@ -145,3 +145,70 @@ def test_si_controllano_prima_i_piu_trascurati(tmp_path):
     # Il secondo giro guarda altri due, non gli stessi.
     assert not (set(f2.chiamate) & primo_giro)
     db.close()
+
+
+# =============================================================================
+# Lo spurgo, e il baco che lo ha reso necessario
+# =============================================================================
+
+def test_una_risposta_anti_bot_non_e_un_annuncio_vivo():
+    """Il baco che ha fatto crescere la lista da 320 a 420 annunci.
+
+    `dove_porta` restituiva l'indirizzo e il codice per QUALUNQUE risposta.
+    Dal runner di GitHub, Chrono24 risponde 403 alla richiesta: l'indirizzo
+    non cambia, quindi `stato` vedeva un annuncio ancora al suo posto e lo
+    dava per vivo. Il controllo girava tre volte al giorno, verificava
+    centoventi annunci, e in ventitre' giorni non ne ha chiuso **nessuno**.
+
+    Un 403 non dice niente sull'annuncio: dice che non ci hanno fatto
+    guardare. E' il caso "boh", non il caso "vivo".
+    """
+    class _Bloccato:
+        def dove_porta(self, url):
+            return None, 403, "HTTP 403 (anti-bot o limite)"
+    st, perche = vivo.stato(VENDUTO, _Bloccato())
+    assert st == vivo.BOH, f"un 403 letto come '{st}'"
+    assert "403" in perche
+
+
+def test_lo_spurgo_chiude_quelli_elencati(tmp_path):
+    """La pulizia a mano: un elenco di numeri, verificati da dove si puo'."""
+    from radar.db import Database
+    from radar.models import Listing
+
+    db = Database(tmp_path / "t.db")
+    for u in (VIVO_19_GIORNI, VIVO_11_GIORNI, VENDUTO):
+        db.upsert(Listing(source="chrono24", url=u, price_eur=6500.0), "speedmaster")
+
+    elenco = tmp_path / "elenco.txt"
+    elenco.write_text("# commento che deve essere ignorato\n47542099\n\n", encoding="utf-8")
+
+    assert vivo.chiudi_elenco(db, elenco) == 1
+    attivi = {l["url"] for l in db.active_listings()}
+    assert attivi == {VIVO_19_GIORNI, VIVO_11_GIORNI}
+
+    # Rilanciarlo non fa danni: il file puo' restare nel repository.
+    assert vivo.chiudi_elenco(db, elenco) == 0
+    db.close()
+
+
+def test_lo_spurgo_senza_file_non_si_lamenta(tmp_path):
+    from radar.db import Database
+    db = Database(tmp_path / "t.db")
+    assert vivo.chiudi_elenco(db, tmp_path / "manca.txt") == 0
+    db.close()
+
+
+def test_l_elenco_vero_e_leggibile():
+    """Il file di spurgo del 18/10 deve contenere numeri e nient'altro."""
+    import re
+    from pathlib import Path
+    p = Path(__file__).resolve().parent.parent / "pulizia" / "chrono24-non-piu-online.txt"
+    if not p.is_file():
+        import pytest
+        pytest.skip("nessuno spurgo in corso")
+    numeri = [r.strip() for r in p.read_text(encoding="utf-8").splitlines()
+              if r.strip() and not r.lstrip().startswith("#")]
+    assert numeri, "elenco vuoto"
+    assert all(re.fullmatch(r"\d{6,10}", n) for n in numeri), "righe non numeriche"
+    assert len(numeri) == len(set(numeri)), "numeri ripetuti"

@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import logging
 import re
+from pathlib import Path
 from urllib.parse import urlparse
 
 from . import extract
@@ -54,6 +55,8 @@ from . import extract
 log = logging.getLogger("radar.vivo")
 
 VIVO, SPARITO, BOH = "vivo", "sparito", "boh"
+
+ELENCO = "pulizia/chrono24-non-piu-online.txt"
 
 # Il marcatore che rende un indirizzo Chrono24 un annuncio e non un modello.
 _ID_CHRONO24 = re.compile(r"--id\d+\.htm", re.I)
@@ -79,6 +82,34 @@ def stato(url: str, fetcher) -> tuple[str, str]:
         return SPARITO, f"reindirizzato a {urlparse(finale).path[:60]}"
 
     return VIVO, "ok"
+
+
+def chiudi_elenco(db, percorso: str | Path = ELENCO) -> int:
+    """Chiude gli annunci elencati in un file di spurgo.
+
+    Serve per le pulizie fatte a mano, da dove la rete risponde davvero. Il
+    file contiene un numero per riga — quello che Chrono24 mette in fondo
+    all'indirizzo — e il radar chiude gli annunci corrispondenti.
+
+    E' idempotente: chiudere un annuncio gia' chiuso non fa niente, quindi il
+    file puo' restare nel repository senza conseguenze.
+    """
+    p = Path(percorso)
+    if not p.is_file():
+        return 0
+    numeri = {r.strip() for r in p.read_text(encoding="utf-8").splitlines()
+              if r.strip() and not r.lstrip().startswith("#")}
+    if not numeri:
+        return 0
+    chiusi = 0
+    for riga in db.active_listings():
+        m = re.search(r"--id(\d+)", riga.get("url") or "")
+        if m and m.group(1) in numeri:
+            db.chiudi(riga["key"])
+            chiusi += 1
+    if chiusi:
+        log.info("spurgo: %d annunci chiusi dall'elenco %s", chiusi, p.name)
+    return chiusi
 
 
 def ripulisci(db, fetcher, limite: int = 40) -> tuple[int, int, int]:

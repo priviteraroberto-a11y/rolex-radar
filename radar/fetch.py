@@ -132,6 +132,14 @@ class Fetcher:
                 finale = r.url
                 codice = r.status_code
                 r.close()
+                # 403, 429, 503 non dicono niente sull'annuncio: dicono che
+                # non ci hanno fatto guardare. Trattarli come una risposta
+                # valida e' stato l'errore che ha fatto crescere la lista: il
+                # controllo girava, Chrono24 rispondeva 403 dal runner, e
+                # siccome l'indirizzo non era cambiato ogni annuncio morto
+                # risultava vivo. Ventitre' giorni, zero chiusure.
+                if codice in (401, 403, 429, 503):
+                    return None, codice, f"HTTP {codice} (anti-bot o limite)"
                 return finale, codice, "ok"
             except requests.RequestException as exc:
                 ultimo = f"{type(exc).__name__}: {exc}"

@@ -409,6 +409,7 @@ def cmd_check(args) -> int:
     # Qui e non dentro il ciclo degli orologi perche' e' un lavoro sul
     # database, non su un orologio: va fatto una volta per giro.
     if not args.dry_run:
+        vivo.chiudi_elenco(db)
         vivo.ripulisci(db, ctx.fetcher,
                        limite=int(cfg.get("http.verifiche_per_giro", 40)))
 
