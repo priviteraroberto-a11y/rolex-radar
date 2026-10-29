@@ -846,3 +846,48 @@ def test_il_tetto_delle_pagine_non_si_puo_alzare_a_piacere():
     gruppi = pagine.serie({"start_urls": ["https://x.it/{page}"],
                            "paginate": {"max": 10_000}})
     assert len(gruppi[0]) == pagine.MAX_PAGINE
+
+
+# =============================================================================
+# Una lettura a meta' non vale una lettura intera
+# =============================================================================
+
+def test_una_pagina_che_non_risponde_rende_la_lettura_incompleta():
+    """Il 29/10 PlusWatch ha risposto alla prima pagina e poi e' andata in
+    timeout: 100 annunci su 1.550, e la fonte si e' dichiarata "ok".
+
+    Chi la ascolta usa quel risultato anche per CHIUDERE gli annunci che non
+    ha rivisto. Una lettura parziale presa per intera avrebbe messo a riposo
+    millequattrocento annunci veri perche' un server era lento.
+    """
+    prima = CFG_WOO["start_urls"][0].replace("{page}", "1")
+    f = _Fetcher({prima: _woo("220000", 2)})      # le pagine dopo non rispondono
+    r = JsonSource(CFG_WOO, _Ctx(f)).collect()
+    assert r.ok is True, "la fonte ha risposto, quindi ok"
+    assert r.listings, "e gli annunci letti vanno tenuti"
+    assert r.completa is False, "ma la lettura NON e' completa"
+
+
+def test_una_lettura_intera_resta_completa():
+    prima = CFG_WOO["start_urls"][0].replace("{page}", "1")
+    f = _Fetcher({prima: _woo("220000", 2)}, difetto="[]")
+    r = JsonSource(CFG_WOO, _Ctx(f)).collect()
+    assert r.completa is True
+
+
+def test_la_fonte_incompleta_non_autorizza_a_chiudere():
+    """`produttive` non vuol dire "ha risposto": vuol dire "mi fido abbastanza
+    da chiudere quello che non ha restituito"."""
+    import yaml
+    from radar.main import collect, Context
+    from radar.config import Config
+
+    cfg = Config({
+        "watches": [{"id": "x", "label": "X", "references": ["310.30.42.50.01.002"]}],
+        "sources": [{**CFG_WOO, "name": "lenta", "enabled": True}],
+        "http": {},
+    })
+    prima = CFG_WOO["start_urls"][0].replace("{page}", "1")
+    f = _Fetcher({prima: _woo("220000", 2)})      # pagina 2 muta
+    _, produttive = collect(cfg, Context(cfg, f), cfg.watches[0])
+    assert "lenta" not in produttive, "una lettura parziale non deve dare quel diritto"

@@ -120,8 +120,14 @@ def collect(cfg: Config, ctx: Context,
             continue
 
         if result.ok:
-            if result.listings:
+            # `produttive` non vuol dire "ha risposto": vuol dire "mi fido
+            # abbastanza da chiudere quello che NON ha restituito". Una
+            # lettura interrotta a meta' non da' quel diritto.
+            if result.listings and result.completa:
                 produttive.append(name)
+            elif result.listings:
+                log.warning("[%s] letta solo in parte: i suoi annunci restano "
+                            "aperti, non sappiamo cosa c'era nel resto", name)
             log.info("[%s] %d annunci — %s", name, len(result.listings), result.detail)
         else:
             log.warning("[%s] FONTE NON RAGGIUNGIBILE — %s", name, result.detail)

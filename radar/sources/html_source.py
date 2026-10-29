@@ -92,8 +92,11 @@ class HtmlSource(BaseSource):
         self.arricchisci(listings)
 
         ok = pages_ok > 0
+        if errors:
+            log.warning("%s: lettura INCOMPLETA (%d annunci letti) — %s",
+                        self.name, len(listings), errors[0][:120])
         detail = "; ".join(errors) if errors else "ok"
-        return SourceResult(self.name, ok, listings, detail)
+        return SourceResult(self.name, ok, listings, detail, completa=not errors)
 
     # -- livello 1: JSON-LD ---------------------------------------------------
 

@@ -1236,8 +1236,15 @@ sources:
     seller_trust: 4
     base_url: "https://www.pluswatch.it"
     start_urls:
-      - "https://www.pluswatch.it/wp-json/wc/store/v1/products?per_page=100&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku,description"
-    paginate: {max: 25}
+      # `per_page=50` e non 100, dal 29/10/2026.
+      #
+      # Con 100 la risposta pesa 537 KB e il loro server ci mette 14 secondi,
+      # che in un giro vero sono diventati piu' di 25 e la lettura si e'
+      # fermata alla prima pagina: 100 annunci su 1.550. Con 50 scende a
+      # 3,6 secondi e 281 KB. Le pagine raddoppiano, il tempo totale e' simile,
+      # ma arriva in fondo — che e' l'unica cosa che conta.
+      - "https://www.pluswatch.it/wp-json/wc/store/v1/products?per_page=50&page={page}&_fields=id,name,permalink,prices,is_in_stock,sku,description"
+    paginate: {max: 40}
     items_path: ""
     available_value: "true"
     # Qui il prezzo arriva in centesimi (220000 = 2.200 €). Su Bonanno arriva

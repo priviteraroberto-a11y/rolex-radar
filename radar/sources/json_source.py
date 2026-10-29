@@ -116,8 +116,12 @@ class JsonSource(BaseSource):
             self.arricchisci(listings)
 
         ok = pagine_ok > 0
+        if errori:
+            log.warning("%s: lettura INCOMPLETA (%d annunci letti) — %s",
+                        self.name, len(listings), errori[0][:120])
         return SourceResult(self.name, ok, listings,
-                            "; ".join(errori) if errori else "ok")
+                            "; ".join(errori) if errori else "ok",
+                            completa=not errori)
 
     # ------------------------------------------------------------------
 

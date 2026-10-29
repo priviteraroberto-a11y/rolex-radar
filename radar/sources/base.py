@@ -20,6 +20,19 @@ class SourceResult:
     listings: list[Listing]
     detail: str = ""
 
+    # Ho letto il catalogo FINO IN FONDO?
+    #
+    # Non e' una sfumatura. Il 29/10 PlusWatch ha risposto alla prima pagina e
+    # poi e' andata in timeout: 100 annunci su 1.550, e la fonte si e'
+    # dichiarata "ok". Il giro ha quindi creduto di aver visto tutto il
+    # catalogo, e `mark_inactive_except` chiude gli annunci che non ha
+    # rivisto: millequattrocento annunci veri a un passo dall'essere messi a
+    # riposo perche' un server era lento.
+    #
+    # Una lettura parziale e' un'informazione parziale: vale per aggiungere,
+    # non per togliere.
+    completa: bool = True
+
 
 class BaseSource:
     def __init__(self, cfg: dict, ctx: Any):
