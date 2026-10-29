@@ -174,6 +174,40 @@ permette di dire &ldquo;questo 2023 a 26.000&nbsp;&euro; e' un affare migliore
 di quel 2025 a 33.000&nbsp;&euro;&rdquo;, cosa che nessun marketplace ti
 dice.</p>
 
+<h3>Come si leggono i numeri in dashboard</h3>
+<p>Nella riga di sommario ci sono <b>tre prezzi</b>, e non sono la stessa
+cosa:</p>
+<table>
+  <tr><td><b>riferimento</b></td>
+      <td>la <b>mediana</b> dei campioni di quel modello &mdash; non la media,
+          e con il 10% alto e basso gia' tagliato</td></tr>
+  <tr><td><b>piu' basso</b></td>
+      <td>l'annuncio attivo che costa meno. Attenzione: e' spesso il peggiore
+          del gruppo. Quando di quell'esemplare non sappiamo anno ne'
+          condizione lo scriviamo <span style="color:#5f708c">in grigio</span>,
+          perche' sembra l'affare migliore e di solito non lo e'</td></tr>
+  <tr><td><b>miglior voto</b></td>
+      <td>quanto costa l'annuncio col punteggio piu' alto</td></tr>
+</table>
+
+<p>Dentro la scheda, sotto ogni prezzo, la <b>stima</b> e' quanto dovrebbe
+costare <em>quell'esemplare li'</em>: il riferimento del modello corretto per
+anno, stato, corredo e garanzia. Per questo cambia da annuncio ad annuncio
+anche sullo stesso orologio.</p>
+
+<p>La percentuale accanto confronta il prezzo con quella stima, e segue la
+convenzione dei saldi:</p>
+<table>
+  <tr><td><b class="g">&minus;12%</b> in verde</td>
+      <td>costa il 12% <b>meno</b> di quanto dovrebbe: conviene</td></tr>
+  <tr><td><b class="r">+8%</b> in rosso</td>
+      <td>costa l'8% <b>piu'</b> di quanto dovrebbe</td></tr>
+</table>
+<p>Fino al 27/10/2026 era scritta al contrario &mdash; &ldquo;sotto mercato
++11,8%&rdquo; &mdash; e si leggeva male: un annuncio conveniente mostrava un
+numero col piu', e fra due annunci sempre piu' economici il numero
+<em>scendeva</em>. Stessa regola per lo scarto dal listino.</p>
+
 <div class="nota">
 <h4>Il limite, detto chiaramente</h4>
 <p>Servono <b>{_e(fv.get('min_samples', 10))} annunci comparabili</b> degli

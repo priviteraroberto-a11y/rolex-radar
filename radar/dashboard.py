@@ -55,6 +55,55 @@ _PIANI = {"home": 0, "nearby": 1, "reference": 2}
 # l'invio dell'email e il momento in cui la leggi l'annuncio puo' essere gia'
 # stato venduto, e Chrono24 in quel caso non da' errore: rimanda alla pagina
 # della marca. Vale la pena dirlo invece di far sembrare tutto verificato.
+# Come si chiama davvero il negozio, invece della sigla interna.
+NOMI_FONTE = {
+    "chrono24": "Chrono24", "zorzoli": "Zorzoli Orologi",
+    "pluswatch": "PlusWatch", "chlw": "CHLW",
+    "conteorologi": "Conte Orologi", "edwatch": "Ed Watch",
+    "bonanno": "Gioielleria Bonanno", "universooro": "Universo Oro",
+    "davidepedretti": "Davide Pedretti", "dellarocca": "della Rocca",
+    "lorologiaiodicorte": "L'Orologiaio di Corte",
+    "orologifamosi": "Orologi Famosi",
+    "subito": "Subito", "ebay": "eBay", "catawiki": "Catawiki",
+}
+
+
+def _fonte(nome: str) -> str:
+    """Il venditore, per quel che ne sappiamo.
+
+    Il nome del singolo venditore non lo raccogliamo da nessuna fonte: sulle
+    schede c'e', ma Chrono24 dal runner non si legge. Quello che sappiamo con
+    certezza e' da chi arriva l'annuncio, e per i negozi il negozio **e'** il
+    venditore. Meglio un dato vero e modesto che uno inventato.
+    """
+    return NOMI_FONTE.get((nome or "").lower(), nome or "")
+
+
+def _scostamento(pct, cosa: str, soglia: float = 4.0) -> str:
+    """La pastiglia dello scarto, col segno che ci si aspetta.
+
+    Prima diceva "sotto mercato +11,8%", e il piu' era fuorviante: un prezzo
+    conveniente mostrava un numero positivo, e due annunci sempre piu'
+    economici mostravano numeri sempre piu' piccoli. Ora vale la convenzione
+    di tutti i giorni: **meno e verde se costa meno**, piu' e rosso se costa
+    di piu'.
+
+    Internamente il segno resta quello di prima (positivo = risparmio),
+    perche' lo usano punteggio e notifiche: si gira solo qui, dove si guarda.
+    """
+    if pct is None:
+        return '<span class="b n">n/d</span>'
+    segnato = -pct                      # risparmio → negativo, come un saldo
+    if pct >= soglia:
+        classe, spiega = "g", f"costa il {abs(pct):.1f}% in meno {cosa}"
+    elif pct >= -2:
+        classe, spiega = "y", f"in linea {cosa}"
+    else:
+        classe, spiega = "r", f"costa il {abs(pct):.1f}% in piu' {cosa}"
+    return (f'<span class="b {classe}" title="{html.escape(spiega)}">'
+            f'{segnato:+.1f}%</span>')
+
+
 def _da_email(fonte: str) -> bool:
     from .sources.email_source import SENDER_MAP
     return str(fonte or "").lower() in set(SENDER_MAP.values())
@@ -117,24 +166,35 @@ def _gruppo(market: dict) -> str:
 
 
 def _riga_sommario(market: dict, listings: list[dict]) -> str:
-    """Riga compatta in cima: colpo d'occhio su tutti gli orologi."""
-    qui = [l for l in listings if l.get("_piano") == "home"]
-    under = sum(1 for l in qui if (l.get("delta_pct") or 0) >= 4)
-    best = qui[0] if qui else (listings[0] if listings else None)
-    if under:
-        stato = f'<span class="occ">{under} sotto mercato</span>'
-    elif qui:
-        stato = f'{len(qui)} in Italia'
-    elif listings:
-        stato = f'<span class="mut">{len(listings)} altrove</span>'
-    else:
-        stato = '<span class="mut">nessun annuncio</span>'
-    return f"""<a class="srow" href="#{html.escape(str(market.get('watch_id', '')))}">
+    """Riga compatta in cima: quattro numeri che si leggono in fila.
+
+    Prima c'erano "quanti sotto mercato" e il miglior punteggio. Il conteggio
+    diceva poco e il punteggio da solo non diceva a che prezzo: per sapere se
+    valeva la pena bisognava aprire la scheda. Ora ci sono i tre prezzi che
+    servono per decidere se aprirla.
+    """
+    e = html.escape
+    con_prezzo = [l for l in listings if l.get("price_eur")]
+    piu_basso = min(con_prezzo, key=lambda x: x["price_eur"]) if con_prezzo else None
+    best = listings[0] if listings else None
+
+    # Il piu' economico e' spesso il peggiore del gruppo, o uno di cui non
+    # sappiamo niente: se mancano anno e condizione lo diciamo smorzandolo,
+    # perche' altrimenti sembra l'affare migliore e di solito non lo e'.
+    magro = piu_basso is not None and not (piu_basso.get("year")
+                                           or piu_basso.get("condition"))
+    cl_basso = "sval mut" if magro else "sval"
+    tit_basso = ("il piu' economico fra gli annunci attivi — di questo non "
+                 "sappiamo anno ne' condizione") if magro else \
+                "il piu' economico fra gli annunci attivi"
+
+    return f"""<a class="srow" href="#{e(str(market.get('watch_id', '')))}">
       {_foto(market, listings)}
-      <span class="sname">{html.escape(market.get('label', 'Orologio'))}{_gruppo(market)}</span>
-      <span class="sidx">{_eur(market.get('index'))}</span>
-      <span class="sstat">{stato}</span>
-      <span class="sbest">{best['score'] if best else ''}</span>
+      <span class="sname">{e(market.get('label', 'Orologio'))}{_gruppo(market)}</span>
+      <span class="sval" title="prezzo di riferimento: la mediana dei campioni raccolti">{_eur(market.get('index'))}</span>
+      <span class="{cl_basso}" title="{e(tit_basso)}">{_eur(piu_basso['price_eur']) if piu_basso else '—'}</span>
+      <span class="sval" title="il prezzo dell'annuncio col punteggio piu' alto">{_eur(best['price_eur']) if best else '—'}</span>
+      <span class="sbest" title="il punteggio migliore fra gli annunci attivi">{best['score'] if best else ''}</span>
     </a>"""
 
 
@@ -180,6 +240,7 @@ f"""{f' · <b class="g">{len(under)} sotto mercato</b>' if under else ''}</span>
         {f'<div class="note">{note}</div>' if note else ''}
         <canvas class="chart" data-series='{chart_data}'></canvas>
         <table><tbody>{rows}</tbody></table>
+        <a class="su" href="#top">↑ torna in cima</a>
       </div>
     </details>"""
 
@@ -189,22 +250,10 @@ _QUI = None  # segnaposto: le pastiglie di posizione si evidenziano via CSS
 
 def _row(l: dict) -> str:
     e = html.escape
-    delta = l.get("delta_pct")
-    if delta is None:
-        badge = '<span class="b n">n/d</span>'
-    elif delta >= 4:
-        badge = f'<span class="b g">sotto mercato {delta:+.1f}%</span>'
-    elif delta >= -2:
-        badge = f'<span class="b y">in linea {delta:+.1f}%</span>'
-    else:
-        badge = f'<span class="b r">sopra {abs(delta):.1f}%</span>'
-
+    badge = _scostamento(l.get("delta_pct"), "della stima di questo esemplare")
     dl = l.get("delta_listino_pct")
-    listino = ""
-    if dl is not None:
-        classe = "g" if dl >= 5 else ("y" if dl >= -5 else "r")
-        verso = "sotto" if dl >= 0 else "sopra"
-        listino = (f' · <span class="b {classe}">{verso} listino {abs(dl):.0f}%</span>')
+    listino = ("" if dl is None else
+               " · " + _scostamento(dl, "del listino di fabbrica", soglia=5.0))
 
     chips = "".join(
         f'<span class="chip{" here" if c == _QUI else ""}">{e(str(c))}</span>'
@@ -224,9 +273,9 @@ def _row(l: dict) -> str:
         <span>{l.get('score', 0)}</span></div></td>
       <td>
         <div class="pr">{_eur(l.get('price_eur'))}</div>
-        <div class="fv">stima {_eur(l.get('fair_value_eur'))} · {badge}{listino}</div>
+        <div class="fv"><span title="quanto dovrebbe costare QUESTO esemplare: il prezzo di riferimento del modello corretto per anno, stato, corredo e garanzia">stima {_eur(l.get('fair_value_eur'))}</span> · {badge}{listino}</div>
         <div class="chips">{chips}</div>
-        <div class="src">{e(l.get('source', ''))}</div>
+        <div class="src">{e(_fonte(l.get('source', '')))}</div>
       </td>
       <td class="go"><a href="{e(l.get('url', '#'))}" target="_blank" rel="noopener">→</a></td>
     </tr>"""
@@ -282,11 +331,29 @@ _TEMPLATE = """<!doctype html>
           letter-spacing:.02em; vertical-align:1px; }}
   .sname {{ flex:1; font-size:14px; font-weight:600; letter-spacing:-.01em;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap }}
-  .sidx {{ font-size:13px; color:var(--mut); white-space:nowrap }}
-  .sstat {{ font-size:11px; color:var(--mut); width:96px; text-align:right;
-    white-space:nowrap }}
-  .sbest {{ font-size:12px; font-weight:700; color:var(--acc); width:24px;
+  /* I tre prezzi della riga di sommario: stessa larghezza, cosi' si leggono
+     in colonna anche senza righe di tabella. */
+  .sval {{ font-size:13px; color:var(--mut); white-space:nowrap;
+    width:78px; text-align:right; font-variant-numeric:tabular-nums }}
+  .sval.mut {{ color:#4d5c75 }}
+  .sbest {{ font-size:12px; font-weight:700; color:var(--acc); width:28px;
     text-align:right }}
+  /* L'intestazione deve allinearsi alle righe, che cominciano con la
+     miniatura da 44px: senza il segnaposto le colonne scivolano. */
+  .sint {{ display:flex; gap:11px; padding:6px 12px 8px; font-size:10px;
+    letter-spacing:.04em; text-transform:uppercase; color:#5f708c;
+    border-bottom:1px solid var(--line) }}
+  .sint .vuoto {{ flex:0 0 44px }}
+  .sint .sh {{ flex:1 }}
+  .sint span.c {{ width:78px; text-align:right }}
+  .sint span.b24 {{ width:28px; text-align:right }}
+  @media (max-width:560px) {{
+    .sval {{ width:66px; font-size:12px }}
+    .sint span.c {{ width:66px }}
+  }}
+  .su {{ display:inline-block; margin:10px 2px 2px; font-size:12px;
+    color:var(--acc); text-decoration:none }}
+  .su:active {{ opacity:.6 }}
   .occ {{ color:var(--g); font-weight:600 }}
   .mut {{ color:#5f708c }}
 
@@ -346,7 +413,7 @@ _TEMPLATE = """<!doctype html>
   canvas.chart {{ width:100%; height:130px; background:#182338; border-radius:12px;
     border:1px solid var(--line); padding:8px; margin-bottom:12px }}
   footer {{ margin-top:30px; font-size:11px; color:#5f708c; line-height:1.6 }}
-</style></head><body>
+</style></head><body id="top">
 <div class="wrap">
   <div class="eyebrow">RADAR OROLOGI</div>
   <div class="hdr">
@@ -359,7 +426,16 @@ _TEMPLATE = """<!doctype html>
   <div class="upd">aggiornato {updated}</div>
   <div class="head-k"><b>{totale}</b> annunci attivi · <b>{occasioni}</b> sotto mercato</div>
 
-  <div class="sum">{sommario}</div>
+  <div class="sum">
+    <div class="sint">
+      <span class="vuoto"></span>
+      <span class="sh">modello</span>
+      <span class="c" title="la mediana dei campioni raccolti per questo modello">riferimento</span>
+      <span class="c" title="il piu' economico fra gli annunci attivi">piu' basso</span>
+      <span class="c" title="il prezzo dell'annuncio col punteggio piu' alto">miglior voto</span>
+      <span class="b24"></span>
+    </div>
+{sommario}</div>
 
   {sezioni}
 

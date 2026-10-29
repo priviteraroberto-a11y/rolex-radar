@@ -652,8 +652,6 @@ def test_la_dashboard_mette_l_italia_in_cima(tmp_path):
     import re
     ordine = re.findall(r'<tr class="(\w+)"', h)
     assert ordine == ["home", "home", "nearby", "reference"], ordine
-    # il sommario conta l'Italia, non il totale
-    assert "2 in Italia" in h
     db.close()
 
 
@@ -1258,7 +1256,9 @@ def test_lo_scarto_dal_listino_arriva_fino_alla_dashboard(tmp_path):
     p = dashboard.build(db, [{"watch_id": "speedmaster", "label": "Omega"}],
                         tmp_path / "index.html")
     testo = p.read_text(encoding="utf-8")
-    assert "sotto listino 25%" in testo, "manca l'indicazione sul listino"
+    # Col segno dei saldi: costa il 25,3% MENO del listino, quindi meno e verde.
+    assert "-25.3%" in testo, "manca l'indicazione sul listino"
+    assert "listino di fabbrica" in testo, "manca la spiegazione al passaggio del mouse"
 
 
 def test_senza_listino_la_dashboard_non_scrive_niente(tmp_path):
@@ -1353,3 +1353,96 @@ def test_gli_annunci_dai_marketplace_sono_marcati(tmp_path):
                             tmp_path / "i.html").read_text(encoding="utf-8")
     assert "segnalato il" in testo
     assert testo.count("segnalato il") == 1, "solo gli annunci via email"
+
+
+def test_il_segno_segue_la_convenzione_dei_saldi(tmp_path):
+    """Meno e verde quando costa meno. Piu' e rosso quando costa di piu'.
+
+    Prima era al contrario — "sotto mercato +11,8%" — e si leggeva male in due
+    modi: un annuncio conveniente mostrava un numero col piu', e fra due
+    annunci sempre piu' economici il numero *scendeva*. Roberto l'ha notato su
+    due Speedmaster: 7.330 € dato a +11,8% e 7.200 € a +7,5%.
+
+    Dentro resta il segno di prima (positivo = risparmio), perche' lo usano
+    punteggio e notifiche: si gira solo dove si guarda.
+    """
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "s.db")
+
+    db.upsert(Listing(source="chlw", url="https://a/conviene", price_eur=7330.0,
+                      fair_value_eur=8306.0, delta_pct=11.8, score=92,
+                      seller_country="IT"), "speedmaster")
+    db.upsert(Listing(source="pluswatch", url="https://a/caro", price_eur=9000.0,
+                      fair_value_eur=8200.0, delta_pct=-9.8, score=30,
+                      seller_country="IT"), "speedmaster")
+    h = dashboard.build(db, [{"watch_id": "speedmaster", "label": "Omega"}],
+                        tmp_path / "i.html").read_text(encoding="utf-8")
+
+    assert '<span class="b g" title="costa il 11.8% in meno' in h
+    assert ">-11.8%</span>" in h, "il conveniente deve avere il meno"
+    assert '<span class="b r" title="costa il 9.8% in piu' in h
+    assert ">+9.8%</span>" in h, "il caro deve avere il piu'"
+    assert "sotto mercato +" not in h, "e' rimasta la vecchia dicitura"
+    db.close()
+
+
+def test_il_sommario_mostra_i_tre_prezzi(tmp_path):
+    """Modello, riferimento, piu' basso, prezzo del miglior voto.
+
+    Prima c'erano "quanti sotto mercato" e il punteggio migliore: il
+    conteggio diceva poco e il punteggio da solo non diceva a che prezzo, per
+    cui bisognava aprire la scheda per sapere se valeva la pena.
+    """
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "t.db")
+
+    db.upsert(Listing(source="chlw", url="https://a/1", price_eur=7330.0,
+                      fair_value_eur=8306.0, delta_pct=11.8, score=92,
+                      year=2026, condition="unworn", seller_country="IT"),
+              "speedmaster")
+    db.upsert(Listing(source="chrono24", url="https://a/2", price_eur=5621.0,
+                      fair_value_eur=6550.0, delta_pct=14.2, score=57,
+                      seller_country="IT"), "speedmaster")
+    h = dashboard.build(db, [{"watch_id": "speedmaster", "label": "Omega",
+                              "index": 6550}], tmp_path / "i.html").read_text(encoding="utf-8")
+
+    import re
+    riga = re.search(r'<a class="srow".*?</a>', h, re.S).group(0)
+    for atteso in ("6.550", "5.621", "7.330"):
+        assert atteso in riga, f"manca {atteso} nel sommario"
+    assert ">92</span>" in riga, "manca il punteggio"
+
+    # Il piu' economico non ha anno ne' condizione: va smorzato, perche'
+    # sembra l'affare migliore e di solito non lo e'.
+    assert 'class="sval mut"' in riga
+    db.close()
+
+
+def test_si_torna_in_cima_senza_scrollare(tmp_path):
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "u.db")
+    db.upsert(Listing(source="chlw", url="https://a/1", price_eur=7000.0,
+                      score=80, seller_country="IT"), "speedmaster")
+    h = dashboard.build(db, [{"watch_id": "speedmaster", "label": "Omega"}],
+                        tmp_path / "i.html").read_text(encoding="utf-8")
+    assert 'id="top"' in h and 'href="#top"' in h
+
+
+def test_la_fonte_si_legge_col_suo_nome(tmp_path):
+    """Il venditore vero non lo raccogliamo da nessuna parte: sulle schede
+    c'e', ma Chrono24 dal runner non si legge. Quello che sappiamo con
+    certezza e' da chi arriva l'annuncio — e per un negozio il negozio *e'* il
+    venditore."""
+    from radar.db import Database
+    from radar.models import Listing
+    db = Database(tmp_path / "v.db")
+    for fonte in ("zorzoli", "chrono24", "lorologiaiodicorte"):
+        db.upsert(Listing(source=fonte, url=f"https://a/{fonte}", price_eur=7000.0,
+                          score=70, seller_country="IT"), "speedmaster")
+    h = dashboard.build(db, [{"watch_id": "speedmaster", "label": "Omega"}],
+                        tmp_path / "i.html").read_text(encoding="utf-8")
+    assert "Zorzoli Orologi" in h and "Chrono24" in h
+    assert "L&#x27;Orologiaio di Corte" in h or "L'Orologiaio di Corte" in h
