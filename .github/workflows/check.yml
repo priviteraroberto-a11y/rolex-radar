@@ -67,6 +67,9 @@ on:
           - "Panerai Luminor Marina Militare 1000 pezzi — panerai-marina-militare"
           - "Rolex Land-Dweller 40 — land-dweller-40"
           - "Rolex Land-Dweller 36 — land-dweller-36"
+          - "Rolex Day-Date 36 Everose quadrante blu — day-date-36-blue"
+          - "Rolex Sky-Dweller 42 Everose quadrante blu — sky-dweller-everose-blue"
+          - "Patek Philippe Calatrava 5196G-001 oro bianco — patek-calatrava-5196g"
 
 concurrency:
   group: radar
