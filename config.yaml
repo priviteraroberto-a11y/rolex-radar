@@ -982,12 +982,13 @@ watches:
 
   - id: sky-dweller-everose-blue
     brand: Rolex
-    model: Sky-Dweller 42 Everose quadrante blu
-    # Riconosciuto per NOME: la 336935 esiste con piu' quadranti; qui solo il blu.
-    identify_by: name
-    must_include: ["Blue"]
-    references: ["336935"]
-    search_terms: ["336935 Blue", "Sky-Dweller 336935 Blue"]
+    model: Sky-Dweller 42 Everose quadrante blu-verde
+    # Riconosciuto per REFERENZA COMPLETA: la 336935-0005 e' proprio la
+    # versione Everose con quadrante blu-verde. La sola radice 336935 coprirebbe
+    # anche gli altri quadranti, con prezzi diversi.
+    references: ["336935-0005"]
+    search_terms: ["336935-0005", "Sky-Dweller 336935-0005"]
+    model_keywords: ["Sky-Dweller", "Sky Dweller"]
     exclude_keywords: ["Diamond", "Diamanti", "Platino", "Platinum",
                        "Oro giallo", "Yellow Gold", "Oro bianco", "White Gold",
                        "Day-Date"]
@@ -1000,7 +1001,8 @@ watches:
       target_years: [2024, 2025, 2026]
       acceptable_years: [2023]
     fair_value:
-      # PROVVISORIO: mediana UE circa 61.000 (12/11/2026), misura grezza.
+      # PROVVISORIO: 61.000 e' la mediana UE della 336935 con "blue" nel testo
+      # (12/11/2026), non della sola -0005. Da rifare a mano.
       seed_price_eur: 61000
     notifications:
       always_notify_if_underpriced_pct: 10.0
