@@ -1,0 +1,62 @@
+{
+  "fonte": "chrono24",
+  "data": "2026-11-23",
+  "nota": "Vacheron Constantin 222 4200H/222A acciaio, ricerca '4200H' filtrata Unione Europea: 31 annunci, di cui 14 in acciaio con prezzo. Esclusi l'oro 222J (dalla referenza o, se non dichiarata, dal prezzo oltre 63.000 €) e i 'prezzo su richiesta'. Senza paese = non leggibile dalla scheda, ma dentro il filtro UE. Sostituisce la rilevazione del 12/09 (mediana 51.950 €).",
+  "campioni": {
+    "vc-222": [
+      {
+        "p": 48500,
+        "c": "RO"
+      },
+      {
+        "p": 48710,
+        "c": "DK"
+      },
+      {
+        "p": 49650,
+        "c": "AT"
+      },
+      {
+        "p": 52000,
+        "c": "SE"
+      },
+      {
+        "p": 52500,
+        "c": "CZ"
+      },
+      {
+        "p": 54100
+      },
+      {
+        "p": 54500,
+        "c": "ES"
+      },
+      {
+        "p": 55000
+      },
+      {
+        "p": 55000
+      },
+      {
+        "p": 55000,
+        "c": "IT"
+      },
+      {
+        "p": 55000,
+        "c": "LT"
+      },
+      {
+        "p": 57000,
+        "c": "DE"
+      },
+      {
+        "p": 57000,
+        "c": "ES"
+      },
+      {
+        "p": 57000,
+        "c": "IT"
+      }
+    ]
+  }
+}

@@ -104,7 +104,7 @@ watches:
       # sarebbe stata una stima sbagliata per difetto — sotto ci sono Hong Kong
       # e Giappone, dove il prezzo non e' confrontabile perche' all'importazione
       # si aggiunge il 27,5% fra dazio e IVA.
-      seed_price_eur: 7100
+      seed_price_eur: 6700
     notifications:
       always_notify_if_underpriced_pct: 15.0
 
@@ -320,7 +320,7 @@ watches:
       # tutti fra 47.500 e 55.000. Sostituisce i 9 campioni del 03/09, che
       # erano in gran parte gli stessi annunci ancora online: tenerli tutti e
       # due avrebbe contato nove prezzi due volte.
-      seed_price_eur: 52000
+      seed_price_eur: 54750
       # listino Vacheron: CHF 32.200 al cambio 1,0635 del 05/09/2026
       list_price_eur: 34250
       # Tabelle centrate su questo mercato, come per il Land-Dweller.
